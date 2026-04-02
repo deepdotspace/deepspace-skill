@@ -1,0 +1,8 @@
+{
+  "name": "deepspace",
+  "description": "Build real-time collaborative apps on Cloudflare Workers with DeepSpace SDK",
+  "version": "0.1.0",
+  "author": {
+    "name": "DeepSpace"
+  }
+}
