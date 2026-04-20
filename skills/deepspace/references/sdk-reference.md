@@ -208,6 +208,16 @@ function Gallery() {
   }
   ```
 
+### Game rooms (state migration)
+
+Subclasses of `GameRoom` can override `onHydrateState(stored)` to migrate persisted game state when redeploying with a schema change. Use it for:
+
+- **Evolving schemas** — merge new fields into existing stored state.
+- **Version bumps** — transform old shapes to new ones.
+- **Fresh starts** — discard stale blobs and return a default state.
+
+Omit the override to keep the legacy behavior (load the stored blob as-is).
+
 ### Auth
 - `verifyJwt(request, env)` — validates the session JWT, returns `{ userId, ... }` or throws.
 
