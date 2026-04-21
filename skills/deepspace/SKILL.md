@@ -124,6 +124,7 @@ Rules either way:
 - Use `useAuth().isSignedIn` for auth gating (session-based, updates immediately). `useUser()` loads async and causes a flash.
 - `<AuthOverlay/>` auto-hides when signed in (returns `null`), so dropping `onClose` is safe when you also gate with `!isSignedIn`.
 - Don't add a second sign-out — the avatar dropdown in `Navigation.tsx` already calls `signOut()`.
+- **If the app requires sign-in, a sign-out control is non-negotiable.** The scaffold's avatar dropdown provides it. If you replace `Navigation.tsx` with a custom header/dropdown, the replacement must still call `signOut()` from `deepspace` somewhere reachable when signed in (avatar menu, settings page, etc.). Apps without a logout affordance are broken UX.
 - Don't rewrite `Navigation.tsx` just to theme it — edit tokens in `src/styles.css` (Step 5).
 
 ### Step 5: Pick a Theme
