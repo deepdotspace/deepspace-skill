@@ -204,8 +204,11 @@ For the `requiresOAuth` response shape and client retry pattern, see `references
 
 ## Worker (`deepspace/worker`)
 
-### Base class
-- `RecordRoom` — Durable Object base class. Extend it in your app worker:
+### Base classes
+
+The scaffold declares five DO classes in `__DO_MANIFEST__` and extends these bases in `worker.ts` — do not add a new DO class without updating the manifest and wrangler migrations.
+
+- `RecordRoom` — primary app data DO. Extend with your `schemas`:
   ```typescript
   export class AppRecordRoom extends RecordRoom {
     constructor(state: DurableObjectState, env: Env) {
@@ -213,6 +216,12 @@ For the `requiresOAuth` response shape and client retry pattern, see `references
     }
   }
   ```
+- `YjsRoom` — per-doc collaborative text (Y.Text) and rich fields.
+- `CanvasRoom` — collaborative canvas state (shapes, strokes).
+- `MediaRoom` — LiveKit-backed audio/video rooms.
+- `PresenceRoom` — cursors, typing indicators, "who's online".
+
+Each has its own WebSocket route wired in `worker.ts` (`/ws/yjs/:docId`, `/ws/canvas/:docId`, `/ws/media/:roomId`, `/ws/presence/:scopeId`).
 
 ### Game rooms (state migration)
 
@@ -226,6 +235,20 @@ Omit the override to keep the legacy behavior (load the stored blob as-is).
 
 ### Auth
 - `verifyJwt(request, env)` — validates the session JWT, returns `{ userId, ... }` or throws.
+- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` — HMAC verification for internal platform → app calls (e.g., the `/internal/cron` endpoint).
+
+### AI provider helper
+- `createDeepSpaceAI(env, provider, options?)` — returns a Vercel-AI-SDK-compatible provider routed through the DeepSpace API worker. `provider` is `'anthropic' | 'openai' | 'cerebras'`. Pass `{ authToken }` for user-billed calls (inside a request handler); omit for server-side autonomous calls (falls back to `env.APP_OWNER_JWT`, billed to the app owner).
+
+### Server action types
+- `ActionHandler` — `(ctx: ActionContext) => Promise<ActionResult>`.
+- `ActionContext` — `{ userId, params, tools }`. `tools` exposes `create / update / remove / get / query` (bypass user RBAC) and `integration(endpoint, data)`.
+- `ActionResult` — `{ success: boolean, data?: unknown, error?: string }`.
+
+### AI tool helpers (from `deepspace/worker`)
+- `BUILT_IN_TOOLS` — catalog of read-only tool definitions.
+- `ToolSchema` — tool-definition type.
+- See `src/ai/tools.ts` in the scaffold for `buildSystemPrompt(appName, schemas)` and `buildReadOnlyTools(executor)` — both are app-local by default (the scaffold ships a reference implementation you can edit to add custom tools).
 
 ### R2 helpers
 - `createScopedR2Handler(...)` — route handler for scoped R2 reads/writes.

@@ -56,7 +56,7 @@ Default palette (dark slate + indigo) — these are the values to change:
 2. Replace the `@theme` block — swap at least: `--color-background`, `--color-foreground`, `--color-primary`, `--color-secondary`, `--color-card`, `--color-accent`, `--color-ring`, and the `--shadow-glow-*` tokens so glows match the new accent. A single token swap is not enough — the UI will still read as "default DeepSpace".
 3. Update the backward-compat aliases at the bottom of the `@theme` block (`--color-surface`, `--color-primary-hover`, `--color-primary-muted`, `--color-primary-border`) — several components still read these.
 4. Update the favicon and `<title>` in `index.html`. The defaults say "DeepSpace".
-5. If the app has a distinct identity, add a simple wordmark or logo to `Navigation.tsx` (plain text in a distinctive font counts — `font-serif`, `tracking-tight`, larger size).
+5. If the app has a distinct identity, add a simple wordmark or logo to `Navigation.tsx` (plain text in a distinctive font counts — `font-serif`, `tracking-tight`, larger size). **Don't rewrite the rest of `Navigation.tsx`** — sign-in (`AuthOverlay` modal), sign-out (`signOut()` in avatar dropdown), user avatar, role badge, mobile menu, and nav links are already wired to the SDK and `src/nav.ts`. To add a nav item, append to `src/nav.ts`; Navigation picks it up automatically.
 
 If the user has not specified a palette, **pick one and tell them in one line** what you picked (e.g., "Picked a deep teal + cream palette"). Do not silently keep the default. Do not ask for hex codes up front. Do not explain your reasoning unless asked — just ship and move on.
 
