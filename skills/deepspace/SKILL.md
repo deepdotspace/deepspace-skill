@@ -328,7 +328,7 @@ const result = await integration.post('openweathermap/geocoding', { q: city })
 
 **Do not guess endpoint names.** The format is `<integration-name>/<endpoint-name>` (two segments). Names like `geocode-city` or `weather-forecast` are not real — a wrong name will return a 404 at runtime.
 
-**For the full list of available integrations and endpoints, read `references/integrations.md`.** It covers LLMs (OpenAI, Anthropic, Gemini), search (Exa, Firecrawl, SerpAPI), media (Freepik, ElevenLabs, CloudConvert), communication (Email, Slack, LiveKit), Google Workspace (Gmail, Drive, Calendar), social (GitHub, LinkedIn, YouTube, TikTok, Instagram), finance (Polymarket, stocks, crypto), sports, NASA, MTA, Wikipedia, and more. Always verify the endpoint exists in that reference before calling it.
+**Load `references/integrations.md` when the app needs to call any external API** — LLMs (OpenAI, Anthropic, Gemini), search (Exa, Firecrawl, SerpAPI), media (Freepik, ElevenLabs, CloudConvert), communication (Email, Slack, LiveKit), Google Workspace (Gmail, Drive, Calendar), social (GitHub, LinkedIn, YouTube, TikTok, Instagram), finance (Polymarket, stocks, crypto), sports, NASA, MTA, Wikipedia, and more. Verify the endpoint exists in that reference before calling it. Skip it for apps that only use client hooks.
 
 ## Server-Side Extensions
 
