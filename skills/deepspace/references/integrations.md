@@ -31,7 +31,48 @@ The api-worker then 401s anonymous callers and bills the signed-in user's DeepSp
 
 **Integration calls cost real money every test run.** `npx deepspace test` and `api.spec.ts` runs hit the real third-party API through the proxy — `developer`-billed calls charge the CLI user (`npx deepspace whoami`), `user`-billed calls charge the signed-in test account. Keep integration assertions minimal: one `integration.post(...)` per endpoint per test run, not a matrix. Never put integration calls inside `for` loops, retry-until-success polls, or parameterized test generators.
 
-**Skip `user`-billed endpoints in api.spec.ts entirely.** Test accounts have no DeepSpace credits, so `user`-billed calls (e.g. `google/*`, or anything you've flipped to `'user'`) will 402 and the test will fail for the wrong reason. Don't "fix" this by temporarily flipping the integration to `'developer'` for tests — that silently bills the CLI user for calls the real app would have charged its end-users for, which is the opposite of what the developer chose. Either leave those endpoints out of api.spec.ts and verify them via UI smoke + `page.route(...)` mocks, or note in `findings.md` that they're untested-by-design.
+**Skip real `user`-billed endpoint calls in api.spec.ts.** Test accounts have no DeepSpace credits, so `user`-billed calls (e.g. `google/*`, or anything you've flipped to `'user'`) will 402 and the test will fail for the wrong reason. Don't "fix" this by temporarily flipping the integration to `'developer'` for tests — that silently bills the CLI user for calls the real app would have charged its end-users for, which is the opposite of what the developer chose.
+
+**For the OAuth surface (Google), use `page.route(...)` to mock the connected and recovery branches.** The disconnected state is the easy half — fresh test accounts always show "Connect" so smoke.spec.ts can assert that with no mocks. But the connected-state UI (Disconnect button, events/data list, send-action affordances) and the requiresOAuth recovery prompt are non-trivial branches that fail silently in production if you don't exercise them. Minimum coverage:
+
+```typescript
+// 1. connected state renders Disconnect + data UI
+await page.route('**/api/integrations/status', (route) =>
+  route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ google: { connected: true, calendar: true, gmailSend: true } }),
+  })
+)
+await page.route('**/api/integrations/google/calendar-list-events', (route) =>
+  route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ success: true, data: { items: [{ id: 'e1', summary: 'mock event', attendees: [{ email: 'a@x.com' }] }] } }),
+  })
+)
+// → assert Disconnect button visible, mock event renders, Send button enabled
+
+// 2. requiresOAuth recovery — note the nested `data` envelope
+await page.route('**/api/integrations/google/gmail-send', (route) =>
+  route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ success: true, data: { requiresOAuth: true, provider: 'google', scopes: ['gmail.send'], authUrl: 'https://accounts.google.com/o/oauth2/v2/auth?...' } }),
+  })
+)
+// → assert reconnect prompt appears, page does NOT crash, no infinite retry loop
+
+// 3. Disconnect button hits the right endpoint
+let disconnectCalled = false
+await page.route('**/api/integrations/oauth/google/disconnect', (route) => {
+  disconnectCalled = true
+  route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) })
+})
+// → click Disconnect, assert disconnectCalled === true, banner flips back
+```
+
+Real Google round-trips remain **deploy-and-manual-test only** — note that explicitly in `findings.md` so the gap is paper-trailed instead of forgotten.
 
 ## AI / LLM
 
@@ -384,27 +425,40 @@ Currently only `google` requires OAuth. Users connect once; tokens are stored an
 
 ### Error shape when OAuth is needed
 
-When a Google endpoint is called without stored tokens, without a required scope, or with a token that has been revoked/expired, the handler returns:
+When a Google endpoint is called without stored tokens, without a required scope, or with a token that has been revoked/expired, the api-worker returns HTTP 200 with this envelope:
 
 ```typescript
 {
-  success: false,
-  requiresOAuth: true,
-  provider: 'google',
-  scopes: string[],   // scopes needed for this call
-  authUrl: string     // redirect the user here to grant consent
+  success: true,             // <-- yes, true. The OAuth-required payload
+  data: {                    //     rides under data, not as a top-level error.
+    requiresOAuth: true,
+    provider: 'google',
+    scopes: string[],        // scopes needed for this call
+    authUrl: string          // redirect the user here to grant consent
+  }
 }
 ```
 
-Check `result.requiresOAuth` — **do not** grep for the legacy `error: 'not_connected'` string; that shape no longer applies. The platform produces this response for three distinct failures (no tokens, insufficient scope 403, revoked/invalid 401), so one check handles all of them.
+The platform produces this response for three distinct failures (no tokens, insufficient scope 403, revoked/invalid 401), so one check handles all of them. **Always check `result.data?.requiresOAuth`, never `result.requiresOAuth` or `result.success === false`** — the SDK forwards the api-worker's `data` field as-is, so the OAuth fields are nested one level down. (Do not grep for the legacy `error: 'not_connected'` string either; that shape no longer applies.)
 
 Client pattern:
 
 ```typescript
 const result = await integration.post('google/gmail-send', { to, subject, content })
-if (result.requiresOAuth) {
-  window.open(result.authUrl, 'google-auth', 'width=500,height=600')
-  // After the user completes consent, retry the call
+const oauth = result.data as { requiresOAuth?: boolean; authUrl?: string } | undefined
+if (oauth?.requiresOAuth && oauth.authUrl) {
+  window.open(oauth.authUrl, 'google-auth', 'width=500,height=600')
+  // After the user completes consent, retry the call.
+}
+```
+
+Type the response so this stays honest:
+
+```typescript
+type GoogleResult<T> = {
+  success: boolean
+  data?: T | { requiresOAuth: true; provider: 'google'; scopes: string[]; authUrl: string }
+  error?: string
 }
 ```
 
