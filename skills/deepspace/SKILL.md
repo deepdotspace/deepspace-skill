@@ -172,7 +172,7 @@ Tests are the primary way to verify and debug code changes. The scaffolded tests
 
 1. **Customize or extend the relevant test file** to cover what you just built or modified:
    - **smoke.spec.ts** — update when adding a new page, route, nav item, or top-level UI (landing, gallery, dashboard, settings). Assert the page loads, expected content is visible, no console/page errors.
-   - **api.spec.ts** — update when adding worker routes, integration calls, or endpoints that require auth. Assert status codes, response shape, auth gating, error cases.
+   - **api.spec.ts** — update when (a) you add or edit a worker route in `worker.ts` (e.g., a server action, AI chat route, or cron handler), or (b) your app calls `integration.post(endpoint, ...)` for an endpoint not yet covered by an existing test. For (b), POST to `/api/integrations/<endpoint>` with the same body the app uses and assert the envelope comes back `success: true` with the shape your UI consumes — this locks the contract with the api-worker in the same session and catches wrong endpoint names, which is the #1 failure mode for integration-heavy apps. For (a), assert status codes, response shape, auth gating, and error cases.
    - **collab.spec.ts** — update when adding multi-user flows (shared records, messaging, permissions, presence, invites, real-time sync). Use `createTestUsers(browser, N)` and assert one user's action is visible/effective for another.
 2. **Run the relevant tests** (`npx playwright test <file>`). The scaffolded `tests/playwright.config.ts` has a `webServer` block that auto-starts Vite on port 5173 and reuses an existing one if present — you don't need to run `npx deepspace dev` in a separate shell just to run tests.
 3. **Debug from failures, not from console logs.** If a test fails, read the assertion message, read the failing selector, then fix the code. Do not add `console.log` to diagnose — write a more specific assertion. Do not weaken or delete tests to make them green.
@@ -180,7 +180,7 @@ Tests are the primary way to verify and debug code changes. The scaffolded tests
 
 **When to reach for which test:**
 - Single-user UI / CRUD / navigation → extend `smoke.spec.ts`.
-- Worker route, integration call, RBAC on HTTP → extend `api.spec.ts`.
+- Worker route added/edited, any `integration.post(...)` call from the app, or RBAC enforced via HTTP → extend `api.spec.ts`.
 - Anything where user A's action should affect user B's view → extend `collab.spec.ts`.
 - A bug you're trying to fix → write a failing test that reproduces it first, then fix the code.
 
@@ -329,6 +329,8 @@ const result = await integration.post('openweathermap/geocoding', { q: city })
 
 **Do not guess endpoint names.** The format is `<integration-name>/<endpoint-name>` (two segments). Names like `geocode-city` or `weather-forecast` are not real — a wrong name will return a 404 at runtime.
 
+**Auth-gate any UI that calls `integration.post(...)`.** Integrations default to owner-billed and the api-worker allows anonymous callers, so without a sign-in gate any visitor can spend the owner's credits. Wrap the calling page/button behind `useAuth().isSignedIn`. (For the app where end-users should pay for integration calls instead, see `references/integrations.md` § "Billing & access control" for the `billing: 'user'` flip.)
+
 **Load `references/integrations.md` when the app needs to call any external API** — LLMs (OpenAI, Anthropic, Gemini), search (Exa, Firecrawl, SerpAPI), media (Freepik, ElevenLabs, CloudConvert), communication (Email, Slack, LiveKit), Google Workspace (Gmail, Drive, Calendar), social (GitHub, LinkedIn, YouTube, TikTok, Instagram), finance (Polymarket, stocks, crypto), sports, NASA, MTA, Wikipedia, and more. Verify the endpoint exists in that reference before calling it. Skip it for apps that only use client hooks.
 
 ## Server-Side Extensions
@@ -452,7 +454,7 @@ Write and update tests **as you build**, not after. Every new page, feature, or 
 
 - **New page / route / nav item** → extend `smoke.spec.ts`. Add a test that navigates to the page, asserts the expected headline/components are visible, and the page has no errors.
 - **New CRUD feature** (items, posts, whatever) → extend `smoke.spec.ts` with a create/read/edit/delete happy path for a signed-in user.
-- **New worker route or integration call** → extend `api.spec.ts`. Assert success responses, auth-required failures, and error shapes.
+- **New worker route, server action, AI chat route, cron handler, or any `integration.post(...)` call** → extend `api.spec.ts`. For integration calls, POST to `/api/integrations/<endpoint>` and assert the envelope is `success: true` with the data the UI consumes — this catches wrong endpoint names, the most common integration-heavy-app failure. For routes/actions/AI/cron, assert status codes, response shape, and auth gating.
 - **New multi-user behavior** (sharing, invites, messages, presence, permissions, shared scopes) → extend `collab.spec.ts`. Create two users, act in one, assert in the other.
 - **RBAC changes or permission tweaks** → add tests in `collab.spec.ts` with users of different roles, asserting what each can and cannot see/do.
 - **Bug fix** → write the failing test first (reproducing the bug), then fix the code until it passes. Leave the test in the suite.
