@@ -29,6 +29,10 @@ The api-worker then 401s anonymous callers and bills the signed-in user's DeepSp
 
 **Note for `google/*`**: keep `'user'`. OAuth tokens are stored per-user keyed by JWT subject — using `developer` would forward the owner's JWT and operate on the owner's connected Gmail/Drive/Calendar regardless of who's signed in client-side.
 
+**Integration calls cost real money every test run.** `npx deepspace test` and `api.spec.ts` runs hit the real third-party API through the proxy — `developer`-billed calls charge the CLI user (`npx deepspace whoami`), `user`-billed calls charge the signed-in test account. Keep integration assertions minimal: one `integration.post(...)` per endpoint per test run, not a matrix. Never put integration calls inside `for` loops, retry-until-success polls, or parameterized test generators.
+
+**Skip `user`-billed endpoints in api.spec.ts entirely.** Test accounts have no DeepSpace credits, so `user`-billed calls (e.g. `google/*`, or anything you've flipped to `'user'`) will 402 and the test will fail for the wrong reason. Don't "fix" this by temporarily flipping the integration to `'developer'` for tests — that silently bills the CLI user for calls the real app would have charged its end-users for, which is the opposite of what the developer chose. Either leave those endpoints out of api.spec.ts and verify them via UI smoke + `page.route(...)` mocks, or note in `findings.md` that they're untested-by-design.
+
 ## AI / LLM
 
 ### anthropic
