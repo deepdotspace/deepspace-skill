@@ -123,48 +123,61 @@ tools:
           type: boolean
         data:
           type: object
+          description: Raw gamma-api.polymarket.com /events/:id response (bare event object; verified via live API)
           properties:
-            event:
-              type: object
-              properties:
-                id:
-                  type: string
-                slug:
-                  type: string
-                title:
-                  type: string
-                description:
-                  type: string
-                startDate:
-                  type: string
-                endDate:
-                  type: string
-                image:
-                  type: string
-                active:
-                  type: boolean
-                closed:
-                  type: boolean
-                liquidity:
-                  type: number
-                volume:
-                  type: number
-                markets:
-                  type: array
-                  items:
-                    type: object
-                    properties: {}
-                    additionalProperties: true
-                tags:
-                  type: array
-                  items:
-                    type: object
-                    properties: {}
-                    additionalProperties: true
-              required:
-                - id
-              additionalProperties: true
-          additionalProperties: false
+            id:
+              type: string
+            ticker:
+              type: string
+            slug:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            resolutionSource:
+              type: string
+            startDate:
+              type: string
+            creationDate:
+              type: string
+            endDate:
+              type: string
+            image:
+              type: string
+            icon:
+              type: string
+            active:
+              type: boolean
+            closed:
+              type: boolean
+            archived:
+              type: boolean
+            featured:
+              type: boolean
+            restricted:
+              type: boolean
+            liquidity:
+              type: number
+            volume:
+              type: number
+            openInterest:
+              type: number
+            volume24hr:
+              type: number
+            markets:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            tags:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          required:
+            - id
+          additionalProperties: true
         error:
           type: string
       required:
@@ -197,61 +210,106 @@ tools:
         success:
           type: boolean
         data:
-          type: object
-          properties:
-            events:
-              type: array
-              items:
+          type: array
+          description: Raw gamma-api.polymarket.com /events response (bare array; verified via live API)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              ticker:
+                type: string
+              slug:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              resolutionSource:
+                type: string
+              startDate:
+                type: string
+              creationDate:
+                type: string
+              endDate:
+                type: string
+              image:
+                type: string
+              icon:
+                type: string
+              active:
+                type: boolean
+              closed:
+                type: boolean
+              archived:
+                type: boolean
+              new:
+                type: boolean
+              featured:
+                type: boolean
+              restricted:
+                type: boolean
+              liquidity:
+                type: number
+              volume:
+                type: number
+              openInterest:
+                type: number
+              sortBy:
+                type: string
+              category:
+                type: string
+              volume24hr:
+                type: number
+              volume1wk:
+                type: number
+              volume1mo:
+                type: number
+              volume1yr:
+                type: number
+              liquidityAmm:
+                type: number
+              liquidityClob:
+                type: number
+              competitive:
+                type: number
+              commentCount:
+                type: number
+              markets:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+              series:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+              tags:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+              cyom:
+                type: boolean
+              enableNegRisk:
+                type: boolean
+              negRiskAugmented:
+                type: boolean
+              showAllOutcomes:
+                type: boolean
+              showMarketImages:
+                type: boolean
+              requiresTranslation:
+                type: boolean
+              eventMetadata:
                 type: object
-                properties:
-                  id:
-                    type: string
-                  slug:
-                    type: string
-                  title:
-                    type: string
-                  description:
-                    type: string
-                  startDate:
-                    type: string
-                  endDate:
-                    type: string
-                  image:
-                    type: string
-                  icon:
-                    type: string
-                  active:
-                    type: boolean
-                  closed:
-                    type: boolean
-                  liquidity:
-                    type: number
-                  volume:
-                    type: number
-                  volume24hr:
-                    type: number
-                  markets:
-                    type: array
-                    items:
-                      type: object
-                      properties: {}
-                      additionalProperties: true
-                  tags:
-                    type: array
-                    items:
-                      type: object
-                      properties: {}
-                      additionalProperties: true
-                required:
-                  - id
                 additionalProperties: true
-            limit:
-              type: number
-            offset:
-              type: number
-            count:
-              type: number
-          additionalProperties: false
+            required:
+              - id
+              - slug
+              - title
+            additionalProperties: true
         error:
           type: string
       required:
@@ -276,38 +334,49 @@ tools:
           type: boolean
         data:
           type: object
+          description: Raw gamma-api.polymarket.com /markets/:id response (bare market object; verified via live API)
           properties:
-            market:
-              type: object
-              properties:
-                id:
-                  type: string
-                question:
-                  type: string
-                slug:
-                  type: string
-                description:
-                  type: string
-                outcomes:
-                  type: string
-                outcomePrices:
-                  type: string
-                volume:
-                  type: string
-                liquidity:
-                  type: string
-                active:
-                  type: boolean
-                closed:
-                  type: boolean
-                endDate:
-                  type: string
-                clobTokenIds:
-                  type: string
-              required:
-                - id
-              additionalProperties: true
-          additionalProperties: false
+            id:
+              type: string
+            question:
+              type: string
+            conditionId:
+              type: string
+            slug:
+              type: string
+            resolutionSource:
+              type: string
+            endDate:
+              type: string
+            startDate:
+              type: string
+            image:
+              type: string
+            icon:
+              type: string
+            description:
+              type: string
+            outcomes:
+              type: string
+              description: JSON-encoded string array, e.g. "[\"Yes\", \"No\"]"
+            outcomePrices:
+              type: string
+              description: JSON-encoded string array of probabilities
+            volume:
+              type: string
+            liquidity:
+              type: string
+            active:
+              type: boolean
+            closed:
+              type: boolean
+            marketMakerAddress:
+              type: string
+            clobTokenIds:
+              type: string
+          required:
+            - id
+          additionalProperties: true
         error:
           type: string
       required:
@@ -342,45 +411,107 @@ tools:
         success:
           type: boolean
         data:
-          type: object
-          properties:
-            markets:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  question:
-                    type: string
-                  slug:
-                    type: string
-                  description:
-                    type: string
-                  outcomes:
-                    type: string
-                  outcomePrices:
-                    type: string
-                  volume:
-                    type: string
-                  liquidity:
-                    type: string
-                  active:
-                    type: boolean
-                  closed:
-                    type: boolean
-                  endDate:
-                    type: string
-                required:
-                  - id
-                additionalProperties: true
-            limit:
-              type: number
-            offset:
-              type: number
-            count:
-              type: number
-          additionalProperties: false
+          type: array
+          description: Raw gamma-api.polymarket.com /markets response (bare array; verified via live API)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              question:
+                type: string
+              conditionId:
+                type: string
+              slug:
+                type: string
+              resolutionSource:
+                type: string
+              endDate:
+                type: string
+              liquidity:
+                type: string
+              startDate:
+                type: string
+              image:
+                type: string
+              icon:
+                type: string
+              description:
+                type: string
+              outcomes:
+                type: string
+                description: JSON-encoded string array, e.g. "[\"Yes\", \"No\"]"
+              outcomePrices:
+                type: string
+                description: JSON-encoded string array of probabilities
+              volume:
+                type: string
+              active:
+                type: boolean
+              closed:
+                type: boolean
+              marketMakerAddress:
+                type: string
+              questionID:
+                type: string
+              enableOrderBook:
+                type: boolean
+              orderPriceMinTickSize:
+                type: number
+              orderMinSize:
+                type: number
+              volumeNum:
+                type: number
+              liquidityNum:
+                type: number
+              endDateIso:
+                type: string
+              startDateIso:
+                type: string
+              volume24hr:
+                type: number
+              volume1wk:
+                type: number
+              volume1mo:
+                type: number
+              volume1yr:
+                type: number
+              clobTokenIds:
+                type: string
+              umaBond:
+                type: string
+              umaReward:
+                type: string
+              events:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+              acceptingOrders:
+                type: boolean
+              negRisk:
+                type: boolean
+              competitive:
+                type: number
+              lastTradePrice:
+                type: number
+              bestBid:
+                type: number
+              bestAsk:
+                type: number
+              spread:
+                type: number
+              oneDayPriceChange:
+                type: number
+              oneWeekPriceChange:
+                type: number
+              oneMonthPriceChange:
+                type: number
+            required:
+              - id
+              - question
+              - slug
+            additionalProperties: true
         error:
           type: string
       required:
@@ -604,67 +735,48 @@ tools:
         success:
           type: boolean
         data:
-          type: object
-          properties:
-            results:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  title:
-                    type: string
-                  slug:
-                    type: string
-                  description:
-                    type: string
-                  active:
-                    type: boolean
-                  closed:
-                    type: boolean
-                  markets:
-                    type: array
-                    items:
-                      type: object
-                      properties: {}
-                      additionalProperties: true
-                required:
-                  - id
-                additionalProperties: true
-            events:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  title:
-                    type: string
-                  slug:
-                    type: string
-                  description:
-                    type: string
-                  active:
-                    type: boolean
-                  closed:
-                    type: boolean
-                  markets:
-                    type: array
-                    items:
-                      type: object
-                      properties: {}
-                      additionalProperties: true
-                required:
-                  - id
-                additionalProperties: true
-            limit:
-              type: number
-            offset:
-              type: number
-            count:
-              type: number
-          additionalProperties: false
+          type: array
+          description: Raw gamma-api.polymarket.com /events?q=... response (bare array; SDK uses /events with q param, not a dedicated search endpoint; verified via live API)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              ticker:
+                type: string
+              slug:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              startDate:
+                type: string
+              endDate:
+                type: string
+              active:
+                type: boolean
+              closed:
+                type: boolean
+              liquidity:
+                type: number
+              volume:
+                type: number
+              markets:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+              tags:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+            required:
+              - id
+              - slug
+              - title
+            additionalProperties: true
         error:
           type: string
       required:
@@ -683,23 +795,28 @@ tools:
         success:
           type: boolean
         data:
-          type: object
-          properties:
-            tags:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  label:
-                    type: string
-                  slug:
-                    type: string
-                required:
-                  - id
-                additionalProperties: true
-          additionalProperties: false
+          type: array
+          description: Raw gamma-api.polymarket.com /tags response (bare array; verified via live API)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+              slug:
+                type: string
+              createdAt:
+                type: string
+              updatedAt:
+                type: string
+              requiresTranslation:
+                type: boolean
+            required:
+              - id
+              - label
+              - slug
+            additionalProperties: true
         error:
           type: string
       required:
@@ -707,19 +824,33 @@ tools:
   trades:
     method: POST
     endpoint_key: polymarket/trades
-    description: Get recent trade history from Polymarket including trade size,
-      price, side (buy/sell), timestamp, and transaction details. Supports
-      filtering by market, user, side, and more.
+    description: "Get recent public trade history from Polymarket. Returns a bare array
+      of trade records enriched with user profile info, market/event metadata,
+      and transaction hashes. Supports filtering by market, user, side,
+      takerOnly, filterType, filterAmount, eventId."
     input_schema:
       type: object
       properties:
         token_id:
           type: string
+          description: Market token ID (becomes `market` query param)
         limit:
           type: number
-        before:
+        offset:
+          type: number
+        user:
           type: string
-        after:
+          description: Filter to a specific user's wallet address
+        side:
+          type: string
+          description: "'BUY' or 'SELL'"
+        takerOnly:
+          type: boolean
+        filterType:
+          type: string
+        filterAmount:
+          type: number
+        eventId:
           type: string
       required:
         - token_id
@@ -730,61 +861,63 @@ tools:
         success:
           type: boolean
         data:
-          type: object
-          properties:
-            trades:
-              type: array
-              items:
-                type: object
-                properties:
-                  conditionId:
-                    type: string
-                  size:
-                    type: string
-                  price:
-                    type: string
-                  side:
-                    type: string
-                  outcome:
-                    type: string
-                  timestamp:
-                    type: string
-                  transactionHash:
-                    type: string
-                  proxyWallet:
-                    type: string
-                  asset:
-                    type: string
-                  title:
-                    type: string
-                  slug:
-                    type: string
-                  icon:
-                    type: string
-                  eventSlug:
-                    type: string
-                  outcomeIndex:
-                    type: number
-                  name:
-                    type: string
-                  pseudonym:
-                    type: string
-                  bio:
-                    type: string
-                  profileImage:
-                    type: string
-                  profileImageOptimized:
-                    type: string
-                required:
-                  - conditionId
-                  - size
-                  - price
-                  - side
-                  - outcome
-                  - timestamp
-                  - transactionHash
-                additionalProperties: true
-          additionalProperties: false
+          type: array
+          description: Raw data-api.polymarket.com /trades response (bare array of enriched trade records; verified via live API)
+          items:
+            type: object
+            properties:
+              proxyWallet:
+                type: string
+                description: User's wallet address
+              side:
+                type: string
+                description: "'BUY' or 'SELL'"
+              asset:
+                type: string
+                description: Token ID being traded
+              conditionId:
+                type: string
+              size:
+                type: number
+              price:
+                type: number
+              timestamp:
+                type: number
+                description: Unix seconds
+              title:
+                type: string
+              slug:
+                type: string
+              icon:
+                type: string
+              eventSlug:
+                type: string
+              outcome:
+                type: string
+              outcomeIndex:
+                type: number
+              name:
+                type: string
+                description: User's display name
+              pseudonym:
+                type: string
+              bio:
+                type: string
+              profileImage:
+                type: string
+              profileImageOptimized:
+                type: string
+              transactionHash:
+                type: string
+            required:
+              - proxyWallet
+              - side
+              - conditionId
+              - size
+              - price
+              - timestamp
+              - transactionHash
+            additionalProperties: true
         error:
           type: string
       required:
