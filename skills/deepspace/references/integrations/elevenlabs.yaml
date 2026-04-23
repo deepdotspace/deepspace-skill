@@ -1,0 +1,258 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: elevenlabs
+endpoint_count: 4
+usage_example: await integration.post('elevenlabs/create-agent', { /* ...params */ })
+tools:
+  create-agent:
+    method: POST
+    endpoint_key: elevenlabs/create-agent
+    description: Create an ElevenLabs Conversational AI agent
+    input_schema:
+      type: object
+      properties:
+        name:
+          type: string
+        prompt:
+          type: string
+        firstMessage:
+          type: string
+        voiceId:
+          default: JBFqnCBsd6RMkjVDRZzb
+          type: string
+        language:
+          default: en
+          type: string
+        llm:
+          default: gemini-2.0-flash-001
+          type: string
+        model:
+          default: eleven_turbo_v2
+          type: string
+        clientTools:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              parameters:
+                type: object
+                propertyNames:
+                  type: string
+                additionalProperties:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    description:
+                      type: string
+                    required:
+                      type: boolean
+                  required:
+                    - type
+                    - description
+                  additionalProperties: false
+              wait_for_response:
+                type: boolean
+            required:
+              - name
+              - description
+              - parameters
+            additionalProperties: false
+      required:
+        - name
+        - prompt
+        - firstMessage
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            agent_id:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-speech:
+    method: POST
+    endpoint_key: elevenlabs/generate-speech
+    description: Convert text to speech using ElevenLabs (high-quality, expressive voices)
+    input_schema:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        voice_id:
+          default: JBFqnCBsd6RMkjVDRZzb
+          type: string
+        model_id:
+          default: eleven_flash_v2_5
+          type: string
+          enum:
+            - eleven_v3
+            - eleven_multilingual_v2
+            - eleven_flash_v2_5
+            - eleven_flash_v2
+            - eleven_turbo_v2_5
+            - eleven_turbo_v2
+        output_format:
+          default: mp3_44100_128
+          type: string
+          enum:
+            - mp3_22050_32
+            - mp3_44100_64
+            - mp3_44100_96
+            - mp3_44100_128
+            - mp3_44100_192
+            - pcm_16000
+            - pcm_22050
+            - pcm_24000
+            - pcm_44100
+        voice_settings:
+          type: object
+          properties:
+            stability:
+              default: 0.5
+              type: number
+              minimum: 0
+              maximum: 1
+            similarity_boost:
+              default: 0.75
+              type: number
+              minimum: 0
+              maximum: 1
+            style:
+              default: 0
+              type: number
+              minimum: 0
+              maximum: 1
+            use_speaker_boost:
+              default: true
+              type: boolean
+          additionalProperties: false
+      required:
+        - text
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            audioUrl:
+              type: string
+            voice_id:
+              type: string
+            model_id:
+              type: string
+            output_format:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-signed-url:
+    method: POST
+    endpoint_key: elevenlabs/get-signed-url
+    description: Get a signed URL for ElevenLabs Conversational AI session
+    input_schema:
+      type: object
+      properties:
+        agent_id:
+          type: string
+      required:
+        - agent_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            signed_url:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  list-voices:
+    method: POST
+    endpoint_key: elevenlabs/list-voices
+    description: List available ElevenLabs voices
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            voices:
+              type: array
+              items:
+                type: object
+                properties:
+                  voice_id:
+                    type: string
+                  name:
+                    type: string
+                  category:
+                    type: string
+                  gender:
+                    type: string
+                  age:
+                    type: string
+                  accent:
+                    type: string
+                  description:
+                    type: string
+                  use_case:
+                    type: string
+                  preview_url:
+                    type:
+                      - string
+                      - null
+                required:
+                  - voice_id
+                  - name
+                  - category
+                  - gender
+                  - age
+                  - accent
+                  - description
+                  - use_case
+                  - preview_url
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

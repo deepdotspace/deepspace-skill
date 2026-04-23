@@ -1,0 +1,688 @@
+# Index of all DeepSpace integration endpoints — hand-maintained.
+# For full input/output schemas, open the per-integration file referenced below.
+# Files are grouped by SDK folder (platform/api-worker/src/integrations/<name>/).
+#
+# USAGE: import { integration } from 'deepspace'
+#   await integration.post('<integration>/<endpoint>', { ...params })
+
+sdk_import: import { integration } from 'deepspace'
+call_pattern: await integration.post('<integration>/<endpoint>', body)
+response_envelope: "{ success: true, data: <endpoint-specific> } | { success:
+  false, error: string }"
+integration_count: 31
+endpoint_count: 215
+oauth_required_integrations:
+  - google
+categories:
+  amazon:
+    file: integrations/amazon.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: amazon/search-products
+        description: Search Amazon products
+  anthropic:
+    file: integrations/anthropic.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: anthropic/chat-completion
+        description: Generate text completions using Anthropic Claude models via the
+          Messages API
+  cloudconvert:
+    file: integrations/cloudconvert.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: cloudconvert/convert-file
+        description: Convert a file by URL or base64
+  elevenlabs:
+    file: integrations/elevenlabs.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: elevenlabs/create-agent
+        description: Create an ElevenLabs Conversational AI agent
+      - endpoint: elevenlabs/generate-speech
+        description: Convert text to speech using ElevenLabs (high-quality, expressive
+          voices)
+      - endpoint: elevenlabs/get-signed-url
+        description: Get a signed URL for ElevenLabs Conversational AI session
+      - endpoint: elevenlabs/list-voices
+        description: List available ElevenLabs voices
+  email:
+    file: integrations/email.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: email/send
+        description: Send a transactional email via Resend (html or text body; optional
+          cc, bcc, reply_to)
+  exa:
+    file: integrations/exa.yaml
+    endpoint_count: 6
+    endpoints:
+      - endpoint: exa/answer
+        description: Get an LLM answer to a question informed by Exa search results.
+          Performs search and generates either a direct answer for specific
+          queries or a detailed summary with citations for open-ended queries.
+      - endpoint: exa/contents
+        description: Get full page contents, summaries, and metadata for a list of URLs
+          using Exa AI. Returns instant results from cache.
+      - endpoint: exa/findSimilar
+        description: Find similar links to the provided URL using Exa AI. Supports
+          content extraction (text, highlights, summaries) and advanced
+          filtering for discovered links.
+      - endpoint: exa/news-search
+        description: "[DEPRECATED — use /news-search-exa instead] Search news articles.
+          Limited to truncated content and 24-hour delay."
+      - endpoint: exa/research
+        description: Create a research task that explores the web, gathers sources, and
+          synthesizes findings. Waits for completion and returns the full
+          research content. Research can take up to 10 minutes for complex
+          queries.
+      - endpoint: exa/search
+        description: Search the web using Exa AI with neural search capabilities.
+          Supports categories, content extraction (text, highlights, summaries),
+          and advanced filtering.
+  finance:
+    file: integrations/finance.yaml
+    endpoint_count: 5
+    endpoints:
+      - endpoint: alphavantage/search-symbols
+        description: Search stocks (alias of market symbols)
+      - endpoint: coinbase/crypto-price
+        description: Get live cryptocurrency price (spot, buy, sell, bid, ask, volume)
+      - endpoint: coinbase/search-crypto
+        description: Search cryptocurrencies
+      - endpoint: coinbase/search-currencies
+        description: Search fiat currencies (USD, EUR, GBP, etc.)
+      - endpoint: finnhub/stock-price
+        description: Get real-time US stock quote (price, change, high, low, open,
+          previous close)
+  firecrawl:
+    file: integrations/firecrawl.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: firecrawl/crawl
+        description: Crawl a website starting from a URL, following links to discover
+          and scrape multiple pages. 1 credit per page crawled.
+      - endpoint: firecrawl/map
+        description: Map a website to get a list of all its URLs without scraping
+          content. Fast way to discover site structure. 1 credit per page in
+          results.
+      - endpoint: firecrawl/scrape
+        description: Scrape a single URL and extract its content as markdown/HTML.
+          Handles JavaScript rendering and anti-bot measures. 1 credit per page.
+      - endpoint: firecrawl/search
+        description: Search the web and get full scraped content from top results.
+          Combines search with scraping. 2 credits per 10 results + scrape
+          costs.
+  freepik:
+    file: integrations/freepik.yaml
+    endpoint_count: 21
+    endpoints:
+      - endpoint: freepik/download-icons
+        description: Download a Freepik icon
+      - endpoint: freepik/download-stock-images
+        description: Download a stock image
+      - endpoint: freepik/download-stock-videos
+        description: Download a stock video
+      - endpoint: freepik/generate-image-flux-2-pro
+        description: Generate images using Freepik Flux 2 Pro model with custom pixel
+          dimensions
+      - endpoint: freepik/generate-image-flux-2-turbo
+        description: Generate images using Freepik Flux 2 Turbo model — fast
+          speed-optimized generation
+      - endpoint: freepik/generate-image-flux-dev
+        description: Generate images using Freepik Flux Dev model
+      - endpoint: freepik/generate-image-flux-pro
+        description: Generate images using Freepik Flux Pro v1.1 model
+      - endpoint: freepik/generate-image-hyperflux
+        description: Generate images using Freepik Hyperflux model
+      - endpoint: freepik/generate-image-mystic
+        description: Generate ultra-realistic, high-resolution images using Freepik
+          Mystic model
+      - endpoint: freepik/generate-image-runway
+        description: Generate images using RunWay Gen4 Image model — photorealistic and
+          artistic generation
+      - endpoint: freepik/generate-image-seedream
+        description: "[DEPRECATED — prefer Seedream v4 or Seedream 4.5] Generate images
+          using Freepik Seedream v3 model"
+      - endpoint: freepik/generate-image-seedream-v4
+        description: Generate images using Freepik Seedream v4 model
+      - endpoint: freepik/generate-image-seedream-v4-5
+        description: Generate images using Freepik Seedream 4.5 model (superior
+          typography, poster composition, up to 4MP)
+      - endpoint: freepik/generate-image-z-image
+        description: Generate images using Freepik Z-Image turbo model — fast
+          high-quality generation
+      - endpoint: freepik/generate-video
+        description: Generate a video from an image and prompt
+      - endpoint: freepik/image-expand
+        description: Outpaint/expand an image
+      - endpoint: freepik/image-relight
+        description: Relight an image
+      - endpoint: freepik/image-style-transfer
+        description: Style transfer from a reference image
+      - endpoint: freepik/remove-background
+        description: Remove background from image
+      - endpoint: freepik/text-to-image-classic
+        description: Generate image from text with full parameter control (classic fast
+          model)
+      - endpoint: freepik/upscale-image-precision
+        description: Precision upscale an image
+  gemini:
+    file: integrations/gemini.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: gemini/generate-image
+        description: "[DEPRECATED — prefer using newer models instead like Gemini]
+          Generate image from prompt (async)"
+  github:
+    file: integrations/github.yaml
+    endpoint_count: 18
+    endpoints:
+      - endpoint: github/get-commit
+        description: Get a single commit with stats (additions, deletions, files)
+      - endpoint: github/get-public-user
+        description: Get public GitHub user
+      - endpoint: github/get-pull-request
+        description: Get a single pull request with full details
+      - endpoint: github/get-pull-request-files
+        description: Get files changed in a pull request
+      - endpoint: github/get-pull-request-reviews
+        description: Get reviews for a pull request
+      - endpoint: github/get-repository
+        description: Get repository information
+      - endpoint: github/get-repository-commits
+        description: Get repository commits
+      - endpoint: github/get-repository-contents
+        description: Get file or directory contents from a repository
+      - endpoint: github/get-repository-contributors
+        description: Get repository contributors with commit counts
+      - endpoint: github/get-repository-issues
+        description: Get repository issues
+      - endpoint: github/get-repository-languages
+        description: Get language breakdown for a repository
+      - endpoint: github/get-repository-pulls
+        description: List pull requests for a repository
+      - endpoint: github/get-repository-readme
+        description: Get the README file for a repository
+      - endpoint: github/get-repository-tree
+        description: Get repository file tree structure (recursive)
+      - endpoint: github/get-user
+        description: Get authenticated GitHub user
+      - endpoint: github/get-user-public-repos
+        description: Get public repos for a GitHub user
+      - endpoint: github/get-user-repos
+        description: Get authenticated user repositories
+      - endpoint: github/search-repositories
+        description: Search GitHub repositories
+  google:
+    file: integrations/google.yaml
+    oauth_required: true
+    endpoint_count: 10
+    endpoints:
+      - endpoint: google/calendar-create-event
+        description: Create events on the user's Google Calendar with optional video
+          conferencing
+      - endpoint: google/calendar-delete-event
+        description: "Delete a Google Calendar event by eventId. Scope: calendar.events."
+      - endpoint: google/calendar-list-events
+        description: List Google Calendar events within a time range
+      - endpoint: google/contacts-list
+        description: Fetch Google contacts
+      - endpoint: google/drive-get
+        description: Download file from Google Drive
+      - endpoint: google/drive-list
+        description: List files in Google Drive
+      - endpoint: google/gmail-get
+        description: Get a single email message by ID with full content
+      - endpoint: google/gmail-list
+        description: List email messages from inbox or with optional search query
+      - endpoint: google/gmail-search
+        description: Search emails using Gmail search syntax (e.g., "from:company.com
+          subject:feedback")
+      - endpoint: google/gmail-send
+        description: Send email via Gmail
+  instagram:
+    file: integrations/instagram.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: instagram/extract-content
+        description: Extract content from Instagram posts (captions and media)
+  latex:
+    file: integrations/latex.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: latex-compiler/compile
+        description: Compile a multi-file LaTeX project to PDF. Supports
+          pdflatex/xelatex/lualatex, inline content, base64 files, URL
+          resources, and bibliography processing. Returns the compiled PDF as
+          base64.
+  linkedin:
+    file: integrations/linkedin.yaml
+    endpoint_count: 2
+    endpoints:
+      - endpoint: linkedin/analyze-profile-url
+        description: Analyze LinkedIn profile from URL
+      - endpoint: linkedin/search-profiles
+        description: Search LinkedIn profiles
+  livekit:
+    file: integrations/livekit.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: livekit/create-room
+        description: Create a LiveKit room with upfront billing based on max
+          participants and duration. Returns admin token.
+      - endpoint: livekit/delete-room
+        description: Force-close a LiveKit room. Only the room creator can delete.
+          Refund for unused time is applied automatically based on actual
+          duration.
+      - endpoint: livekit/generate-token
+        description: Generate a LiveKit access token for any room. Rooms auto-create
+          when the first participant connects. No billing — use
+          livekit-create-room for billable rooms with duration limits.
+      - endpoint: livekit/list-rooms
+        description: List active LiveKit rooms
+  mta:
+    file: integrations/mta.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: mta/alerts
+        description: Get current service alerts for NYC Subway lines including delays,
+          planned work, and service changes
+      - endpoint: mta/arrivals
+        description: Get real-time arrival times for a specific NYC Subway line,
+          optionally filtered by stop
+      - endpoint: mta/feed
+        description: Get real-time NYC Subway feed data including trip updates, vehicle
+          positions, and alerts for specific lines
+      - endpoint: mta/list-feeds
+        description: List all available NYC Subway GTFS-RT feeds and the lines they cover
+  nasa:
+    file: integrations/nasa.yaml
+    endpoint_count: 7
+    endpoints:
+      - endpoint: nasa/apod
+        description: Get NASA Astronomy Picture of the Day. Supports single date, date
+          range, or random count.
+      - endpoint: nasa/cme
+        description: Get NASA DONKI Coronal Mass Ejection (CME) data. startDate defaults
+          to 30 days prior, endDate defaults to current UTC date.
+      - endpoint: nasa/flr
+        description: Get NASA DONKI Solar Flare (FLR) data. startDate defaults to 30
+          days prior, endDate defaults to current UTC date.
+      - endpoint: nasa/gst
+        description: Get NASA DONKI Geomagnetic Storm (GST) data. startDate defaults to
+          30 days prior, endDate defaults to current UTC date.
+      - endpoint: nasa/neo-browse
+        description: Browse the overall Near-Earth Objects data-set
+      - endpoint: nasa/neo-feed
+        description: Get NASA NeoWs (Near-Earth Objects) Feed. Retrieves asteroids based
+          on closest approach date to Earth. endDate defaults to 7 days after
+          startDate.
+      - endpoint: nasa/neo-lookup
+        description: Lookup a specific Near-Earth Object by its NASA JPL small body
+          (SPK-ID) ID
+  newsapi:
+    file: integrations/newsapi.yaml
+    endpoint_count: 2
+    endpoints:
+      - endpoint: newsapi/search-everything
+        description: "[DEPRECATED — use /news-search-exa instead] Search news articles.
+          Limited to truncated content and 24-hour delay."
+      - endpoint: newsapi/top-headlines
+        description: "[DEPRECATED — use /news-search-exa instead] Get top headlines.
+          Limited to truncated content and 24-hour delay."
+  openai:
+    file: integrations/openai.yaml
+    endpoint_count: 2
+    endpoints:
+      - endpoint: openai/chat-completion
+        description: "Generate chat completions using OpenAI chat models (default: gpt-4o)"
+      - endpoint: openai/generate-image
+        description: "[DEPRECATED — prefer using newer models instead like Gemini]
+          Generate image from prompt (async)"
+  openweathermap:
+    file: integrations/openweathermap.yaml
+    endpoint_count: 3
+    endpoints:
+      - endpoint: openweathermap/current
+        description: Get current weather
+      - endpoint: openweathermap/forecast
+        description: Get 5-day forecast
+      - endpoint: openweathermap/geocoding
+        description: Geocode a city name
+  polymarket:
+    file: integrations/polymarket.yaml
+    endpoint_count: 12
+    endpoints:
+      - endpoint: polymarket/comments
+        description: Get community comments and discussion for a specific Polymarket
+          event including content, timestamps, user profile, reactions, and
+          engagement metrics
+      - endpoint: polymarket/event-detail
+        description: Get detailed information for a single Polymarket event including
+          title, description, dates, total volume/liquidity, and all associated
+          prediction markets
+      - endpoint: polymarket/events
+        description: Get prediction market events from Polymarket. Events group related
+          markets (e.g., "2024 Election" contains multiple questions). Returns
+          event details with volume, liquidity, active status, and all
+          associated markets.
+      - endpoint: polymarket/market-detail
+        description: Get detailed information for a single prediction market including
+          question, outcomes, current prices, volume, liquidity, and trading
+          status
+      - endpoint: polymarket/markets
+        description: Get prediction markets from Polymarket with filtering and
+          pagination. Markets are individual questions with outcomes, current
+          prices (probabilities), volume, and liquidity data
+      - endpoint: polymarket/orderbook
+        description: Get orderbook depth showing all bids and asks for a Polymarket
+          outcome token. Includes market metadata like min_order_size,
+          tick_size, and neg_risk flag.
+      - endpoint: polymarket/price
+        description: Get current price for a Polymarket outcome token. Prices represent
+          market probability (0-1) for that outcome. Side parameter is required
+          per Polymarket API docs.
+      - endpoint: polymarket/price-history
+        description: Get historical price data for a Polymarket market showing how
+          outcome probabilities changed over time. Returns time-series data with
+          configurable intervals (1m to 1w)
+      - endpoint: polymarket/prices
+        description: Get current prices for multiple Polymarket outcome tokens in batch.
+          Uses POST /prices endpoint internally. Returns prices keyed by
+          token_id with BUY/SELL nested values.
+      - endpoint: polymarket/search
+        description: Full-text search for Polymarket events and markets by title,
+          description, or keywords. Uses public-search endpoint. Returns
+          matching events with their associated markets
+      - endpoint: polymarket/tags
+        description: Get available categories/tags for filtering Polymarket events and
+          markets
+      - endpoint: polymarket/trades
+        description: Get recent trade history from Polymarket including trade size,
+          price, side (buy/sell), timestamp, and transaction details. Supports
+          filtering by market, user, side, and more.
+  serpapi:
+    file: integrations/serpapi.yaml
+    endpoint_count: 12
+    endpoints:
+      - endpoint: scholar/get-author-details
+        description: Get detailed author information
+      - endpoint: scholar/get-author-papers
+        description: Get papers by Google Scholar author
+      - endpoint: scholar/get-citation-details
+        description: Get detailed citation information
+      - endpoint: scholar/search-authors
+        description: Search Google Scholar authors
+      - endpoint: scholar/search-papers
+        description: Search Google Scholar papers
+      - endpoint: serpapi/events
+        description: Google Events search via SerpApi
+      - endpoint: serpapi/flights
+        description: Search flights via SerpAPI Google Flights. Supports round-trip and
+          one-way searches.
+      - endpoint: serpapi/hotels
+        description: Google Hotels search via SerpApi
+      - endpoint: serpapi/places-reviews
+        description: Google Maps Place reviews via SerpApi
+      - endpoint: serpapi/places-search
+        description: Google Maps Places search via SerpApi
+      - endpoint: serpapi/search
+        description: "SerpApi search (default engine: google; override with `engine` to
+          query other search engines)"
+      - endpoint: serpapi/web-search
+        description: Google Web Search via SerpApi
+  slack:
+    file: integrations/slack.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: slack/channel-history
+        description: Get message history from a Slack channel with resolved user names
+      - endpoint: slack/list-channels
+        description: List Slack channels the user has access to
+      - endpoint: slack/send-message
+        description: Send a message to a Slack channel
+      - endpoint: slack/team-info
+        description: Get Slack workspace/team information
+  speech:
+    file: integrations/speech.yaml
+    endpoint_count: 2
+    endpoints:
+      - endpoint: speech/speech-to-text
+        description: Transcribe speech audio to text
+      - endpoint: speech/text-to-speech
+        description: Convert text to speech audio
+  sports:
+    file: integrations/sports.yaml
+    endpoint_count: 71
+    endpoints:
+      - endpoint: api-american-football/games
+        description: Get NFL and NCAA football games. Includes live scores updated every
+          30 seconds.
+      - endpoint: api-american-football/games-events
+        description: Get game events (touchdowns, field goals, etc.) for a specific
+          NFL/NCAA game
+      - endpoint: api-american-football/games-statistics-players
+        description: Get player statistics from a game by group (passing, rushing,
+          receiving, defensive, etc.)
+      - endpoint: api-american-football/games-statistics-teams
+        description: Get team statistics from a specific NFL/NCAA game (yards, first
+          downs, turnovers, etc.)
+      - endpoint: api-american-football/injuries
+        description: Get current NFL/NCAA player injuries. No historical data - only
+          currently injured players.
+      - endpoint: api-american-football/leagues
+        description: Get NFL and NCAA football leagues. NFL is league ID 1, NCAA is
+          league ID 2.
+      - endpoint: api-american-football/odds
+        description: Get betting odds for NFL/NCAA games. Pre-match odds available 1-7
+          days before games.
+      - endpoint: api-american-football/odds-bookmakers
+        description: List bookmakers available for NFL/NCAA betting odds (API-Sports)
+      - endpoint: api-american-football/players
+        description: Get NFL and NCAA football player information including position,
+          college, salary
+      - endpoint: api-american-football/players-statistics
+        description: Get NFL player season statistics by group (Passing, Rushing,
+          Receiving, Defense, etc.)
+      - endpoint: api-american-football/standings
+        description: Get NFL/NCAA standings by conference and division
+      - endpoint: api-american-football/standings-conferences
+        description: Get available conferences for NFL/NCAA standings (AFC, NFC, etc.)
+      - endpoint: api-american-football/standings-divisions
+        description: Get available divisions for NFL/NCAA standings (East, West, North,
+          South)
+      - endpoint: api-american-football/teams
+        description: Get NFL and NCAA football teams including stadium, coach, and city
+          information
+      - endpoint: api-baseball/countries
+        description: Get all available countries for baseball leagues
+      - endpoint: api-baseball/games
+        description: Get baseball games with live scores. Includes inning-by-inning scores.
+      - endpoint: api-baseball/games-h2h
+        description: Get head-to-head history between two baseball teams
+      - endpoint: api-baseball/leagues
+        description: Get baseball leagues including MLB, minor leagues (AAA, AA), and
+          international leagues
+      - endpoint: api-baseball/odds
+        description: Get betting odds for baseball games
+      - endpoint: api-baseball/odds-bookmakers
+        description: List bookmakers available for baseball betting odds (API-Sports)
+      - endpoint: api-baseball/standings
+        description: Get baseball league standings. For MLB includes AL/NL divisions.
+      - endpoint: api-baseball/standings-groups
+        description: Get available groups for baseball standings (e.g., AL East, NL West)
+      - endpoint: api-baseball/standings-stages
+        description: Get available stages for baseball standings
+      - endpoint: api-baseball/teams
+        description: Get baseball team information
+      - endpoint: api-baseball/teams-statistics
+        description: Get season statistics for a baseball team (wins, losses, games played)
+      - endpoint: api-basketball/bookmakers
+        description: Get available bookmakers for basketball betting odds
+      - endpoint: api-basketball/countries
+        description: Get all available countries for basketball leagues and competitions
+      - endpoint: api-basketball/games
+        description: Get basketball games/matches. Includes live scores, scheduled
+          games, and results. Updated every 15 seconds for live games.
+      - endpoint: api-basketball/games-h2h
+        description: Get head-to-head history between two basketball teams
+      - endpoint: api-basketball/games-statistics-players
+        description: Get player statistics from a specific basketball game including
+          points, rebounds, assists, minutes
+      - endpoint: api-basketball/games-statistics-teams
+        description: Get team statistics from a specific basketball game including field
+          goals, rebounds, assists
+      - endpoint: api-basketball/leagues
+        description: Get basketball leagues and competitions. Includes NBA, NCAA,
+          EuroLeague, and 426+ other leagues.
+      - endpoint: api-basketball/odds
+        description: Get betting odds for basketball games. Pre-match odds available 1-7
+          days before games.
+      - endpoint: api-basketball/players
+        description: Get basketball player information including position, age, and team
+      - endpoint: api-basketball/standings
+        description: Get basketball league standings. For NBA, includes conference
+          standings (Eastern/Western).
+      - endpoint: api-basketball/standings-groups
+        description: Get available groups for basketball standings (e.g.,
+          Eastern/Western Conference)
+      - endpoint: api-basketball/standings-stages
+        description: Get available stages for basketball standings (e.g., Regular
+          Season, Playoffs)
+      - endpoint: api-basketball/statistics
+        description: Get basketball team statistics for a given league and season
+          (API-Sports)
+      - endpoint: api-basketball/teams
+        description: Get basketball team information. Use league and season to find
+          teams in a specific competition.
+      - endpoint: api-football/coachs
+        description: Get coach/manager information and career history
+      - endpoint: api-football/countries
+        description: Get all countries available in the API-Football database
+      - endpoint: api-football/fixtures
+        description: Get football fixtures (matches) by date, league, team, or live
+          status. Returns match details, scores, and status.
+      - endpoint: api-football/fixtures-events
+        description: Get match events (goals, cards, substitutions, VAR decisions)
+      - endpoint: api-football/fixtures-headtohead
+        description: Get head-to-head match history between two teams
+      - endpoint: api-football/fixtures-lineups
+        description: Get match lineups including starting XI, formation, and substitutes
+      - endpoint: api-football/fixtures-statistics
+        description: Get detailed match statistics (shots, possession, passes, etc.)
+      - endpoint: api-football/injuries
+        description: Get current player injuries
+      - endpoint: api-football/leagues
+        description: Get all football leagues and competitions. Use to find league IDs
+          for other endpoints.
+      - endpoint: api-football/players
+        description: Get player information and statistics
+      - endpoint: api-football/players-squads
+        description: Get current team squad/roster with player details
+      - endpoint: api-football/players-topassists
+        description: Get top assist providers for a league and season
+      - endpoint: api-football/players-topscorers
+        description: Get top goal scorers for a league and season
+      - endpoint: api-football/predictions
+        description: Get AI-powered match predictions including win probability and advice
+      - endpoint: api-football/standings
+        description: Get league standings table with points, wins, draws, losses, goals
+      - endpoint: api-football/teams
+        description: Get football team information including name, logo, venue, and country
+      - endpoint: api-football/teams-statistics
+        description: Get detailed team statistics for a specific league and season
+      - endpoint: api-football/transfers
+        description: Get player transfer history
+      - endpoint: api-football/venues
+        description: Get stadium/venue information including capacity and location
+      - endpoint: f1/all-constructors
+        description: Get complete list of all constructor teams that competed in a
+          specific F1 season
+      - endpoint: f1/all-drivers
+        description: Get complete list of all drivers who competed in a specific F1 season
+      - endpoint: f1/circuit-info
+        description: Get detailed information about a specific F1 circuit including
+          location, coordinates, and full name
+      - endpoint: f1/constructor-standings
+        description: Get current constructor (team) championship standings with points
+          and wins
+      - endpoint: f1/driver-standings
+        description: Get current driver championship standings with points, wins, and
+          positions
+      - endpoint: f1/lap-times
+        description: Get all lap-by-lap timing data for a race. Returns lap times
+          organized by driver with position tracking throughout the race.
+      - endpoint: f1/latest-race
+        description: Get the most recent completed F1 race with full results and race
+          information
+      - endpoint: f1/pit-stops
+        description: Get all pit stop data for a race including stop number, lap,
+          duration, and timestamp for each driver
+      - endpoint: f1/qualifying
+        description: Get qualifying session results showing Q1, Q2, and Q3 times for all
+          drivers
+      - endpoint: f1/race-results
+        description: Get final race classification with finishing positions, points,
+          fastest laps, and status
+      - endpoint: f1/race-weekend
+        description: Get complete race weekend data including qualifying, sprint (if
+          applicable), and race results for a specific Grand Prix
+      - endpoint: f1/season-schedule
+        description: Get complete F1 season schedule with all race dates, circuits, and
+          session times for a given year
+      - endpoint: f1/sprint
+        description: Get sprint race results. Returns empty array if the race weekend
+          did not include a sprint race.
+  submagic:
+    file: integrations/submagic.yaml
+    endpoint_count: 3
+    endpoints:
+      - endpoint: submagic/create-video
+        description: Create SubMagic video (async)
+      - endpoint: submagic/get-project
+        description: Check SubMagic project status / retrieve result by projectId
+      - endpoint: submagic/wait-for-completion
+        description: Submit + poll a SubMagic project until it finishes (handles the
+          polling loop)
+  tiktok:
+    file: integrations/tiktok.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: tiktok/cancel-scheduled-post
+        description: Cancel a scheduled TikTok post by postId
+      - endpoint: tiktok/get-scheduled-posts
+        description: List scheduled TikTok posts
+      - endpoint: tiktok/post-video
+        description: Post a video to TikTok (sandbox)
+      - endpoint: tiktok/user-info
+        description: Get TikTok user profile
+  websearch:
+    file: integrations/websearch.yaml
+    endpoint_count: 1
+    endpoints:
+      - endpoint: websearch/advanced-search
+        description: Advanced multi-modal web search with structured output for widgets
+  wikipedia:
+    file: integrations/wikipedia.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: wikipedia/get-page-content
+        description: Get full page content (HTML)
+      - endpoint: wikipedia/get-page-summary
+        description: Get Wikipedia page summary
+      - endpoint: wikipedia/get-random-page
+        description: Get a random page
+      - endpoint: wikipedia/search-pages
+        description: Search Wikipedia articles
+  youtube:
+    file: integrations/youtube.yaml
+    endpoint_count: 3
+    endpoints:
+      - endpoint: youtube/get-trending-videos
+        description: Get trending videos
+      - endpoint: youtube/get-video-details
+        description: Get details for videos
+      - endpoint: youtube/search-videos
+        description: Search for videos and return URLs with metadata (duration, views,
+          thumbnails)

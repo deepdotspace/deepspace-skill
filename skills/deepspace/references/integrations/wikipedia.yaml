@@ -1,0 +1,169 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: wikipedia
+endpoint_count: 4
+usage_example: await integration.post('wikipedia/get-page-content', { /* ...params */ })
+tools:
+  get-page-content:
+    method: POST
+    endpoint_key: wikipedia/get-page-content
+    description: Get full page content (HTML)
+    input_schema:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            htmlContent:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-page-summary:
+    method: POST
+    endpoint_key: wikipedia/get-page-summary
+    description: Get Wikipedia page summary
+    input_schema:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            extract:
+              type: string
+            url:
+              type: string
+            pageData:
+              type: object
+              description: Raw Wikipedia REST /page/summary response
+              additionalProperties: true
+          required:
+            - title
+            - pageData
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-random-page:
+    method: POST
+    endpoint_key: wikipedia/get-random-page
+    description: Get a random page
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            extract:
+              type: string
+            url:
+              type: string
+            pageData:
+              type: object
+              description: Raw Wikipedia REST /page/random/summary response
+              additionalProperties: true
+          required:
+            - title
+            - pageData
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search-pages:
+    method: POST
+    endpoint_key: wikipedia/search-pages
+    description: Search Wikipedia articles
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        q:
+          type: string
+        limit:
+          default: 10
+          type: number
+          minimum: 1
+          maximum: 50
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Array of matched pages (raw handler return is an array, not wrapped)
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              key:
+                type: string
+              excerpt:
+                type: string
+                description: Excerpt with HTML tags stripped
+              description:
+                type: string
+              id:
+                type: number
+              thumbnail:
+                type:
+                  - string
+                  - "null"
+                description: "Thumbnail URL (with https: prefix) or null"
+            required:
+              - title
+              - key
+              - id
+            additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

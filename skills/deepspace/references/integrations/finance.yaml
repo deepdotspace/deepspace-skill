@@ -1,0 +1,194 @@
+# Endpoint specs for this integration — hand-maintained starting point.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# output schemas reflect what the SDK handler actually returns.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: finance
+endpoint_count: 5
+usage_example: await integration.post('alphavantage/search-symbols', { /* ...params */ })
+tools:
+  alphavantage/search-symbols:
+    method: POST
+    endpoint_key: alphavantage/search-symbols
+    description: Search stocks (alias of market symbols)
+    input_schema:
+      type: object
+      properties:
+        keywords:
+          type: string
+        q:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Alpha Vantage SYMBOL_SEARCH response
+          properties:
+            bestMatches:
+              type: array
+              items:
+                type: object
+                description: Alpha Vantage uses numbered string keys like "1. symbol", "2. name"
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  coinbase/crypto-price:
+    method: POST
+    endpoint_key: coinbase/crypto-price
+    description: Get live cryptocurrency spot price from Coinbase
+    input_schema:
+      type: object
+      properties:
+        symbol:
+          type: string
+        id:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Coinbase `data.data` from /v2/prices/{pair}/spot
+          properties:
+            amount:
+              type: string
+              description: Spot price as a string
+            base:
+              type: string
+              description: Base currency (e.g., BTC)
+            currency:
+              type: string
+              description: Quote currency (e.g., USD)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  coinbase/search-crypto:
+    method: POST
+    endpoint_key: coinbase/search-crypto
+    description: Search cryptocurrencies (Coinbase crypto currency list)
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        q:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Array of Coinbase crypto currency entries (optionally filtered by query)
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              name:
+                type: string
+            additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  coinbase/search-currencies:
+    method: POST
+    endpoint_key: coinbase/search-currencies
+    description: Search fiat currencies (Coinbase currency list)
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        q:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Array of Coinbase fiat currency entries (optionally filtered by query)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              min_size:
+                type: string
+            additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  finnhub/stock-price:
+    method: POST
+    endpoint_key: finnhub/stock-price
+    description: Get real-time US stock quote from Finnhub
+    input_schema:
+      type: object
+      properties:
+        symbol:
+          type: string
+      required:
+        - symbol
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Finnhub /quote response
+          properties:
+            c:
+              type: number
+              description: Current price
+            d:
+              type: number
+              description: Change
+            dp:
+              type: number
+              description: Percent change
+            h:
+              type: number
+              description: High price of the day
+            l:
+              type: number
+              description: Low price of the day
+            o:
+              type: number
+              description: Open price of the day
+            pc:
+              type: number
+              description: Previous close price
+            t:
+              type: number
+              description: Timestamp
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

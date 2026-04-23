@@ -1,0 +1,791 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: polymarket
+endpoint_count: 12
+usage_example: await integration.post('polymarket/comments', { /* ...params */ })
+tools:
+  comments:
+    method: POST
+    endpoint_key: polymarket/comments
+    description: Get community comments and discussion for a specific Polymarket
+      event including content, timestamps, user profile, reactions, and
+      engagement metrics
+    input_schema:
+      type: object
+      properties:
+        market_id:
+          type: string
+        limit:
+          type: number
+        offset:
+          type: number
+      required:
+        - market_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            comments:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  body:
+                    type:
+                      - string
+                      - null
+                  parentEntityType:
+                    type:
+                      - string
+                      - null
+                  parentEntityID:
+                    type:
+                      - number
+                      - null
+                  parentCommentID:
+                    type:
+                      - string
+                      - null
+                  userAddress:
+                    type:
+                      - string
+                      - null
+                  replyAddress:
+                    type:
+                      - string
+                      - null
+                  createdAt:
+                    type:
+                      - string
+                      - null
+                  updatedAt:
+                    type:
+                      - string
+                      - null
+                  profile:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  reactions:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                  reportCount:
+                    type:
+                      - number
+                      - null
+                  reactionCount:
+                    type:
+                      - number
+                      - null
+                required:
+                  - id
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  event-detail:
+    method: POST
+    endpoint_key: polymarket/event-detail
+    description: Get detailed information for a single Polymarket event including
+      title, description, dates, total volume/liquidity, and all associated
+      prediction markets
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            event:
+              type: object
+              properties:
+                id:
+                  type: string
+                slug:
+                  type: string
+                title:
+                  type: string
+                description:
+                  type: string
+                startDate:
+                  type: string
+                endDate:
+                  type: string
+                image:
+                  type: string
+                active:
+                  type: boolean
+                closed:
+                  type: boolean
+                liquidity:
+                  type: number
+                volume:
+                  type: number
+                markets:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                tags:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+              required:
+                - id
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  events:
+    method: POST
+    endpoint_key: polymarket/events
+    description: Get prediction market events from Polymarket. Events group related
+      markets (e.g., "2024 Election" contains multiple questions). Returns event
+      details with volume, liquidity, active status, and all associated markets.
+    input_schema:
+      type: object
+      properties:
+        limit:
+          type: number
+        offset:
+          type: number
+        order:
+          type: string
+        ascending:
+          type: boolean
+        closed:
+          type: boolean
+        tag:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            events:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  startDate:
+                    type: string
+                  endDate:
+                    type: string
+                  image:
+                    type: string
+                  icon:
+                    type: string
+                  active:
+                    type: boolean
+                  closed:
+                    type: boolean
+                  liquidity:
+                    type: number
+                  volume:
+                    type: number
+                  volume24hr:
+                    type: number
+                  markets:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                  tags:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                required:
+                  - id
+                additionalProperties: true
+            limit:
+              type: number
+            offset:
+              type: number
+            count:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  market-detail:
+    method: POST
+    endpoint_key: polymarket/market-detail
+    description: Get detailed information for a single prediction market including
+      question, outcomes, current prices, volume, liquidity, and trading status
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            market:
+              type: object
+              properties:
+                id:
+                  type: string
+                question:
+                  type: string
+                slug:
+                  type: string
+                description:
+                  type: string
+                outcomes:
+                  type: string
+                outcomePrices:
+                  type: string
+                volume:
+                  type: string
+                liquidity:
+                  type: string
+                active:
+                  type: boolean
+                closed:
+                  type: boolean
+                endDate:
+                  type: string
+                clobTokenIds:
+                  type: string
+              required:
+                - id
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  markets:
+    method: POST
+    endpoint_key: polymarket/markets
+    description: Get prediction markets from Polymarket with filtering and
+      pagination. Markets are individual questions with outcomes, current prices
+      (probabilities), volume, and liquidity data
+    input_schema:
+      type: object
+      properties:
+        limit:
+          type: number
+        offset:
+          type: number
+        order:
+          type: string
+        ascending:
+          type: boolean
+        closed:
+          type: boolean
+        tag:
+          type: string
+        event_slug:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            markets:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  question:
+                    type: string
+                  slug:
+                    type: string
+                  description:
+                    type: string
+                  outcomes:
+                    type: string
+                  outcomePrices:
+                    type: string
+                  volume:
+                    type: string
+                  liquidity:
+                    type: string
+                  active:
+                    type: boolean
+                  closed:
+                    type: boolean
+                  endDate:
+                    type: string
+                required:
+                  - id
+                additionalProperties: true
+            limit:
+              type: number
+            offset:
+              type: number
+            count:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  orderbook:
+    method: POST
+    endpoint_key: polymarket/orderbook
+    description: Get orderbook depth showing all bids and asks for a Polymarket
+      outcome token. Includes market metadata like min_order_size, tick_size,
+      and neg_risk flag.
+    input_schema:
+      type: object
+      properties:
+        token_id:
+          type: string
+      required:
+        - token_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            orderbook:
+              type: object
+              properties:
+                market:
+                  type: string
+                asset_id:
+                  type: string
+                hash:
+                  type: string
+                timestamp:
+                  type: string
+                bids:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      price:
+                        type: string
+                      size:
+                        type: string
+                    required:
+                      - price
+                      - size
+                    additionalProperties: false
+                asks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      price:
+                        type: string
+                      size:
+                        type: string
+                    required:
+                      - price
+                      - size
+                    additionalProperties: false
+                min_order_size:
+                  type: string
+                  description: Minimum order size for this market
+                tick_size:
+                  type: string
+                  description: Minimum price increment
+                neg_risk:
+                  type: boolean
+                  description: Whether negative risk is enabled
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  price:
+    method: POST
+    endpoint_key: polymarket/price
+    description: Get current price for a Polymarket outcome token. Prices represent
+      market probability (0-1) for that outcome. Side parameter is required per
+      Polymarket API docs.
+    input_schema:
+      type: object
+      properties:
+        token_id:
+          type: string
+        side:
+          type: string
+      required:
+        - token_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            price:
+              type: object
+              properties:
+                price:
+                  type: string
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  price-history:
+    method: POST
+    endpoint_key: polymarket/price-history
+    description: Get historical price data for a Polymarket market showing how
+      outcome probabilities changed over time. Returns time-series data with
+      configurable intervals (1m to 1w)
+    input_schema:
+      type: object
+      properties:
+        token_id:
+          type: string
+        interval:
+          type: string
+        fidelity:
+          type: number
+        startTs:
+          type: number
+        endTs:
+          type: number
+      required:
+        - token_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            history:
+              type: array
+              items:
+                type: object
+                properties:
+                  t:
+                    type: number
+                    description: UTC timestamp
+                  p:
+                    type: number
+                    description: Price
+                required:
+                  - t
+                  - p
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  prices:
+    method: POST
+    endpoint_key: polymarket/prices
+    description: Get current prices for multiple Polymarket outcome tokens in batch.
+      Uses POST /prices endpoint internally. Returns prices keyed by token_id
+      with BUY/SELL nested values.
+    input_schema:
+      type: object
+      properties:
+        token_ids:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+      required:
+        - token_ids
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            prices:
+              type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: string
+              description: Map of token_id to side to price
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search:
+    method: POST
+    endpoint_key: polymarket/search
+    description: Full-text search for Polymarket events and markets by title,
+      description, or keywords. Uses public-search endpoint. Returns matching
+      events with their associated markets
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        limit:
+          type: number
+      required:
+        - q
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  slug:
+                    type: string
+                  description:
+                    type: string
+                  active:
+                    type: boolean
+                  closed:
+                    type: boolean
+                  markets:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                required:
+                  - id
+                additionalProperties: true
+            events:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  slug:
+                    type: string
+                  description:
+                    type: string
+                  active:
+                    type: boolean
+                  closed:
+                    type: boolean
+                  markets:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                required:
+                  - id
+                additionalProperties: true
+            limit:
+              type: number
+            offset:
+              type: number
+            count:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  tags:
+    method: POST
+    endpoint_key: polymarket/tags
+    description: Get available categories/tags for filtering Polymarket events and markets
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            tags:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  label:
+                    type: string
+                  slug:
+                    type: string
+                required:
+                  - id
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  trades:
+    method: POST
+    endpoint_key: polymarket/trades
+    description: Get recent trade history from Polymarket including trade size,
+      price, side (buy/sell), timestamp, and transaction details. Supports
+      filtering by market, user, side, and more.
+    input_schema:
+      type: object
+      properties:
+        token_id:
+          type: string
+        limit:
+          type: number
+        before:
+          type: string
+        after:
+          type: string
+      required:
+        - token_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            trades:
+              type: array
+              items:
+                type: object
+                properties:
+                  conditionId:
+                    type: string
+                  size:
+                    type: string
+                  price:
+                    type: string
+                  side:
+                    type: string
+                  outcome:
+                    type: string
+                  timestamp:
+                    type: string
+                  transactionHash:
+                    type: string
+                  proxyWallet:
+                    type: string
+                  asset:
+                    type: string
+                  title:
+                    type: string
+                  slug:
+                    type: string
+                  icon:
+                    type: string
+                  eventSlug:
+                    type: string
+                  outcomeIndex:
+                    type: number
+                  name:
+                    type: string
+                  pseudonym:
+                    type: string
+                  bio:
+                    type: string
+                  profileImage:
+                    type: string
+                  profileImageOptimized:
+                    type: string
+                required:
+                  - conditionId
+                  - size
+                  - price
+                  - side
+                  - outcome
+                  - timestamp
+                  - transactionHash
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

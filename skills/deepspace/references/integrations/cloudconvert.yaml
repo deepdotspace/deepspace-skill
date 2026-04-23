@@ -1,0 +1,58 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: cloudconvert
+endpoint_count: 1
+usage_example: await integration.post('cloudconvert/convert-file', { /* ...params */ })
+tools:
+  convert-file:
+    method: POST
+    endpoint_key: cloudconvert/convert-file
+    description: Convert a file by URL or base64
+    input_schema:
+      type: object
+      properties:
+        input_format:
+          type: string
+        output_format:
+          type: string
+        file:
+          type: string
+        url:
+          type: string
+        optimize_print:
+          type: boolean
+        pages:
+          type: string
+      required:
+        - input_format
+        - output_format
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            jobId:
+              type: string
+            downloadUrl:
+              type: string
+            tasks:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

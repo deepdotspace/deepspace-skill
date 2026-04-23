@@ -1,0 +1,3054 @@
+# Endpoint specs for this integration.
+# Output schemas reflect what the SDK handler actually returns:
+#   - API-Sports endpoints (football/basketball/american-football/baseball) return the raw
+#     API-Sports envelope: { get, parameters, errors, results, paging, response: [...] }
+#   - F1 endpoints return bare arrays or objects (no wrapper key) from Ergast/Jolpica.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: sports
+endpoint_count: 71
+usage_example: await integration.post('api-american-football/games', { /* ...params */ })
+tools:
+  api-american-football/games:
+    method: POST
+    endpoint_key: api-american-football/games
+    description: Get NFL and NCAA football games. Includes live scores updated every 30 seconds.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/games-events:
+    method: POST
+    endpoint_key: api-american-football/games-events
+    description: Get game events (touchdowns, field goals, etc.) for a specific NFL/NCAA game
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/games-statistics-players:
+    method: POST
+    endpoint_key: api-american-football/games-statistics-players
+    description: Get player statistics from a game by group (passing, rushing, receiving, defensive, etc.)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/games-statistics-teams:
+    method: POST
+    endpoint_key: api-american-football/games-statistics-teams
+    description: Get team statistics from a specific NFL/NCAA game (yards, first downs, turnovers, etc.)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/injuries:
+    method: POST
+    endpoint_key: api-american-football/injuries
+    description: Get current NFL/NCAA player injuries. No historical data - only currently injured players.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/leagues:
+    method: POST
+    endpoint_key: api-american-football/leagues
+    description: Get NFL and NCAA football leagues. NFL is league ID 1, NCAA is league ID 2.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/odds:
+    method: POST
+    endpoint_key: api-american-football/odds
+    description: Get betting odds for NFL/NCAA games. Pre-match odds available 1-7 days before games.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/odds-bookmakers:
+    method: POST
+    endpoint_key: api-american-football/odds-bookmakers
+    description: List bookmakers available for NFL/NCAA betting odds (API-Sports)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/players:
+    method: POST
+    endpoint_key: api-american-football/players
+    description: Get NFL and NCAA football player information including position, college, salary
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/players-statistics:
+    method: POST
+    endpoint_key: api-american-football/players-statistics
+    description: Get NFL player season statistics by group (Passing, Rushing, Receiving, Defense, etc.)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/standings:
+    method: POST
+    endpoint_key: api-american-football/standings
+    description: Get NFL/NCAA standings by conference and division
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/standings-conferences:
+    method: POST
+    endpoint_key: api-american-football/standings-conferences
+    description: Get available conferences for NFL/NCAA standings (AFC, NFC, etc.)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/standings-divisions:
+    method: POST
+    endpoint_key: api-american-football/standings-divisions
+    description: Get available divisions for NFL/NCAA standings (East, West, North, South)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-american-football/teams:
+    method: POST
+    endpoint_key: api-american-football/teams
+    description: Get NFL and NCAA football teams including stadium, coach, and city information
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/countries:
+    method: POST
+    endpoint_key: api-baseball/countries
+    description: Get all available countries for baseball leagues
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/games:
+    method: POST
+    endpoint_key: api-baseball/games
+    description: Get baseball games with live scores. Includes inning-by-inning scores.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/games-h2h:
+    method: POST
+    endpoint_key: api-baseball/games-h2h
+    description: Get head-to-head history between two baseball teams
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/leagues:
+    method: POST
+    endpoint_key: api-baseball/leagues
+    description: Get baseball leagues including MLB, minor leagues (AAA, AA), and international leagues
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/odds:
+    method: POST
+    endpoint_key: api-baseball/odds
+    description: Get betting odds for baseball games
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/odds-bookmakers:
+    method: POST
+    endpoint_key: api-baseball/odds-bookmakers
+    description: List bookmakers available for baseball betting odds (API-Sports)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/standings:
+    method: POST
+    endpoint_key: api-baseball/standings
+    description: Get baseball league standings. For MLB includes AL/NL divisions.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/standings-groups:
+    method: POST
+    endpoint_key: api-baseball/standings-groups
+    description: Get available groups for baseball standings (e.g., AL East, NL West)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/standings-stages:
+    method: POST
+    endpoint_key: api-baseball/standings-stages
+    description: Get available stages for baseball standings
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/teams:
+    method: POST
+    endpoint_key: api-baseball/teams
+    description: Get baseball team information
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-baseball/teams-statistics:
+    method: POST
+    endpoint_key: api-baseball/teams-statistics
+    description: Get season statistics for a baseball team (wins, losses, games played)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/bookmakers:
+    method: POST
+    endpoint_key: api-basketball/bookmakers
+    description: Get available bookmakers for basketball betting odds
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/countries:
+    method: POST
+    endpoint_key: api-basketball/countries
+    description: Get all available countries for basketball leagues and competitions
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/games:
+    method: POST
+    endpoint_key: api-basketball/games
+    description: Get basketball games/matches. Includes live scores, scheduled games, and results. Updated
+      every 15 seconds for live games.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/games-h2h:
+    method: POST
+    endpoint_key: api-basketball/games-h2h
+    description: Get head-to-head history between two basketball teams
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/games-statistics-players:
+    method: POST
+    endpoint_key: api-basketball/games-statistics-players
+    description: Get player statistics from a specific basketball game including points, rebounds, assists,
+      minutes
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/games-statistics-teams:
+    method: POST
+    endpoint_key: api-basketball/games-statistics-teams
+    description: Get team statistics from a specific basketball game including field goals, rebounds,
+      assists
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/leagues:
+    method: POST
+    endpoint_key: api-basketball/leagues
+    description: Get basketball leagues and competitions. Includes NBA, NCAA, EuroLeague, and 426+ other
+      leagues.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/odds:
+    method: POST
+    endpoint_key: api-basketball/odds
+    description: Get betting odds for basketball games. Pre-match odds available 1-7 days before games.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/players:
+    method: POST
+    endpoint_key: api-basketball/players
+    description: Get basketball player information including position, age, and team
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/standings:
+    method: POST
+    endpoint_key: api-basketball/standings
+    description: Get basketball league standings. For NBA, includes conference standings (Eastern/Western).
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/standings-groups:
+    method: POST
+    endpoint_key: api-basketball/standings-groups
+    description: Get available groups for basketball standings (e.g., Eastern/Western Conference)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/standings-stages:
+    method: POST
+    endpoint_key: api-basketball/standings-stages
+    description: Get available stages for basketball standings (e.g., Regular Season, Playoffs)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/statistics:
+    method: POST
+    endpoint_key: api-basketball/statistics
+    description: Get basketball team statistics for a given league and season (API-Sports)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-basketball/teams:
+    method: POST
+    endpoint_key: api-basketball/teams
+    description: Get basketball team information. Use league and season to find teams in a specific competition.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/coachs:
+    method: POST
+    endpoint_key: api-football/coachs
+    description: Get coach/manager information and career history
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/countries:
+    method: POST
+    endpoint_key: api-football/countries
+    description: Get all countries available in the API-Football database
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/fixtures:
+    method: POST
+    endpoint_key: api-football/fixtures
+    description: Get football fixtures (matches) by date, league, team, or live status. Returns match
+      details, scores, and status.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/fixtures-events:
+    method: POST
+    endpoint_key: api-football/fixtures-events
+    description: Get match events (goals, cards, substitutions, VAR decisions)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/fixtures-headtohead:
+    method: POST
+    endpoint_key: api-football/fixtures-headtohead
+    description: Get head-to-head match history between two teams
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/fixtures-lineups:
+    method: POST
+    endpoint_key: api-football/fixtures-lineups
+    description: Get match lineups including starting XI, formation, and substitutes
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/fixtures-statistics:
+    method: POST
+    endpoint_key: api-football/fixtures-statistics
+    description: Get detailed match statistics (shots, possession, passes, etc.)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/injuries:
+    method: POST
+    endpoint_key: api-football/injuries
+    description: Get current player injuries
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/leagues:
+    method: POST
+    endpoint_key: api-football/leagues
+    description: Get all football leagues and competitions. Use to find league IDs for other endpoints.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/players:
+    method: POST
+    endpoint_key: api-football/players
+    description: Get player information and statistics
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/players-squads:
+    method: POST
+    endpoint_key: api-football/players-squads
+    description: Get current team squad/roster with player details
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/players-topassists:
+    method: POST
+    endpoint_key: api-football/players-topassists
+    description: Get top assist providers for a league and season
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/players-topscorers:
+    method: POST
+    endpoint_key: api-football/players-topscorers
+    description: Get top goal scorers for a league and season
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/predictions:
+    method: POST
+    endpoint_key: api-football/predictions
+    description: Get AI-powered match predictions including win probability and advice
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/standings:
+    method: POST
+    endpoint_key: api-football/standings
+    description: Get league standings table with points, wins, draws, losses, goals
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/teams:
+    method: POST
+    endpoint_key: api-football/teams
+    description: Get football team information including name, logo, venue, and country
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/teams-statistics:
+    method: POST
+    endpoint_key: api-football/teams-statistics
+    description: Get detailed team statistics for a specific league and season
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/transfers:
+    method: POST
+    endpoint_key: api-football/transfers
+    description: Get player transfer history
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  api-football/venues:
+    method: POST
+    endpoint_key: api-football/venues
+    description: Get stadium/venue information including capacity and location
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw API-Sports response envelope
+          properties:
+            get:
+              type: string
+            parameters:
+              type: object
+              additionalProperties: true
+            errors:
+              type: object
+              additionalProperties: true
+            results:
+              type: number
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              additionalProperties: true
+            response:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/all-constructors:
+    method: POST
+    endpoint_key: f1/all-constructors
+    description: Get complete list of all constructor teams that competed in a specific F1 season
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+      required:
+      - season
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast Constructors array
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/all-drivers:
+    method: POST
+    endpoint_key: f1/all-drivers
+    description: Get complete list of all drivers who competed in a specific F1 season
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+      required:
+      - season
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast Drivers array
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/circuit-info:
+    method: POST
+    endpoint_key: f1/circuit-info
+    description: Get detailed information about a specific F1 circuit including location, coordinates,
+      and full name
+    input_schema:
+      type: object
+      properties:
+        circuitId:
+          type: string
+      required:
+      - circuitId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type:
+          - object
+          - 'null'
+          description: Ergast Circuit object (or null if not found)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/constructor-standings:
+    method: POST
+    endpoint_key: f1/constructor-standings
+    description: Get current constructor (team) championship standings with points and wins
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+      required:
+      - season
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast ConstructorStandings array
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/driver-standings:
+    method: POST
+    endpoint_key: f1/driver-standings
+    description: Get current driver championship standings with points, wins, and positions
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+      required:
+      - season
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast DriverStandings array
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/lap-times:
+    method: POST
+    endpoint_key: f1/lap-times
+    description: Get all lap-by-lap timing data for a race. Returns lap times organized by driver with
+      position tracking throughout the race.
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+        driverId:
+          type: string
+      required:
+      - season
+      - round
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: 'Lap times. When driverId is provided: { laps, driverId, totalLaps, totalTimings
+            }. Otherwise: { laps, driverLaps, totalLaps, totalTimings }.'
+          properties:
+            laps:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            driverLaps:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            driverId:
+              type: string
+              description: Present only when driverId filter was provided
+            totalLaps:
+              type: number
+            totalTimings:
+              type: number
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/latest-race:
+    method: POST
+    endpoint_key: f1/latest-race
+    description: Get the most recent completed F1 race with full results and race information
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type:
+          - object
+          - 'null'
+          description: Ergast Race object (or null if not found)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/pit-stops:
+    method: POST
+    endpoint_key: f1/pit-stops
+    description: Get all pit stop data for a race including stop number, lap, duration, and timestamp
+      for each driver
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+      required:
+      - season
+      - round
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast PitStops array
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/qualifying:
+    method: POST
+    endpoint_key: f1/qualifying
+    description: Get qualifying session results showing Q1, Q2, and Q3 times for all drivers
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+      required:
+      - season
+      - round
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast QualifyingResults array
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/race-results:
+    method: POST
+    endpoint_key: f1/race-results
+    description: Get final race classification with finishing positions, points, fastest laps, and status
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+      required:
+      - season
+      - round
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast Race Results array
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/race-weekend:
+    method: POST
+    endpoint_key: f1/race-weekend
+    description: Get complete race weekend data including qualifying, sprint (if applicable), and race
+      results for a specific Grand Prix
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+      required:
+      - season
+      - round
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            season:
+              type:
+              - number
+              - string
+            round:
+              type:
+              - number
+              - string
+            raceName:
+              type: string
+            circuit:
+              type: object
+              additionalProperties: true
+            date:
+              type: string
+            time:
+              type: string
+            results:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            qualifying:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            sprint:
+              type:
+              - array
+              - 'null'
+              description: Sprint results array or null if no sprint race
+          additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/season-schedule:
+    method: POST
+    endpoint_key: f1/season-schedule
+    description: Get complete F1 season schedule with all race dates, circuits, and session times for
+      a given year
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+      required:
+      - season
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast Races array (paginated, flattened)
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success
+  f1/sprint:
+    method: POST
+    endpoint_key: f1/sprint
+    description: Get sprint race results. Returns empty array if the race weekend did not include a sprint
+      race.
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: number
+        round:
+          type: number
+      required:
+      - season
+      - round
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Ergast SprintResults array (empty if no sprint race)
+          items:
+            type: object
+            additionalProperties: true
+        error:
+          type: string
+      required:
+      - success

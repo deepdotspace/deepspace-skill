@@ -1,0 +1,300 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: firecrawl
+endpoint_count: 4
+usage_example: await integration.post('firecrawl/crawl', { /* ...params */ })
+tools:
+  crawl:
+    method: POST
+    endpoint_key: firecrawl/crawl
+    description: Crawl a website starting from a URL, following links to discover
+      and scrape multiple pages. 1 credit per page crawled.
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+        limit:
+          default: 10
+          type: number
+          minimum: 1
+        maxDepth:
+          type: number
+        allowBackwardLinks:
+          type: boolean
+        allowExternalLinks:
+          type: boolean
+        includePaths:
+          type: array
+          items:
+            type: string
+        excludePaths:
+          type: array
+          items:
+            type: string
+        formats:
+          default:
+            - markdown
+          type: array
+          items:
+            type: string
+        onlyMainContent:
+          default: true
+          type: boolean
+      required:
+        - url
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  markdown:
+                    type: string
+                  html:
+                    type: string
+                  rawHtml:
+                    type: string
+                  links:
+                    type: array
+                    items:
+                      type: string
+                  screenshot:
+                    type: string
+                  metadata:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      language:
+                        type: string
+                      sourceURL:
+                        type: string
+                      statusCode:
+                        type: number
+                    additionalProperties: true
+                additionalProperties: true
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  map:
+    method: POST
+    endpoint_key: firecrawl/map
+    description: Map a website to get a list of all its URLs without scraping
+      content. Fast way to discover site structure. 1 credit per page in
+      results.
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+        search:
+          type: string
+        ignoreSitemap:
+          type: boolean
+        sitemapOnly:
+          type: boolean
+        includeSubdomains:
+          type: boolean
+        limit:
+          type: number
+      required:
+        - url
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            links:
+              type: array
+              items:
+                type: string
+              description: List of discovered URLs
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  scrape:
+    method: POST
+    endpoint_key: firecrawl/scrape
+    description: Scrape a single URL and extract its content as markdown/HTML.
+      Handles JavaScript rendering and anti-bot measures. 1 credit per page.
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+        formats:
+          default:
+            - markdown
+          type: array
+          items:
+            type: string
+        onlyMainContent:
+          default: true
+          type: boolean
+        includeTags:
+          type: array
+          items:
+            type: string
+        excludeTags:
+          type: array
+          items:
+            type: string
+        waitFor:
+          type: number
+        timeout:
+          type: number
+      required:
+        - url
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                url:
+                  type: string
+                markdown:
+                  type: string
+                html:
+                  type: string
+                rawHtml:
+                  type: string
+                links:
+                  type: array
+                  items:
+                    type: string
+                screenshot:
+                  type: string
+                metadata:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    language:
+                      type: string
+                    sourceURL:
+                      type: string
+                    statusCode:
+                      type: number
+                  additionalProperties: true
+              additionalProperties: true
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search:
+    method: POST
+    endpoint_key: firecrawl/search
+    description: Search the web and get full scraped content from top results.
+      Combines search with scraping. 2 credits per 10 results + scrape costs.
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        limit:
+          default: 5
+          type: number
+          minimum: 1
+        lang:
+          type: string
+        country:
+          type: string
+        scrapeOptions:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+        - query
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  markdown:
+                    type: string
+                  html:
+                    type: string
+                  rawHtml:
+                    type: string
+                  links:
+                    type: array
+                    items:
+                      type: string
+                  metadata:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      language:
+                        type: string
+                      sourceURL:
+                        type: string
+                      statusCode:
+                        type: number
+                    additionalProperties: true
+                additionalProperties: true
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

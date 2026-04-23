@@ -1,0 +1,141 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: linkedin
+endpoint_count: 2
+usage_example: await integration.post('linkedin/analyze-profile-url', { /* ...params */ })
+tools:
+  analyze-profile-url:
+    method: POST
+    endpoint_key: linkedin/analyze-profile-url
+    description: Analyze LinkedIn profile from URL
+    input_schema:
+      type: object
+      properties:
+        profileUrl:
+          type: string
+      required:
+        - profileUrl
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            profile:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                headline:
+                  type: string
+                location:
+                  type: string
+                company:
+                  type: string
+                profileUrl:
+                  type: string
+                imageUrl:
+                  type:
+                    - string
+                    - "null"
+                summary:
+                  type: string
+              required:
+                - id
+                - name
+                - headline
+                - location
+                - company
+                - profileUrl
+                - summary
+              additionalProperties: false
+          required:
+            - profile
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search-profiles:
+    method: POST
+    endpoint_key: linkedin/search-profiles
+    description: Search LinkedIn profiles
+    input_schema:
+      type: object
+      properties:
+        name:
+          type: string
+        company:
+          type: string
+        title:
+          type: string
+        education:
+          type: string
+        location:
+          type: string
+        page:
+          default: 1
+          type: number
+          minimum: 1
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            profiles:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  headline:
+                    type: string
+                  location:
+                    type: string
+                  company:
+                    type: string
+                  profileUrl:
+                    type: string
+                  imageUrl:
+                    type:
+                      - string
+                      - "null"
+                  summary:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - profileUrl
+                additionalProperties: false
+            total:
+              type: number
+            page:
+              type: number
+          required:
+            - profiles
+            - total
+            - page
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

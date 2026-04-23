@@ -1,0 +1,103 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: anthropic
+endpoint_count: 1
+usage_example: await integration.post('anthropic/chat-completion', { /* ...params */ })
+tools:
+  chat-completion:
+    method: POST
+    endpoint_key: anthropic/chat-completion
+    description: Generate text completions using Anthropic Claude models via the
+      Messages API
+    input_schema:
+      type: object
+      properties:
+        model:
+          default: claude-sonnet-4-20250514
+          type: string
+        max_tokens:
+          default: 4096
+          type: number
+          minimum: 1
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum:
+                  - user
+                  - assistant
+              content:
+                anyOf:
+                  - type: string
+                  - type: array
+                    items:
+                      type: object
+                      propertyNames:
+                        type: string
+                      additionalProperties: {}
+            required:
+              - role
+              - content
+            additionalProperties: false
+        system:
+          type: string
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 1
+      required:
+        - messages
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Anthropic Messages API response
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+            role:
+              type: string
+            content:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            model:
+              type: string
+            stop_reason:
+              type:
+                - string
+                - "null"
+            stop_sequence:
+              type:
+                - string
+                - "null"
+            usage:
+              type: object
+              properties:
+                input_tokens:
+                  type: number
+                output_tokens:
+                  type: number
+              additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

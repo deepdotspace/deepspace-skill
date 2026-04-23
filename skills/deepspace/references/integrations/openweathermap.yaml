@@ -1,0 +1,174 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: openweathermap
+endpoint_count: 3
+usage_example: await integration.post('openweathermap/current', { /* ...params */ })
+tools:
+  current:
+    method: POST
+    endpoint_key: openweathermap/current
+    description: Get current weather
+    input_schema:
+      type: object
+      properties:
+        location:
+          type: string
+        q:
+          type: string
+        units:
+          default: metric
+          type: string
+          enum:
+            - metric
+            - imperial
+            - standard
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            dt:
+              type: number
+              description: Unix timestamp of data calculation
+            temp:
+              type: number
+            feels_like:
+              type: number
+            humidity:
+              type: number
+            pressure:
+              type: number
+              description: Atmospheric pressure in hPa
+            visibility:
+              type: number
+              description: Visibility in meters
+            description:
+              type: string
+            icon:
+              type: string
+            wind_speed:
+              type: number
+            wind_deg:
+              type: number
+              description: Wind direction in degrees
+            sunrise:
+              type: number
+              description: Sunrise time as Unix timestamp
+            sunset:
+              type: number
+              description: Sunset time as Unix timestamp
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  forecast:
+    method: POST
+    endpoint_key: openweathermap/forecast
+    description: Get 5-day forecast
+    input_schema:
+      type: object
+      properties:
+        location:
+          type: string
+        q:
+          type: string
+        units:
+          default: metric
+          type: string
+          enum:
+            - metric
+            - imperial
+            - standard
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Array of 3-hour forecast entries (raw handler return is an array)
+          items:
+            type: object
+            properties:
+              dt:
+                type: number
+              temp:
+                type: number
+              feels_like:
+                type: number
+              humidity:
+                type: number
+              description:
+                type: string
+              icon:
+                type: string
+            required:
+              - dt
+            additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  geocoding:
+    method: POST
+    endpoint_key: openweathermap/geocoding
+    description: Geocode a city name
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        q:
+          type: string
+        limit:
+          default: 5
+          type: number
+          minimum: 1
+          maximum: 10
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          description: Raw OpenWeatherMap /geo/1.0/direct response (array of location matches)
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              lat:
+                type: number
+              lon:
+                type: number
+              country:
+                type: string
+              state:
+                type: string
+              local_names:
+                type: object
+                additionalProperties: true
+            required:
+              - name
+              - lat
+              - lon
+            additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

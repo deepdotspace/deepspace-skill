@@ -1,0 +1,127 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: submagic
+endpoint_count: 3
+usage_example: await integration.post('submagic/create-video', { /* ...params */ })
+tools:
+  create-video:
+    method: POST
+    endpoint_key: submagic/create-video
+    description: Create SubMagic video (async)
+    input_schema:
+      type: object
+      properties:
+        title:
+          type: string
+        language:
+          type: string
+        videoUrl:
+          type: string
+        templateName:
+          type: string
+        userThemeId:
+          type: string
+        dictionary:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: string
+        magicZooms:
+          type: boolean
+        magicBrolls:
+          type: boolean
+        magicBrollsPercentage:
+          type: number
+          minimum: 0
+          maximum: 100
+      required:
+        - title
+        - language
+        - videoUrl
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            projectId:
+              type: string
+            status:
+              type: string
+            message:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-project:
+    method: POST
+    endpoint_key: submagic/get-project
+    description: Check SubMagic project status / retrieve result by projectId
+    input_schema:
+      type: object
+      properties:
+        projectId:
+          type: string
+      required:
+        - projectId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SubMagic project response (passthrough from GET /v1/projects/:projectId)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  wait-for-completion:
+    method: POST
+    endpoint_key: submagic/wait-for-completion
+    description: Submit + poll a SubMagic project until it finishes (handles the
+      polling loop)
+    input_schema:
+      type: object
+      properties:
+        projectId:
+          type: string
+        maxAttempts:
+          default: 30
+          type: number
+          minimum: 1
+        pollInterval:
+          default: 10000
+          type: number
+          minimum: 1000
+      required:
+        - projectId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Completed SubMagic project payload (passthrough from polled project response)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

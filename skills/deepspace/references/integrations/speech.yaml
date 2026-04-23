@@ -1,0 +1,154 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: speech
+endpoint_count: 2
+usage_example: await integration.post('speech/speech-to-text', { /* ...params */ })
+tools:
+  speech-to-text:
+    method: POST
+    endpoint_key: speech/speech-to-text
+    description: Transcribe speech audio to text
+    input_schema:
+      type: object
+      properties:
+        audio:
+          type: string
+        model:
+          default: whisper-1
+          type: string
+          enum:
+            - whisper-1
+            - gpt-4o-transcribe
+            - gpt-4o-mini-transcribe
+        language:
+          type: string
+          pattern: ^[a-z]{2}$
+        prompt:
+          type: string
+        response_format:
+          default: json
+          type: string
+          enum:
+            - json
+            - text
+            - srt
+            - verbose_json
+            - vtt
+        temperature:
+          default: 0
+          type: number
+          minimum: 0
+          maximum: 1
+      required:
+        - audio
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            text:
+              type: string
+              description: Transcribed text (string for non-json formats; the `text` field from raw JSON for json/verbose_json)
+            model:
+              type: string
+            language:
+              type: string
+              description: Language code passed by the user, or "auto-detected" if not supplied
+          required:
+            - text
+            - model
+            - language
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  text-to-speech:
+    method: POST
+    endpoint_key: speech/text-to-speech
+    description: Convert text to speech audio
+    input_schema:
+      type: object
+      properties:
+        input:
+          type: string
+          description: Text to speak (either `input` or `text` must be provided; handler will throw if both are empty)
+        text:
+          type: string
+          description: Alias for `input`
+        model:
+          default: tts-1
+          type: string
+          enum:
+            - tts-1
+            - tts-1-hd
+            - gpt-4o-mini-tts
+        voice:
+          default: alloy
+          type: string
+          enum:
+            - alloy
+            - ash
+            - ballad
+            - coral
+            - echo
+            - fable
+            - onyx
+            - nova
+            - sage
+            - shimmer
+            - verse
+        response_format:
+          default: mp3
+          type: string
+          enum:
+            - mp3
+            - opus
+            - aac
+            - flac
+            - wav
+            - pcm
+        speed:
+          default: 1
+          type: number
+          minimum: 0.25
+          maximum: 4
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            audioUrl:
+              type: string
+              description: Data URL containing base64-encoded audio (e.g., "data:audio/mp3;base64,...")
+            model:
+              type: string
+            voice:
+              type: string
+            response_format:
+              type: string
+          required:
+            - audioUrl
+            - model
+            - voice
+            - response_format
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

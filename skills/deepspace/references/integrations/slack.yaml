@@ -1,0 +1,235 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: slack
+endpoint_count: 4
+usage_example: await integration.post('slack/channel-history', { /* ...params */ })
+tools:
+  channel-history:
+    method: POST
+    endpoint_key: slack/channel-history
+    description: Get message history from a Slack channel with resolved user names
+    input_schema:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        channel:
+          type: string
+        limit:
+          default: 100
+          type: number
+          minimum: 1
+          maximum: 200
+        cursor:
+          type: string
+        oldest:
+          type: string
+        latest:
+          type: string
+      required:
+        - accessToken
+        - channel
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  user:
+                    type: string
+                  username:
+                    type: string
+                  userAvatar:
+                    type: string
+                  text:
+                    type: string
+                  ts:
+                    type: string
+                required:
+                  - type
+                  - text
+                  - ts
+                additionalProperties: false
+            hasMore:
+              type: boolean
+            nextCursor:
+              type: string
+          required:
+            - messages
+            - hasMore
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  list-channels:
+    method: POST
+    endpoint_key: slack/list-channels
+    description: List Slack channels the user has access to
+    input_schema:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        limit:
+          default: 100
+          type: number
+          minimum: 1
+          maximum: 200
+        types:
+          default: public_channel,private_channel
+          type: string
+        cursor:
+          type: string
+      required:
+        - accessToken
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            channels:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  is_private:
+                    type: boolean
+                  num_members:
+                    type: number
+                required:
+                  - id
+                  - name
+                  - is_private
+                additionalProperties: false
+            nextCursor:
+              type: string
+          required:
+            - channels
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  send-message:
+    method: POST
+    endpoint_key: slack/send-message
+    description: Send a message to a Slack channel
+    input_schema:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        channel:
+          type: string
+        text:
+          type: string
+        thread_ts:
+          type: string
+        unfurl_links:
+          type: boolean
+        unfurl_media:
+          type: boolean
+        blocks:
+          type: array
+          items:
+            type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+      required:
+        - accessToken
+        - channel
+        - text
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ts:
+              type: string
+            channel:
+              type: string
+            text:
+              type: string
+          required:
+            - ts
+            - channel
+            - text
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  team-info:
+    method: POST
+    endpoint_key: slack/team-info
+    description: Get Slack workspace/team information
+    input_schema:
+      type: object
+      properties:
+        accessToken:
+          type: string
+      required:
+        - accessToken
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            team:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                domain:
+                  type: string
+                icon:
+                  type: string
+              required:
+                - id
+                - name
+                - domain
+              additionalProperties: false
+          required:
+            - team
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

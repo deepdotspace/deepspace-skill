@@ -1,0 +1,463 @@
+# Endpoint specs for this integration — hand-maintained starting point.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: serpapi
+endpoint_count: 12
+usage_example: await integration.post('scholar/get-author-details', { /* ...params */ })
+tools:
+  scholar/get-author-details:
+    method: POST
+    endpoint_key: scholar/get-author-details
+    description: Get detailed author information
+    input_schema:
+      type: object
+      properties:
+        author_id:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            author:
+              type: object
+              properties:
+                name:
+                  type: string
+                affiliations:
+                  type: string
+                email:
+                  type: string
+                interests:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - name
+              additionalProperties: true
+          required:
+            - author
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  scholar/get-author-papers:
+    method: POST
+    endpoint_key: scholar/get-author-papers
+    description: Get papers by Google Scholar author
+    input_schema:
+      type: object
+      properties:
+        author_id:
+          type: string
+        num:
+          type: number
+        start:
+          type: number
+        sort:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            papers:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  link:
+                    type: string
+                  cited_by:
+                    type: number
+                  year:
+                    type: string
+                required:
+                  - title
+                additionalProperties: true
+          required:
+            - papers
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  scholar/get-citation-details:
+    method: POST
+    endpoint_key: scholar/get-citation-details
+    description: Get detailed citation information
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            citation:
+              type: object
+              properties: {}
+              additionalProperties: true
+          required:
+            - citation
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  scholar/search-authors:
+    method: POST
+    endpoint_key: scholar/search-authors
+    description: Search Google Scholar authors
+    input_schema:
+      type: object
+      properties:
+        mauthors:
+          type: string
+        hl:
+          type: string
+        after_author:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            authors:
+              type: array
+              items:
+                type: object
+                properties:
+                  author_id:
+                    type: string
+                  name:
+                    type: string
+                  affiliations:
+                    type: string
+                  cited_by:
+                    type: number
+                  thumbnail:
+                    type: string
+                required:
+                  - name
+                additionalProperties: false
+          required:
+            - authors
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  scholar/search-papers:
+    method: POST
+    endpoint_key: scholar/search-papers
+    description: Search Google Scholar papers
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        num:
+          type: number
+        start:
+          type: number
+        hl:
+          type: string
+        as_ylo:
+          type: number
+        as_yhi:
+          type: number
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            papers:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  link:
+                    type: string
+                  snippet:
+                    type: string
+                  publication_info:
+                    type: string
+                  cited_by:
+                    type: number
+                required:
+                  - title
+                additionalProperties: true
+          required:
+            - papers
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  serpapi/events:
+    method: POST
+    endpoint_key: serpapi/events
+    description: Google Events search via SerpApi
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        location:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SerpAPI JSON response (passthrough - shape depends on engine)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+
+  serpapi/flights:
+    method: POST
+    endpoint_key: serpapi/flights
+    description: Search flights via SerpAPI Google Flights. Supports round-trip and
+      one-way searches.
+    input_schema:
+      type: object
+      properties:
+        departure_id:
+          type: string
+        arrival_id:
+          type: string
+        outbound_date:
+          type: string
+        return_date:
+          type: string
+        type:
+          type: string
+        adults:
+          type: number
+        currency:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SerpAPI JSON response (passthrough - shape depends on engine)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  serpapi/hotels:
+    method: POST
+    endpoint_key: serpapi/hotels
+    description: Google Hotels search via SerpApi
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        check_in_date:
+          type: string
+        check_out_date:
+          type: string
+        adults:
+          type: number
+        location:
+          type: string
+        gl:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SerpAPI JSON response (passthrough - shape depends on engine)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+
+  serpapi/places-reviews:
+    method: POST
+    endpoint_key: serpapi/places-reviews
+    description: Google Maps Place reviews via SerpApi
+    input_schema:
+      type: object
+      properties:
+        data_id:
+          type: string
+        place_id:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SerpAPI JSON response (passthrough - shape depends on engine)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+
+  serpapi/places-search:
+    method: POST
+    endpoint_key: serpapi/places-search
+    description: Google Maps Places search via SerpApi
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        type:
+          type: string
+        ll:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SerpAPI JSON response (passthrough - shape depends on engine)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+
+  serpapi/search:
+    method: POST
+    endpoint_key: serpapi/search
+    description: "SerpApi search (default engine: google; override with `engine` to
+      query other search engines)"
+    input_schema:
+      type: object
+      properties:
+        engine:
+          default: google
+          type: string
+        q:
+          type: string
+        num:
+          type: number
+        location:
+          type: string
+      required:
+        - q
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SerpAPI JSON response (passthrough - shape depends on engine)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+
+  serpapi/web-search:
+    method: POST
+    endpoint_key: serpapi/web-search
+    description: Google Web Search via SerpApi
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        num:
+          type: number
+        start:
+          type: number
+        location:
+          type: string
+        gl:
+          type: string
+        hl:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw SerpAPI JSON response (passthrough - shape depends on engine)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

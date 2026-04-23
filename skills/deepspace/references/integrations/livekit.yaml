@@ -1,0 +1,180 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: livekit
+endpoint_count: 4
+usage_example: await integration.post('livekit/create-room', { /* ...params */ })
+tools:
+  create-room:
+    method: POST
+    endpoint_key: livekit/create-room
+    description: Create a LiveKit room with upfront billing based on max
+      participants and duration. Returns admin token.
+    input_schema:
+      type: object
+      properties:
+        roomName:
+          type: string
+        maxParticipants:
+          default: 10
+          type: number
+          minimum: 1
+          maximum: 100
+        durationMinutes:
+          default: 60
+          type: number
+          minimum: 1
+          maximum: 1440
+        metadata:
+          type: string
+      required:
+        - roomName
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            roomSid:
+              type: string
+              description: LiveKit room SID (unique identifier)
+            roomName:
+              type: string
+              description: Room name
+            adminToken:
+              type: string
+              description: Admin access token for the room creator
+            livekitUrl:
+              type: string
+              description: LiveKit server URL to connect to
+            expiresAt:
+              type: number
+              description: Unix timestamp (ms) when the room expires
+            maxParticipants:
+              type: number
+            durationMinutes:
+              type: number
+          required:
+            - roomName
+            - adminToken
+            - livekitUrl
+            - expiresAt
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  delete-room:
+    method: POST
+    endpoint_key: livekit/delete-room
+    description: Force-close a LiveKit room. Only the room creator can delete.
+      Refund for unused time is applied automatically based on actual duration.
+    input_schema:
+      type: object
+      properties:
+        roomName:
+          type: string
+      required:
+        - roomName
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deleted:
+              type: boolean
+            roomName:
+              type: string
+          required:
+            - deleted
+            - roomName
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-token:
+    method: POST
+    endpoint_key: livekit/generate-token
+    description: Generate a LiveKit access token for any room. Rooms auto-create
+      when the first participant connects. No billing — use livekit-create-room
+      for billable rooms with duration limits.
+    input_schema:
+      type: object
+      properties:
+        roomName:
+          type: string
+        displayName:
+          type: string
+        ttlSeconds:
+          default: 3600
+          type: number
+          minimum: 60
+          maximum: 86400
+      required:
+        - roomName
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: JWT access token for LiveKit
+            url:
+              type: string
+              description: LiveKit server URL to connect to
+            roomName:
+              type: string
+              description: Room name
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  list-rooms:
+    method: POST
+    endpoint_key: livekit/list-rooms
+    description: List active LiveKit rooms
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            rooms:
+              type: array
+              description: Array of LiveKit room objects as returned by the Twirp ListRooms API
+              items:
+                type: object
+                additionalProperties: true
+          required:
+            - rooms
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

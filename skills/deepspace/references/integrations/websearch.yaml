@@ -1,0 +1,117 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: websearch
+endpoint_count: 1
+usage_example: await integration.post('websearch/advanced-search', { /* ...params */ })
+tools:
+  advanced-search:
+    method: POST
+    endpoint_key: websearch/advanced-search
+    description: Advanced multi-modal web search with structured output for widgets
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          default: []
+          type: array
+          items:
+            type: string
+        searchType:
+          default: all
+          type: string
+          enum:
+            - web
+            - images
+            - videos
+            - academic
+            - all
+        count:
+          default: 5
+          type: number
+          minimum: 1
+          maximum: 10
+        parseResultsPrompt:
+          type: string
+      required:
+        - searchPrompt
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            summary:
+              type: string
+            citations:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            assets:
+              type: array
+              items:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    enum:
+                      - image
+                      - video
+                  url:
+                    type: string
+                  thumbnailUrl:
+                    type: string
+                  title:
+                    type: string
+                  attribution:
+                    type: string
+                  width:
+                    type: number
+                  height:
+                    type: number
+                required:
+                  - kind
+                  - url
+                additionalProperties: false
+            dataset:
+              type: object
+              properties:
+                sources:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                images:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                videos:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+              additionalProperties: true
+          required:
+            - summary
+            - citations
+            - assets
+            - dataset
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

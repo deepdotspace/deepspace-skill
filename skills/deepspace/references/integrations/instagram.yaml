@@ -1,0 +1,87 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: instagram
+endpoint_count: 1
+usage_example: await integration.post('instagram/extract-content', { /* ...params */ })
+tools:
+  extract-content:
+    method: POST
+    endpoint_key: instagram/extract-content
+    description: Extract content from Instagram posts (captions and media)
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            postId:
+              type: string
+              description: Instagram media ID
+            caption:
+              type: string
+              description: Post caption/description
+            mediaType:
+              type: string
+              enum:
+                - IMAGE
+                - VIDEO
+                - CAROUSEL_ALBUM
+              description: Type of media content
+            mediaUrls:
+              type: array
+              items:
+                type: string
+              description: URLs to media files
+            thumbnailUrl:
+              type: string
+              description: Video thumbnail URL
+            permalink:
+              type: string
+              description: Permanent link to Instagram post
+            timestamp:
+              type: string
+              description: Post creation timestamp (ISO 8601)
+            author:
+              type:
+                - object
+                - "null"
+              properties:
+                username:
+                  type: string
+                id:
+                  type: string
+              required:
+                - username
+                - id
+              additionalProperties: false
+              description: Post author information (may be undefined if username could not be extracted)
+            extractionMethod:
+              type: string
+              description: Which extraction strategy succeeded
+          required:
+            - postId
+            - mediaUrls
+            - permalink
+            - timestamp
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

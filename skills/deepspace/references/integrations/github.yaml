@@ -1,0 +1,1343 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: github
+endpoint_count: 18
+usage_example: await integration.post('github/get-commit', { /* ...params */ })
+tools:
+  get-commit:
+    method: POST
+    endpoint_key: github/get-commit
+    description: Get a single commit with stats (additions, deletions, files)
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        sha:
+          type: string
+      required:
+        - owner
+        - repo
+        - sha
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            commit:
+              type: object
+              properties:
+                sha:
+                  type: string
+                html_url:
+                  type: string
+                commit:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                    author:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        email:
+                          type: string
+                        date:
+                          type: string
+                      additionalProperties: false
+                    committer:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        email:
+                          type: string
+                        date:
+                          type: string
+                      additionalProperties: false
+                  required:
+                    - message
+                  additionalProperties: true
+                author:
+                  anyOf:
+                    - type: object
+                      properties:
+                        login:
+                          type: string
+                        avatar_url:
+                          type: string
+                      required:
+                        - login
+                      additionalProperties: true
+                    - type: null
+                committer:
+                  anyOf:
+                    - type: object
+                      properties:
+                        login:
+                          type: string
+                        avatar_url:
+                          type: string
+                      required:
+                        - login
+                      additionalProperties: true
+                    - type: null
+                stats:
+                  type: object
+                  properties:
+                    additions:
+                      type: number
+                    deletions:
+                      type: number
+                    total:
+                      type: number
+                  required:
+                    - additions
+                    - deletions
+                    - total
+                  additionalProperties: false
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      filename:
+                        type: string
+                      status:
+                        type: string
+                      additions:
+                        type: number
+                      deletions:
+                        type: number
+                      changes:
+                        type: number
+                      patch:
+                        type: string
+                    required:
+                      - filename
+                      - status
+                      - additions
+                      - deletions
+                      - changes
+                    additionalProperties: true
+              required:
+                - sha
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-public-user:
+    method: POST
+    endpoint_key: github/get-public-user
+    description: Get public GitHub user
+    input_schema:
+      type: object
+      properties:
+        username:
+          type: string
+      required:
+        - username
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+              properties:
+                login:
+                  type: string
+                id:
+                  type: number
+                name:
+                  type:
+                    - string
+                    - null
+                email:
+                  type:
+                    - string
+                    - null
+                avatar_url:
+                  type: string
+                html_url:
+                  type: string
+                public_repos:
+                  type: number
+                followers:
+                  type: number
+                following:
+                  type: number
+              required:
+                - login
+                - id
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-pull-request:
+    method: POST
+    endpoint_key: github/get-pull-request
+    description: Get a single pull request with full details
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        pull_number:
+          type: number
+      required:
+        - owner
+        - repo
+        - pull_number
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            pull:
+              type: object
+              properties:
+                id:
+                  type: number
+                number:
+                  type: number
+                title:
+                  type: string
+                state:
+                  type: string
+                html_url:
+                  type: string
+                body:
+                  type:
+                    - string
+                    - null
+                user:
+                  type: object
+                  properties:
+                    login:
+                      type: string
+                    avatar_url:
+                      type: string
+                  required:
+                    - login
+                  additionalProperties: true
+                created_at:
+                  type: string
+                updated_at:
+                  type: string
+                closed_at:
+                  type:
+                    - string
+                    - null
+                merged_at:
+                  type:
+                    - string
+                    - null
+                merged:
+                  type: boolean
+                mergeable:
+                  type:
+                    - boolean
+                    - null
+                merge_commit_sha:
+                  type:
+                    - string
+                    - null
+                head:
+                  type: object
+                  properties:
+                    ref:
+                      type: string
+                    sha:
+                      type: string
+                  required:
+                    - ref
+                    - sha
+                  additionalProperties: true
+                base:
+                  type: object
+                  properties:
+                    ref:
+                      type: string
+                    sha:
+                      type: string
+                  required:
+                    - ref
+                    - sha
+                  additionalProperties: true
+                labels:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      color:
+                        type: string
+                    required:
+                      - name
+                    additionalProperties: true
+                additions:
+                  type: number
+                deletions:
+                  type: number
+                changed_files:
+                  type: number
+                commits:
+                  type: number
+                comments:
+                  type: number
+                review_comments:
+                  type: number
+              required:
+                - id
+                - number
+                - title
+                - state
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-pull-request-files:
+    method: POST
+    endpoint_key: github/get-pull-request-files
+    description: Get files changed in a pull request
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        pull_number:
+          type: number
+      required:
+        - owner
+        - repo
+        - pull_number
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  sha:
+                    type: string
+                  filename:
+                    type: string
+                  status:
+                    type: string
+                  additions:
+                    type: number
+                  deletions:
+                    type: number
+                  changes:
+                    type: number
+                  patch:
+                    type: string
+                  previous_filename:
+                    type: string
+                required:
+                  - sha
+                  - filename
+                  - status
+                  - additions
+                  - deletions
+                  - changes
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-pull-request-reviews:
+    method: POST
+    endpoint_key: github/get-pull-request-reviews
+    description: Get reviews for a pull request
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        pull_number:
+          type: number
+      required:
+        - owner
+        - repo
+        - pull_number
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            reviews:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  user:
+                    type: object
+                    properties:
+                      login:
+                        type: string
+                      avatar_url:
+                        type: string
+                    required:
+                      - login
+                    additionalProperties: true
+                  body:
+                    type:
+                      - string
+                      - null
+                  state:
+                    type: string
+                  html_url:
+                    type: string
+                  submitted_at:
+                    type: string
+                  commit_id:
+                    type: string
+                required:
+                  - id
+                  - state
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository:
+    method: POST
+    endpoint_key: github/get-repository
+    description: Get repository information
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            repository:
+              type: object
+              properties:
+                id:
+                  type: number
+                name:
+                  type: string
+                full_name:
+                  type: string
+                private:
+                  type: boolean
+                html_url:
+                  type: string
+                description:
+                  type:
+                    - string
+                    - null
+                language:
+                  type:
+                    - string
+                    - null
+                stargazers_count:
+                  type: number
+                forks_count:
+                  type: number
+                open_issues_count:
+                  type: number
+              required:
+                - id
+                - name
+                - full_name
+                - private
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-commits:
+    method: POST
+    endpoint_key: github/get-repository-commits
+    description: Get repository commits
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        sha:
+          type: string
+        per_page:
+          type: number
+          minimum: 1
+          maximum: 100
+        page:
+          type: number
+          minimum: 1
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            commits:
+              type: array
+              items:
+                type: object
+                properties:
+                  sha:
+                    type: string
+                  commit:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      author:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          email:
+                            type: string
+                          date:
+                            type: string
+                        additionalProperties: false
+                    required:
+                      - message
+                    additionalProperties: true
+                  html_url:
+                    type: string
+                required:
+                  - sha
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-contents:
+    method: POST
+    endpoint_key: github/get-repository-contents
+    description: Get file or directory contents from a repository
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        path:
+          default: ""
+          type: string
+        ref:
+          type: string
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            contents:
+              anyOf:
+                - type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - file
+                        - dir
+                        - symlink
+                        - submodule
+                    name:
+                      type: string
+                    path:
+                      type: string
+                    sha:
+                      type: string
+                    size:
+                      type: number
+                    content:
+                      type: string
+                    encoding:
+                      type: string
+                    html_url:
+                      type: string
+                    download_url:
+                      type:
+                        - string
+                        - null
+                  required:
+                    - type
+                    - name
+                    - path
+                    - sha
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                          - file
+                          - dir
+                          - symlink
+                          - submodule
+                      name:
+                        type: string
+                      path:
+                        type: string
+                      sha:
+                        type: string
+                      size:
+                        type: number
+                      html_url:
+                        type: string
+                      download_url:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - type
+                      - name
+                      - path
+                      - sha
+                    additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-contributors:
+    method: POST
+    endpoint_key: github/get-repository-contributors
+    description: Get repository contributors with commit counts
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        per_page:
+          type: number
+          minimum: 1
+          maximum: 100
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            contributors:
+              type: array
+              items:
+                type: object
+                properties:
+                  login:
+                    type: string
+                  id:
+                    type: number
+                  avatar_url:
+                    type: string
+                  html_url:
+                    type: string
+                  contributions:
+                    type: number
+                  type:
+                    type: string
+                required:
+                  - contributions
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-issues:
+    method: POST
+    endpoint_key: github/get-repository-issues
+    description: Get repository issues
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        state:
+          type: string
+          enum:
+            - open
+            - closed
+            - all
+        per_page:
+          type: number
+          minimum: 1
+          maximum: 100
+        page:
+          type: number
+          minimum: 1
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            issues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  number:
+                    type: number
+                  title:
+                    type: string
+                  state:
+                    type: string
+                  html_url:
+                    type: string
+                  body:
+                    type:
+                      - string
+                      - null
+                  user:
+                    type: object
+                    properties:
+                      login:
+                        type: string
+                    required:
+                      - login
+                    additionalProperties: true
+                  created_at:
+                    type: string
+                  updated_at:
+                    type: string
+                required:
+                  - id
+                  - number
+                  - title
+                  - state
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-languages:
+    method: POST
+    endpoint_key: github/get-repository-languages
+    description: Get language breakdown for a repository
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            languages:
+              type: object
+              additionalProperties:
+                type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-pulls:
+    method: POST
+    endpoint_key: github/get-repository-pulls
+    description: List pull requests for a repository
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        state:
+          type: string
+          enum:
+            - open
+            - closed
+            - all
+        per_page:
+          type: number
+          minimum: 1
+          maximum: 100
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            pulls:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  number:
+                    type: number
+                  title:
+                    type: string
+                  state:
+                    type: string
+                  html_url:
+                    type: string
+                  body:
+                    type:
+                      - string
+                      - null
+                  user:
+                    type: object
+                    properties:
+                      login:
+                        type: string
+                      avatar_url:
+                        type: string
+                    required:
+                      - login
+                    additionalProperties: true
+                  created_at:
+                    type: string
+                  updated_at:
+                    type: string
+                  closed_at:
+                    type:
+                      - string
+                      - null
+                  merged_at:
+                    type:
+                      - string
+                      - null
+                  merge_commit_sha:
+                    type:
+                      - string
+                      - null
+                  head:
+                    type: object
+                    properties:
+                      ref:
+                        type: string
+                      sha:
+                        type: string
+                    required:
+                      - ref
+                      - sha
+                    additionalProperties: true
+                  base:
+                    type: object
+                    properties:
+                      ref:
+                        type: string
+                      sha:
+                        type: string
+                    required:
+                      - ref
+                      - sha
+                    additionalProperties: true
+                  labels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        color:
+                          type: string
+                      required:
+                        - name
+                      additionalProperties: true
+                  additions:
+                    type: number
+                  deletions:
+                    type: number
+                  changed_files:
+                    type: number
+                required:
+                  - id
+                  - number
+                  - title
+                  - state
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-readme:
+    method: POST
+    endpoint_key: github/get-repository-readme
+    description: Get the README file for a repository
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            readme:
+              type: object
+              properties:
+                name:
+                  type: string
+                path:
+                  type: string
+                sha:
+                  type: string
+                size:
+                  type: number
+                content:
+                  type: string
+                encoding:
+                  type: string
+                html_url:
+                  type: string
+                download_url:
+                  type:
+                    - string
+                    - null
+              required:
+                - name
+                - path
+                - sha
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-repository-tree:
+    method: POST
+    endpoint_key: github/get-repository-tree
+    description: Get repository file tree structure (recursive)
+    input_schema:
+      type: object
+      properties:
+        owner:
+          type: string
+        repo:
+          type: string
+        sha:
+          default: HEAD
+          type: string
+        recursive:
+          type: boolean
+      required:
+        - owner
+        - repo
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            tree:
+              type: object
+              properties:
+                sha:
+                  type: string
+                url:
+                  type: string
+                tree:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                      mode:
+                        type: string
+                      type:
+                        type: string
+                        enum:
+                          - blob
+                          - tree
+                      sha:
+                        type: string
+                      size:
+                        type: number
+                      url:
+                        type: string
+                    required:
+                      - path
+                      - mode
+                      - type
+                      - sha
+                    additionalProperties: false
+                truncated:
+                  type: boolean
+              required:
+                - sha
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-user:
+    method: POST
+    endpoint_key: github/get-user
+    description: Get authenticated GitHub user
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+              properties:
+                login:
+                  type: string
+                id:
+                  type: number
+                name:
+                  type:
+                    - string
+                    - null
+                email:
+                  type:
+                    - string
+                    - null
+                avatar_url:
+                  type: string
+                html_url:
+                  type: string
+                public_repos:
+                  type: number
+                followers:
+                  type: number
+                following:
+                  type: number
+              required:
+                - login
+                - id
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-user-public-repos:
+    method: POST
+    endpoint_key: github/get-user-public-repos
+    description: Get public repos for a GitHub user
+    input_schema:
+      type: object
+      properties:
+        username:
+          type: string
+        sort:
+          type: string
+        per_page:
+          type: number
+          minimum: 1
+          maximum: 100
+      required:
+        - username
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            repositories:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  full_name:
+                    type: string
+                  private:
+                    type: boolean
+                  html_url:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - null
+                  language:
+                    type:
+                      - string
+                      - null
+                  stargazers_count:
+                    type: number
+                  forks_count:
+                    type: number
+                required:
+                  - id
+                  - name
+                  - full_name
+                  - private
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-user-repos:
+    method: POST
+    endpoint_key: github/get-user-repos
+    description: Get authenticated user repositories
+    input_schema:
+      type: object
+      properties:
+        sort:
+          type: string
+        per_page:
+          type: number
+          minimum: 1
+          maximum: 100
+        page:
+          type: number
+          minimum: 1
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            repositories:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  full_name:
+                    type: string
+                  private:
+                    type: boolean
+                  html_url:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - null
+                  language:
+                    type:
+                      - string
+                      - null
+                  stargazers_count:
+                    type: number
+                  forks_count:
+                    type: number
+                required:
+                  - id
+                  - name
+                  - full_name
+                  - private
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search-repositories:
+    method: POST
+    endpoint_key: github/search-repositories
+    description: Search GitHub repositories
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        sort:
+          type: string
+        order:
+          type: string
+          enum:
+            - asc
+            - desc
+        per_page:
+          type: number
+          minimum: 1
+          maximum: 100
+      required:
+        - q
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            repositories:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  full_name:
+                    type: string
+                  private:
+                    type: boolean
+                  html_url:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - null
+                  language:
+                    type:
+                      - string
+                      - null
+                  stargazers_count:
+                    type: number
+                  forks_count:
+                    type: number
+                required:
+                  - id
+                  - name
+                  - full_name
+                  - private
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

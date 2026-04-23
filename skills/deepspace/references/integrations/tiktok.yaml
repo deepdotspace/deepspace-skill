@@ -1,0 +1,142 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: tiktok
+endpoint_count: 4
+usage_example: await integration.post('tiktok/cancel-scheduled-post', { /* ...params */ })
+tools:
+  cancel-scheduled-post:
+    method: POST
+    endpoint_key: tiktok/cancel-scheduled-post
+    description: Cancel a scheduled TikTok post by postId
+    input_schema:
+      type: object
+      properties:
+        postId:
+          type: string
+      required:
+        - postId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+          required:
+            - message
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-scheduled-posts:
+    method: POST
+    endpoint_key: tiktok/get-scheduled-posts
+    description: List scheduled TikTok posts
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            posts:
+              type: array
+              description: Scheduled posts from TikTok (raw TikTok post objects)
+              items:
+                type: object
+                additionalProperties: true
+          required:
+            - posts
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  post-video:
+    method: POST
+    endpoint_key: tiktok/post-video
+    description: Post a video to TikTok (sandbox)
+    input_schema:
+      type: object
+      properties:
+        videoUrl:
+          type: string
+        caption:
+          type: string
+        privacyLevel:
+          default: PUBLIC_TO_EVERYONE
+          type: string
+        hashtags:
+          type: array
+          items:
+            type: string
+        scheduleTime:
+          type: string
+      required:
+        - videoUrl
+        - caption
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            postId:
+              type: string
+            scheduled:
+              type: boolean
+            scheduledTime:
+              type:
+                - string
+                - "null"
+            message:
+              type: string
+          required:
+            - scheduled
+            - message
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  user-info:
+    method: POST
+    endpoint_key: tiktok/user-info
+    description: Get TikTok user profile
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw TikTok Open API /v2/user/info/ response (passthrough). Typical fields include open_id, union_id, avatar_url, display_name, bio_description, profile_deep_link, is_verified, follower_count, following_count, likes_count, video_count.
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

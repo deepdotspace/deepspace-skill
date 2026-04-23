@@ -1,0 +1,74 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: amazon
+endpoint_count: 1
+usage_example: await integration.post('amazon/search-products', { /* ...params */ })
+tools:
+  search-products:
+    method: POST
+    endpoint_key: amazon/search-products
+    description: Search Amazon products
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        limit:
+          default: 10
+          type: number
+          minimum: 1
+          maximum: 20
+      required:
+        - query
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            products:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  link:
+                    type: string
+                    format: uri
+                  price:
+                    type: string
+                  image:
+                    type: string
+                    format: uri
+                  rating:
+                    type: number
+                  boughtInPastMonth:
+                    type: string
+                  deliveryInfo:
+                    type: string
+                  snapEligible:
+                    type: boolean
+                required:
+                  - title
+                  - link
+                  - price
+                  - image
+                additionalProperties: true
+          additionalProperties: false
+          required:
+            - products
+        error:
+          type: string
+      required:
+        - success

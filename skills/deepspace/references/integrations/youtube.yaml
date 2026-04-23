@@ -1,0 +1,133 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: youtube
+endpoint_count: 3
+usage_example: await integration.post('youtube/get-trending-videos', { /* ...params */ })
+tools:
+  get-trending-videos:
+    method: POST
+    endpoint_key: youtube/get-trending-videos
+    description: Get trending videos
+    input_schema:
+      type: object
+      properties:
+        regionCode:
+          type: string
+        maxResults:
+          type: number
+          minimum: 1
+          maximum: 50
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                description: YouTube video item with added `links`, `embedHtml`, `markdownLink`, and optional `formatted` fields
+                additionalProperties: true
+            totalResults:
+              type: number
+          required:
+            - videos
+            - totalResults
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-video-details:
+    method: POST
+    endpoint_key: youtube/get-video-details
+    description: Get details for videos
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                description: YouTube video item with added `links`, `embedHtml`, `markdownLink`, and optional `formatted` fields
+                additionalProperties: true
+          required:
+            - videos
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search-videos:
+    method: POST
+    endpoint_key: youtube/search-videos
+    description: Search for videos and return URLs with metadata (duration, views,
+      thumbnails)
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        order:
+          type: string
+        maxResults:
+          type: number
+          minimum: 1
+          maximum: 50
+        regionCode:
+          type: string
+        publishedAfter:
+          type: string
+        publishedBefore:
+          type: string
+      required:
+        - q
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                description: YouTube search result with added `links`, `embedHtml`, `markdownLink`, and optional `formatted` fields
+                additionalProperties: true
+            totalResults:
+              type: number
+          required:
+            - videos
+            - totalResults
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

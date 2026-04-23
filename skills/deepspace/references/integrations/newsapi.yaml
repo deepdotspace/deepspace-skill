@@ -1,0 +1,216 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: newsapi
+endpoint_count: 2
+usage_example: await integration.post('newsapi/search-everything', { /* ...params */ })
+tools:
+  search-everything:
+    method: POST
+    endpoint_key: newsapi/search-everything
+    description: "[DEPRECATED — use /news-search-exa instead] Search news articles.
+      Limited to truncated content and 24-hour delay."
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        query:
+          type: string
+        sources:
+          type: string
+        domains:
+          type: string
+        excludeDomains:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        language:
+          default: en
+          type: string
+        sortBy:
+          default: publishedAt
+          type: string
+        pageSize:
+          default: 20
+          type: number
+          minimum: 1
+          maximum: 100
+        page:
+          default: 1
+          type: number
+          minimum: 1
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            headlines:
+              type: array
+              items:
+                type: string
+            articles:
+              type: array
+              items:
+                type: object
+                properties:
+                  source:
+                    type: object
+                    properties:
+                      id:
+                        type:
+                          - string
+                          - null
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  author:
+                    type:
+                      - string
+                      - null
+                  title:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - null
+                  url:
+                    type: string
+                  urlToImage:
+                    type:
+                      - string
+                      - null
+                  publishedAt:
+                    type: string
+                  content:
+                    type:
+                      - string
+                      - null
+                required:
+                  - source
+                  - author
+                  - title
+                  - description
+                  - url
+                  - urlToImage
+                  - publishedAt
+                  - content
+                additionalProperties: false
+            totalResults:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  top-headlines:
+    method: POST
+    endpoint_key: newsapi/top-headlines
+    description: "[DEPRECATED — use /news-search-exa instead] Get top headlines.
+      Limited to truncated content and 24-hour delay."
+    input_schema:
+      type: object
+      properties:
+        country:
+          default: us
+          type: string
+        category:
+          type: string
+        sources:
+          type: string
+        q:
+          type: string
+        pageSize:
+          default: 20
+          type: number
+          minimum: 1
+          maximum: 100
+        page:
+          default: 1
+          type: number
+          minimum: 1
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            headlines:
+              type: array
+              items:
+                type: string
+            articles:
+              type: array
+              items:
+                type: object
+                properties:
+                  source:
+                    type: object
+                    properties:
+                      id:
+                        type:
+                          - string
+                          - null
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  author:
+                    type:
+                      - string
+                      - null
+                  title:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - null
+                  url:
+                    type: string
+                  urlToImage:
+                    type:
+                      - string
+                      - null
+                  publishedAt:
+                    type: string
+                  content:
+                    type:
+                      - string
+                      - null
+                required:
+                  - source
+                  - author
+                  - title
+                  - description
+                  - url
+                  - urlToImage
+                  - publishedAt
+                  - content
+                additionalProperties: false
+            totalResults:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

@@ -1,0 +1,81 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: gemini
+endpoint_count: 1
+usage_example: await integration.post('gemini/generate-image', { /* ...params */ })
+tools:
+  generate-image:
+    method: POST
+    endpoint_key: gemini/generate-image
+    description: "[DEPRECATED — prefer using newer models instead like Gemini]
+      Generate image from prompt (async)"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+        model:
+          default: gemini-2.5-flash-image
+          type: string
+        aspectRatio:
+          type: string
+        imageSize:
+          type: string
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+        maxOutputTokens:
+          type: number
+          minimum: 1
+      required:
+        - prompt
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            base64Images:
+              type: array
+              description: Array of data URLs (e.g., "data:image/png;base64,...") — synchronous, not async
+              items:
+                type: string
+            text:
+              type: string
+              description: Text response parts concatenated (undefined if no text returned)
+            usage:
+              type: object
+              properties:
+                inputTokens:
+                  type: number
+                outputTokens:
+                  type: number
+                totalTokens:
+                  type: number
+              required:
+                - inputTokens
+                - outputTokens
+                - totalTokens
+              additionalProperties: false
+            model:
+              type: string
+          required:
+            - base64Images
+            - usage
+            - model
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

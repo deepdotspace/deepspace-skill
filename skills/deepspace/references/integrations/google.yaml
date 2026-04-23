@@ -1,0 +1,723 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: google
+oauth_required: true
+endpoint_count: 10
+usage_example: await integration.post('google/calendar-create-event', { /* ...params */ })
+tools:
+  calendar-create-event:
+    method: POST
+    endpoint_key: google/calendar-create-event
+    description: Create events on the user's Google Calendar with optional video
+      conferencing
+    input_schema:
+      type: object
+      properties:
+        calendarId:
+          default: primary
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        start:
+          type: string
+        end:
+          type: string
+        allDay:
+          default: false
+          type: boolean
+        description:
+          type: string
+        location:
+          type: string
+        attendees:
+          type: array
+          items:
+            type: string
+        addVideoConferencing:
+          type: boolean
+      required:
+        - start
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            created:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  htmlLink:
+                    type: string
+                  summary:
+                    type: string
+                  start:
+                    type: string
+                  end:
+                    type: string
+                  meetLink:
+                    type: string
+                required:
+                  - id
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  calendar-delete-event:
+    method: POST
+    endpoint_key: google/calendar-delete-event
+    description: "Delete a Google Calendar event by eventId. Scope: calendar.events."
+    input_schema:
+      type: object
+      properties:
+        calendarId:
+          default: primary
+          type: string
+        eventId:
+          type: string
+      required:
+        - eventId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deleted:
+              type: boolean
+            eventId:
+              type: string
+            requiresOAuth:
+              type: boolean
+              description: Present when OAuth flow is required
+            authUrl:
+              type: string
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  calendar-list-events:
+    method: POST
+    endpoint_key: google/calendar-list-events
+    description: List Google Calendar events within a time range
+    input_schema:
+      type: object
+      properties:
+        calendarId:
+          default: primary
+          type: string
+        timeMin:
+          type: string
+        timeMax:
+          type: string
+        maxResults:
+          type: number
+          minimum: 1
+          maximum: 2500
+        q:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            events:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  summary:
+                    type: string
+                  description:
+                    type: string
+                  start:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  end:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  htmlLink:
+                    type: string
+                required:
+                  - id
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  contacts-list:
+    method: POST
+    endpoint_key: google/contacts-list
+    description: Fetch Google contacts
+    input_schema:
+      type: object
+      properties:
+        pageSize:
+          default: 1000
+          type: number
+          minimum: 1
+          maximum: 2000
+        personFields:
+          type: string
+        pageToken:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            contacts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  phone:
+                    type: string
+                  company:
+                    type: string
+                  position:
+                    type: string
+                  notes:
+                    type: string
+                  status:
+                    type: string
+                required:
+                  - name
+                  - email
+                  - phone
+                  - company
+                  - position
+                  - notes
+                  - status
+                additionalProperties: false
+            count:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  drive-get:
+    method: POST
+    endpoint_key: google/drive-get
+    description: Download file from Google Drive
+    input_schema:
+      type: object
+      properties:
+        fileId:
+          type: string
+        fields:
+          type: string
+      required:
+        - fileId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            provider:
+              type: string
+            fileData:
+              type: string
+            mimeType:
+              type: string
+            filename:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  drive-list:
+    method: POST
+    endpoint_key: google/drive-list
+    description: List files in Google Drive
+    input_schema:
+      type: object
+      properties:
+        pageSize:
+          default: 50
+          type: number
+          minimum: 1
+          maximum: 1000
+        q:
+          type: string
+        pageToken:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            provider:
+              type: string
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  mimeType:
+                    type: string
+                  size:
+                    type: string
+                  createdTime:
+                    type: string
+                  modifiedTime:
+                    type: string
+                  webViewLink:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - mimeType
+                additionalProperties: false
+            nextPageToken:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gmail-get:
+    method: POST
+    endpoint_key: google/gmail-get
+    description: Get a single email message by ID with full content
+    input_schema:
+      type: object
+      properties:
+        messageId:
+          type: string
+        id:
+          type: string
+        format:
+          default: full
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            id:
+              type: string
+            threadId:
+              type: string
+            labelIds:
+              type: array
+              items:
+                type: string
+            snippet:
+              type: string
+            subject:
+              type: string
+            from:
+              type: string
+            to:
+              type: string
+            date:
+              type: string
+            body:
+              type: object
+              properties:
+                plain:
+                  type: string
+                html:
+                  type: string
+              required:
+                - plain
+                - html
+              additionalProperties: false
+            attachments:
+              type: array
+              items:
+                type: object
+                properties:
+                  filename:
+                    type: string
+                  mimeType:
+                    type: string
+                  size:
+                    type: number
+                  attachmentId:
+                    type: string
+                required:
+                  - filename
+                  - mimeType
+                  - size
+                  - attachmentId
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gmail-list:
+    method: POST
+    endpoint_key: google/gmail-list
+    description: List email messages from inbox or with optional search query
+    input_schema:
+      type: object
+      properties:
+        maxResults:
+          type: number
+          minimum: 1
+        pageToken:
+          type: string
+        labelIds:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        q:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  threadId:
+                    type: string
+                  labelIds:
+                    type: array
+                    items:
+                      type: string
+                  snippet:
+                    type: string
+                  subject:
+                    type: string
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  date:
+                    type: string
+                  body:
+                    type: object
+                    properties:
+                      plain:
+                        type: string
+                      html:
+                        type: string
+                    required:
+                      - plain
+                      - html
+                    additionalProperties: false
+                  attachments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        filename:
+                          type: string
+                        mimeType:
+                          type: string
+                        size:
+                          type: number
+                        attachmentId:
+                          type: string
+                      required:
+                        - filename
+                        - mimeType
+                        - size
+                        - attachmentId
+                      additionalProperties: false
+                required:
+                  - id
+                  - threadId
+                  - labelIds
+                  - snippet
+                  - subject
+                  - from
+                  - to
+                  - date
+                  - body
+                  - attachments
+                additionalProperties: false
+            nextPageToken:
+              type: string
+            resultSizeEstimate:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gmail-search:
+    method: POST
+    endpoint_key: google/gmail-search
+    description: Search emails using Gmail search syntax (e.g., "from:company.com
+      subject:feedback")
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        q:
+          type: string
+        maxResults:
+          default: 20
+          type: number
+          minimum: 1
+        pageToken:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  threadId:
+                    type: string
+                  labelIds:
+                    type: array
+                    items:
+                      type: string
+                  snippet:
+                    type: string
+                  subject:
+                    type: string
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  date:
+                    type: string
+                  body:
+                    type: object
+                    properties:
+                      plain:
+                        type: string
+                      html:
+                        type: string
+                    required:
+                      - plain
+                      - html
+                    additionalProperties: false
+                  attachments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        filename:
+                          type: string
+                        mimeType:
+                          type: string
+                        size:
+                          type: number
+                        attachmentId:
+                          type: string
+                      required:
+                        - filename
+                        - mimeType
+                        - size
+                        - attachmentId
+                      additionalProperties: false
+                required:
+                  - id
+                  - threadId
+                  - labelIds
+                  - snippet
+                  - subject
+                  - from
+                  - to
+                  - date
+                  - body
+                  - attachments
+                additionalProperties: false
+            nextPageToken:
+              type: string
+            resultSizeEstimate:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gmail-send:
+    method: POST
+    endpoint_key: google/gmail-send
+    description: Send email via Gmail
+    input_schema:
+      type: object
+      properties:
+        to:
+          type: string
+        subject:
+          type: string
+        content:
+          type: string
+        html:
+          type: string
+        threadId:
+          type: string
+      required:
+        - to
+        - subject
+        - content
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            messageId:
+              type: string
+            threadId:
+              type: string
+            recipient:
+              type: string
+            subject:
+              type: string
+            sentAt:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

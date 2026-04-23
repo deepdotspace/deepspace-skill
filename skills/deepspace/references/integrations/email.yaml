@@ -1,0 +1,70 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: email
+endpoint_count: 1
+usage_example: await integration.post('email/send', { /* ...params */ })
+tools:
+  send:
+    method: POST
+    endpoint_key: email/send
+    description: Send a transactional email via Resend (html or text body; optional
+      cc, bcc, reply_to)
+    input_schema:
+      type: object
+      properties:
+        from:
+          type: string
+        to:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        subject:
+          type: string
+        html:
+          type: string
+        text:
+          type: string
+        reply_to:
+          type: string
+        cc:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        bcc:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+      required:
+        - from
+        - to
+        - subject
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Resend API response
+          properties:
+            id:
+              type: string
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success

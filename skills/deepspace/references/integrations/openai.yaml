@@ -1,0 +1,177 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: openai
+endpoint_count: 2
+usage_example: await integration.post('openai/chat-completion', { /* ...params */ })
+tools:
+  chat-completion:
+    method: POST
+    endpoint_key: openai/chat-completion
+    description: "Generate chat completions using OpenAI chat models (default: gpt-4o)"
+    input_schema:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum:
+                  - user
+                  - system
+                  - assistant
+              content:
+                type: string
+            required:
+              - role
+              - content
+            additionalProperties: false
+        model:
+          default: gpt-4o
+          type: string
+        max_tokens:
+          default: 100
+          type: integer
+          minimum: 1
+          maximum: 16384
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+      required:
+        - messages
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw OpenAI Chat Completions API response
+          properties:
+            id:
+              type: string
+            object:
+              type: string
+            created:
+              type: number
+            model:
+              type: string
+            choices:
+              type: array
+              items:
+                type: object
+                properties:
+                  index:
+                    type: number
+                  message:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                      content:
+                        type: string
+                    additionalProperties: true
+                  finish_reason:
+                    type: string
+                additionalProperties: true
+            usage:
+              type: object
+              properties:
+                prompt_tokens:
+                  type: number
+                completion_tokens:
+                  type: number
+                total_tokens:
+                  type: number
+              additionalProperties: true
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  generate-image:
+    method: POST
+    endpoint_key: openai/generate-image
+    description: "[DEPRECATED — prefer using newer models instead like Gemini]
+      Generate image from prompt (async)"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+        model:
+          default: gpt-image-1
+          type: string
+          enum:
+            - gpt-image-1
+            - gpt-image-1-mini
+        n:
+          default: 1
+          type: integer
+          minimum: 1
+          maximum: 4
+        size:
+          default: 1024x1024
+          type: string
+          enum:
+            - 1024x1024
+            - 1536x1024
+            - 1024x1536
+            - auto
+        quality:
+          default: auto
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - auto
+      required:
+        - prompt
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            images:
+              type: array
+              description: Array of image data URLs (base64-encoded) or URLs
+              items:
+                type: string
+            usage:
+              type: object
+              properties:
+                inputTokens:
+                  type: number
+                outputTokens:
+                  type: number
+                totalTokens:
+                  type: number
+              required:
+                - inputTokens
+                - outputTokens
+                - totalTokens
+              additionalProperties: false
+          required:
+            - images
+            - usage
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

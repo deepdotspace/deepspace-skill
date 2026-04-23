@@ -1,0 +1,168 @@
+# Endpoint specs for this integration — hand-maintained starting point.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: latex
+endpoint_count: 1
+usage_example: await integration.post('latex-compiler/compile', { /* ...params */ })
+tools:
+  compile:
+    method: POST
+    endpoint_key: latex-compiler/compile
+    description: Compile a multi-file LaTeX project to PDF. Supports
+      pdflatex/xelatex/lualatex, inline content, base64 files, URL resources,
+      and bibliography processing. Returns the compiled PDF as base64.
+    input_schema:
+      type: object
+      properties:
+        compiler:
+          default: pdflatex
+          type: string
+        document:
+          type: string
+        resources:
+          type: array
+          items:
+            type: object
+            properties:
+              main:
+                type: boolean
+              path:
+                type: string
+              content:
+                type: string
+              file:
+                type: string
+              url:
+                type: string
+            additionalProperties: false
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            compiled:
+              type: boolean
+              description: Whether the compiler produced a PDF. False when compilation errors
+                prevented output.
+            pdfBase64:
+              type: string
+              description: Base64-encoded compiled PDF. Present only when compiled is true.
+            contentType:
+              type: string
+              description: MIME type (application/pdf)
+            compilationLog:
+              type: string
+              description: Raw LaTeX compilation log output
+            parsedLog:
+              type: object
+              properties:
+                errors:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      info:
+                        type: object
+                        additionalProperties: {}
+                        description: Error details — always has "type" and "message", may include
+                          "package", "lines", etc.
+                      context:
+                        type: string
+                    required:
+                      - info
+                      - context
+                    additionalProperties: false
+                warnings:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      info:
+                        type: object
+                        additionalProperties: {}
+                      context:
+                        type: string
+                    required:
+                      - info
+                      - context
+                    additionalProperties: false
+                badboxes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      info:
+                        type: object
+                        additionalProperties: {}
+                      context:
+                        type: string
+                    required:
+                      - info
+                      - context
+                    additionalProperties: false
+                missing_refs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      info:
+                        type: object
+                        additionalProperties: {}
+                      context:
+                        type: string
+                    required:
+                      - info
+                      - context
+                    additionalProperties: false
+                errors_count:
+                  type: number
+                warnings_count:
+                  type: number
+                badboxes_count:
+                  type: number
+                has_errors:
+                  type: boolean
+                has_warnings:
+                  type: boolean
+              required:
+                - errors
+                - warnings
+                - badboxes
+                - missing_refs
+                - errors_count
+                - warnings_count
+                - badboxes_count
+                - has_errors
+                - has_warnings
+              additionalProperties: false
+              description: Structured parsed log with categorised errors, warnings, badboxes,
+                and missing references
+            logFiles:
+              type: object
+              additionalProperties:
+                type: string
+              description: Map of log filename to its full content (e.g. "document.log" →
+                content)
+            duration:
+              type: number
+              description: Compilation duration in seconds
+            error:
+              type: string
+              description: Error message when compiled is false (inside data, not at envelope level)
+          required:
+            - compiled
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

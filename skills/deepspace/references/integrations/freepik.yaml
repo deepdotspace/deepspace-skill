@@ -1,0 +1,594 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: freepik
+endpoint_count: 21
+usage_example: await integration.post('freepik/download-icons', { /* ...params */ })
+tools:
+  download-icons:
+    method: POST
+    endpoint_key: freepik/download-icons
+    description: Download a Freepik icon
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+      required:
+        - id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Freepik download API response (typically includes download URL)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  download-stock-images:
+    method: POST
+    endpoint_key: freepik/download-stock-images
+    description: Download a stock image
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+        image_size:
+          type: string
+      required:
+        - id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Freepik download API response (typically includes download URL)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  download-stock-videos:
+    method: POST
+    endpoint_key: freepik/download-stock-videos
+    description: Download a stock video
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+      required:
+        - id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Freepik download API response (typically includes download URL)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  generate-image-flux-2-pro:
+    method: POST
+    endpoint_key: freepik/generate-image-flux-2-pro
+    description: Generate images using Freepik Flux 2 Pro model with custom pixel dimensions
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-flux-2-turbo:
+    method: POST
+    endpoint_key: freepik/generate-image-flux-2-turbo
+    description: Generate images using Freepik Flux 2 Turbo model — fast
+      speed-optimized generation
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-flux-dev:
+    method: POST
+    endpoint_key: freepik/generate-image-flux-dev
+    description: "Generate images using Freepik Flux Dev model. Returns raw Freepik task response (synchronous handler - not polled)."
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Freepik API response (synchronous handler). Shape depends on the specific endpoint; typically contains a `data` object with task info and/or generated images.
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  generate-image-flux-pro:
+    method: POST
+    endpoint_key: freepik/generate-image-flux-pro
+    description: Generate images using Freepik Flux Pro v1.1 model
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-hyperflux:
+    method: POST
+    endpoint_key: freepik/generate-image-hyperflux
+    description: Generate images using Freepik Hyperflux model
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-mystic:
+    method: POST
+    endpoint_key: freepik/generate-image-mystic
+    description: "Generate ultra-realistic, high-resolution images using Freepik Mystic model. Returns raw Freepik task response (synchronous handler - not polled)."
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Freepik API response (synchronous handler). Shape depends on the specific endpoint; typically contains a `data` object with task info and/or generated images.
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  generate-image-runway:
+    method: POST
+    endpoint_key: freepik/generate-image-runway
+    description: Generate images using RunWay Gen4 Image model — photorealistic and
+      artistic generation
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-seedream:
+    method: POST
+    endpoint_key: freepik/generate-image-seedream
+    description: "[DEPRECATED — prefer Seedream v4 or Seedream 4.5] Generate images
+      using Freepik Seedream v3 model"
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-seedream-v4:
+    method: POST
+    endpoint_key: freepik/generate-image-seedream-v4
+    description: Generate images using Freepik Seedream v4 model
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-seedream-v4-5:
+    method: POST
+    endpoint_key: freepik/generate-image-seedream-v4-5
+    description: Generate images using Freepik Seedream 4.5 model (superior
+      typography, poster composition, up to 4MP)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-image-z-image:
+    method: POST
+    endpoint_key: freepik/generate-image-z-image
+    description: Generate images using Freepik Z-Image turbo model — fast
+      high-quality generation
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+              description: Poll status; "COMPLETED" when returned from this handler
+            generated:
+              type: array
+              description: Array of generated image URLs (strings) or objects, as returned by the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-video:
+    method: POST
+    endpoint_key: freepik/generate-video
+    description: Generate a video from an image and prompt
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generated:
+              type: array
+              description: Array of generated video URLs/objects from the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  image-expand:
+    method: POST
+    endpoint_key: freepik/image-expand
+    description: Outpaint/expand an image
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generated:
+              type: array
+              description: Array of generated URLs/objects from the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  image-relight:
+    method: POST
+    endpoint_key: freepik/image-relight
+    description: Relight an image
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generated:
+              type: array
+              description: Array of generated URLs/objects from the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  image-style-transfer:
+    method: POST
+    endpoint_key: freepik/image-style-transfer
+    description: Style transfer from a reference image
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generated:
+              type: array
+              description: Array of generated URLs/objects from the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  remove-background:
+    method: POST
+    endpoint_key: freepik/remove-background
+    description: Remove background from image
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Freepik remove-background API response
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  text-to-image-classic:
+    method: POST
+    endpoint_key: freepik/text-to-image-classic
+    description: Generate image from text with full parameter control (classic fast model)
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Freepik text-to-image response
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  upscale-image-precision:
+    method: POST
+    endpoint_key: freepik/upscale-image-precision
+    description: Precision upscale an image
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: {}
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generated:
+              type: array
+              description: Array of generated URLs/objects from the Freepik status endpoint
+              items: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

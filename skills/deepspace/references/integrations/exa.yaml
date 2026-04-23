@@ -1,0 +1,741 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: exa
+endpoint_count: 6
+usage_example: await integration.post('exa/answer', { /* ...params */ })
+tools:
+  answer:
+    method: POST
+    endpoint_key: exa/answer
+    description: Get an LLM answer to a question informed by Exa search results.
+      Performs search and generates either a direct answer for specific queries
+      or a detailed summary with citations for open-ended queries.
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        q:
+          type: string
+        text:
+          default: false
+          type: boolean
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            answer:
+              type: string
+              description: The generated answer based on search results
+            citations:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  url:
+                    type: string
+                  title:
+                    type: string
+                  author:
+                    type:
+                      - string
+                      - null
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                    description: Estimated creation date (YYYY-MM-DD format)
+                  text:
+                    type: string
+                    description: Full text content (only when text=true)
+                  image:
+                    type: string
+                    description: URL of associated image
+                  favicon:
+                    type: string
+                    description: URL of domain favicon
+                required:
+                  - id
+                  - url
+                  - title
+                  - author
+                  - publishedDate
+                additionalProperties: false
+              description: Search results used to generate the answer
+            costDollars:
+              description: Cost in USD (raw Exa response field, may be object or number)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  contents:
+    method: POST
+    endpoint_key: exa/contents
+    description: Get full page contents, summaries, and metadata for a list of URLs
+      using Exa AI. Returns instant results from cache.
+    input_schema:
+      type: object
+      properties:
+        urls:
+          minItems: 1
+          type: array
+          items:
+            type: string
+        text:
+          anyOf:
+            - type: boolean
+            - type: object
+              properties:
+                maxCharacters:
+                  type: number
+                includeHtmlTags:
+                  type: boolean
+              additionalProperties: false
+        highlights:
+          type: object
+          properties:
+            maxCharacters:
+              type: number
+              minimum: 1
+            query:
+              type: string
+            numSentences:
+              type: number
+              minimum: 1
+            highlightsPerUrl:
+              type: number
+              minimum: 1
+          additionalProperties: false
+        summary:
+          type: object
+          properties:
+            query:
+              type: string
+          additionalProperties: false
+        subpages: {}
+        subpageTarget: {}
+        extras:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+        context: {}
+      required:
+        - urls
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                  author:
+                    type:
+                      - string
+                      - null
+                  id:
+                    type: string
+                  image:
+                    type: string
+                  favicon:
+                    type: string
+                  text:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+                  summary:
+                    type: string
+                  subpages:
+                    type: array
+                  extras:
+                    type: object
+                    properties:
+                      links:
+                        type: array
+                        items:
+                          type: string
+                      imageLinks:
+                        type: array
+                        items:
+                          type: string
+                    additionalProperties: false
+                required:
+                  - title
+                  - url
+                  - publishedDate
+                  - author
+                  - id
+                additionalProperties: false
+            context:
+              type: string
+              description: Combined context string if context was requested
+            statuses:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - success
+                      - error
+                  error:
+                    type: object
+                    properties:
+                      tag:
+                        type: string
+                      httpStatusCode:
+                        type: number
+                    required:
+                      - tag
+                    additionalProperties: false
+                required:
+                  - id
+                  - status
+                additionalProperties: false
+              description: Status information for each requested URL
+            costDollars:
+              description: Cost in USD (raw Exa response field)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  findSimilar:
+    method: POST
+    endpoint_key: exa/findSimilar
+    description: Find similar links to the provided URL using Exa AI. Supports
+      content extraction (text, highlights, summaries) and advanced filtering
+      for discovered links.
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+        numResults:
+          default: 10
+          type: number
+          minimum: 1
+          maximum: 100
+        includeDomains:
+          type: array
+          items:
+            type: string
+        excludeDomains:
+          type: array
+          items:
+            type: string
+        startPublishedDate:
+          type: string
+        endPublishedDate:
+          type: string
+        includeText:
+          type: array
+          items:
+            type: string
+        excludeText:
+          type: array
+          items:
+            type: string
+        context: {}
+        moderation:
+          type: boolean
+        contents:
+          type: object
+          properties:
+            text:
+              anyOf:
+                - type: boolean
+                - type: object
+                  properties:
+                    maxCharacters:
+                      type: number
+                    includeHtmlTags:
+                      type: boolean
+                  additionalProperties: false
+            highlights:
+              type: object
+              properties:
+                maxCharacters:
+                  type: number
+                  minimum: 1
+                query:
+                  type: string
+                numSentences:
+                  type: number
+                  minimum: 1
+                highlightsPerUrl:
+                  type: number
+                  minimum: 1
+              additionalProperties: false
+            summary:
+              type: object
+              properties:
+                query:
+                  type: string
+              additionalProperties: false
+            extras:
+              type: object
+              propertyNames:
+                type: string
+              additionalProperties: {}
+          additionalProperties: false
+      required:
+        - url
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                  author:
+                    type:
+                      - string
+                      - null
+                  id:
+                    type: string
+                  image:
+                    type: string
+                  favicon:
+                    type: string
+                  text:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+                  summary:
+                    type: string
+                  extras:
+                    type: object
+                    properties:
+                      links:
+                        type: array
+                        items:
+                          type: string
+                      imageLinks:
+                        type: array
+                        items:
+                          type: string
+                    additionalProperties: false
+                required:
+                  - title
+                  - url
+                  - publishedDate
+                  - author
+                  - id
+                additionalProperties: false
+            context:
+              type: string
+              description: Combined context string if context=true
+            costDollars:
+              description: Cost in USD (raw Exa response field)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  news-search:
+    method: POST
+    endpoint_key: exa/news-search
+    description: "[DEPRECATED — use /news-search-exa instead] Search news articles.
+      Limited to truncated content and 24-hour delay."
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        query:
+          type: string
+        numResults:
+          default: 10
+          type: number
+          minimum: 1
+          maximum: 100
+        type:
+          default: auto
+          type: string
+        country:
+          type: string
+        includeDomains:
+          type: array
+          items:
+            type: string
+        excludeDomains:
+          type: array
+          items:
+            type: string
+        from:
+          type: string
+        to:
+          type: string
+        includeText:
+          type: array
+          items:
+            type: string
+        excludeText:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  publishedDate:
+                    type:
+                      - string
+                      - "null"
+                  author:
+                    type:
+                      - string
+                      - "null"
+                  id:
+                    type: string
+                  image:
+                    type: string
+                  favicon:
+                    type: string
+                  text:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+                  summary:
+                    type: string
+                required:
+                  - title
+                  - url
+                  - publishedDate
+                  - author
+                  - id
+                additionalProperties: false
+            headlines:
+              type: array
+              items:
+                type: string
+              description: LLM-friendly formatted strings summarizing each article
+            totalResults:
+              type: number
+            searchType:
+              type: string
+            costDollars:
+              description: Cost in USD (raw Exa response field)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  research:
+    method: POST
+    endpoint_key: exa/research
+    description: Create a research task that explores the web, gathers sources, and
+      synthesizes findings. Waits for completion and returns the full research
+      content. Research can take up to 10 minutes for complex queries.
+    input_schema:
+      type: object
+      properties:
+        instructions:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        model:
+          default: exa-research
+          type: string
+        outputSchema:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+        - instructions
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            researchId:
+              type: string
+              description: Unique identifier for the research request
+            status:
+              type: string
+              enum:
+                - pending
+                - running
+                - completed
+                - failed
+                - canceled
+              description: Final status of the research task
+            content:
+              type: string
+              description: The complete research output as text
+            parsed:
+              type: object
+              additionalProperties: {}
+              description: Structured JSON object matching outputSchema (only present when
+                outputSchema was provided)
+            output:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: The complete research output as text
+                parsed:
+                  type: object
+                  additionalProperties: {}
+                  description: Structured JSON object matching outputSchema
+              required:
+                - content
+              additionalProperties: false
+              description: Research output matching Exa API structure
+            costDollars:
+              type: object
+              properties:
+                total:
+                  type: number
+                numSearches:
+                  type: number
+                numPages:
+                  type: number
+                reasoningTokens:
+                  type: number
+              required:
+                - total
+              additionalProperties: false
+              description: Actual cost breakdown in USD for this research request
+            error:
+              type: string
+              description: Present only when status is "failed"
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search:
+    method: POST
+    endpoint_key: exa/search
+    description: Search the web using Exa AI with neural search capabilities.
+      Supports categories, content extraction (text, highlights, summaries), and
+      advanced filtering.
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        q:
+          type: string
+        numResults:
+          default: 10
+          type: number
+          minimum: 1
+          maximum: 100
+        type:
+          default: auto
+          type: string
+        category:
+          type: string
+        userLocation:
+          type: string
+        includeDomains:
+          type: array
+          items:
+            type: string
+        excludeDomains:
+          type: array
+          items:
+            type: string
+        startPublishedDate:
+          type: string
+        endPublishedDate:
+          type: string
+        includeText:
+          type: array
+          items:
+            type: string
+        excludeText:
+          type: array
+          items:
+            type: string
+        context: {}
+        moderation:
+          type: boolean
+        contents:
+          type: object
+          properties:
+            text:
+              anyOf:
+                - type: boolean
+                - type: object
+                  properties:
+                    maxCharacters:
+                      type: number
+                    includeHtmlTags:
+                      type: boolean
+                  additionalProperties: false
+            highlights:
+              type: object
+              properties:
+                maxCharacters:
+                  type: number
+                  minimum: 1
+                query:
+                  type: string
+                numSentences:
+                  type: number
+                  minimum: 1
+                highlightsPerUrl:
+                  type: number
+                  minimum: 1
+              additionalProperties: false
+            summary:
+              type: object
+              properties:
+                query:
+                  type: string
+              additionalProperties: false
+            extras:
+              type: object
+              propertyNames:
+                type: string
+              additionalProperties: {}
+          additionalProperties: false
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                  author:
+                    type:
+                      - string
+                      - null
+                  id:
+                    type: string
+                  image:
+                    type: string
+                  favicon:
+                    type: string
+                  text:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+                  summary:
+                    type: string
+                  extras:
+                    type: object
+                    properties:
+                      links:
+                        type: array
+                        items:
+                          type: string
+                      imageLinks:
+                        type: array
+                        items:
+                          type: string
+                    additionalProperties: false
+                required:
+                  - title
+                  - url
+                  - publishedDate
+                  - author
+                  - id
+                additionalProperties: false
+            context:
+              type: string
+              description: Combined context string if context=true
+            searchType:
+              type: string
+              description: Actual search type used (for auto searches)
+            costDollars:
+              description: Cost in USD (raw Exa response field)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

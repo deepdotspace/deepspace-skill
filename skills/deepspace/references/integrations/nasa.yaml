@@ -1,0 +1,301 @@
+# Endpoint specs for this integration.
+# Input schemas were initially derived from the api-worker's Zod schemas;
+# descriptions and output schemas were migrated from the prior Miyagi
+# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
+# you touch each endpoint.
+#
+# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
+# Response envelope:        { success: true, data: ... } | { success: false, error: string }
+
+integration: nasa
+endpoint_count: 7
+usage_example: await integration.post('nasa/apod', { /* ...params */ })
+tools:
+  apod:
+    method: POST
+    endpoint_key: nasa/apod
+    description: Get NASA Astronomy Picture of the Day. Supports single date, date
+      range, or random count.
+    input_schema:
+      type: object
+      properties:
+        date:
+          type: string
+        start_date:
+          type: string
+        end_date:
+          type: string
+        count:
+          type: number
+          minimum: 1
+          maximum: 100
+        thumbs:
+          type: boolean
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            apod:
+              anyOf:
+                - type: object
+                  properties:
+                    copyright:
+                      type: string
+                    date:
+                      type: string
+                    explanation:
+                      type: string
+                    hdurl:
+                      type: string
+                    media_type:
+                      type: string
+                    title:
+                      type: string
+                    url:
+                      type: string
+                    thumbnail_url:
+                      type: string
+                  required:
+                    - date
+                    - explanation
+                    - media_type
+                    - title
+                    - url
+                  additionalProperties: false
+                - type: array
+                  items:
+                    type: object
+                    properties:
+                      copyright:
+                        type: string
+                      date:
+                        type: string
+                      explanation:
+                        type: string
+                      hdurl:
+                        type: string
+                      media_type:
+                        type: string
+                      title:
+                        type: string
+                      url:
+                        type: string
+                      thumbnail_url:
+                        type: string
+                    required:
+                      - date
+                      - explanation
+                      - media_type
+                      - title
+                      - url
+                    additionalProperties: false
+          required:
+            - apod
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  cme:
+    method: POST
+    endpoint_key: nasa/cme
+    description: Get NASA DONKI Coronal Mass Ejection (CME) data. startDate defaults
+      to 30 days prior, endDate defaults to current UTC date.
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            cme:
+              type: array
+              items:
+                type: object
+                properties: {}
+                additionalProperties: true
+          required:
+            - cme
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  flr:
+    method: POST
+    endpoint_key: nasa/flr
+    description: Get NASA DONKI Solar Flare (FLR) data. startDate defaults to 30
+      days prior, endDate defaults to current UTC date.
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            flr:
+              type: array
+              items:
+                type: object
+                properties: {}
+                additionalProperties: true
+          required:
+            - flr
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gst:
+    method: POST
+    endpoint_key: nasa/gst
+    description: Get NASA DONKI Geomagnetic Storm (GST) data. startDate defaults to
+      30 days prior, endDate defaults to current UTC date.
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            gst:
+              type: array
+              items:
+                type: object
+                properties: {}
+                additionalProperties: true
+          required:
+            - gst
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  neo-browse:
+    method: POST
+    endpoint_key: nasa/neo-browse
+    description: Browse the overall Near-Earth Objects data-set
+    input_schema:
+      type: object
+      properties:
+        page:
+          type: number
+          minimum: 0
+        size:
+          type: number
+          minimum: 1
+          maximum: 100
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw NASA NeoWs /browse response (near_earth_objects, page, links, etc.)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  neo-feed:
+    method: POST
+    endpoint_key: nasa/neo-feed
+    description: Get NASA NeoWs (Near-Earth Objects) Feed. Retrieves asteroids based
+      on closest approach date to Earth. endDate defaults to 7 days after
+      startDate.
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            neos:
+              type: object
+              properties:
+                element_count:
+                  type: number
+                near_earth_objects:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+              additionalProperties: true
+          required:
+            - neos
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  neo-lookup:
+    method: POST
+    endpoint_key: nasa/neo-lookup
+    description: Lookup a specific Near-Earth Object by its NASA JPL small body (SPK-ID) ID
+    input_schema:
+      type: object
+      properties:
+        asteroidId:
+          type: string
+      required:
+        - asteroidId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw NASA NeoWs /neo/:id response (near-earth object details)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
