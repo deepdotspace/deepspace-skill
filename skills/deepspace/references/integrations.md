@@ -419,9 +419,39 @@ All endpoints return:
 
 **Empty-response gotcha (repeated from Finance):** some endpoints return `success: true` with empty or zero-filled data instead of an error when the upstream has no matches — notably `finnhub/stock-price` (all-zero quote) and `alphavantage/search-symbols` (`{ bestMatches: [] }`). Check for the empty state explicitly in addition to `success`.
 
+
 ## OAuth
 
 Currently only `google` requires OAuth. Users connect once; tokens are stored and auto-refreshed by the platform. Users can grant scopes incrementally (Gmail first, then Calendar, etc.) — the platform unions new scopes with previously granted ones so badges stay accurate.
+
+**There is no separate `google/auth-url` or `google/connect` endpoint.** To obtain an authUrl (e.g. for a "Connect Google" button), POST to any real `google/*` endpoint that needs the scope you want — the requiresOAuth response includes an authUrl built for that endpoint's scopes. Pick the endpoint that matches your UI's intent: `google/calendar-list-events` for a calendar feature, `google/gmail-list` for gmail read, `google/gmail-send` for gmail compose, `google/drive-list` for drive, etc. A "Connect Google" click handler and the load-data path can both target the same endpoint — the api-worker returns events when authorized and the requiresOAuth payload (with authUrl) when not, so one code path covers both.
+
+**Each `google/*` endpoint requests only its own scope.** Posting to `google/calendar-list-events` requests `calendar.events` only — it does not also request `gmail.send` even if your app needs both. The platform's incremental-consent model means scopes accumulate one feature at a time, not all at once.
+
+**Gate per-feature, never with an "all scopes ANDed" boolean.** The status endpoint returns per-scope flags (`calendar`, `gmail`, `gmailSend`, `gmailRead`, `drive`, `contacts`) precisely so UIs can render each feature as soon as its scope is granted. A single composite "isConnected = calendar && gmailSend" gate creates a deadlock: user grants calendar via the Connect button → status reports `calendar: true, gmailSend: false` → composite gate stays false → UI shows "not connected" → user can't reach the Send button that would request gmail.send → connection state is permanently stuck.
+
+```typescript
+// ❌ Deadlock pattern — user grants calendar, gate stays false, UI never advances.
+const isConnected = status?.google?.connected
+  && status?.google?.calendar
+  && status?.google?.gmailSend
+if (!isConnected) return <ConnectGoogleButton />
+
+// ✅ Per-feature gating — calendar UI appears the moment calendar is granted;
+//    gmail.send is requested lazily when the user clicks Send.
+{status?.google?.calendar && <EventsList onSendRecap={attemptSend} />}
+
+async function attemptSend(...) {
+  const result = await integration.post('google/gmail-send', {...})
+  const payload = (result.data ?? result) as Record<string, unknown>
+  if (payload?.requiresOAuth && typeof payload.authUrl === 'string') {
+    window.open(payload.authUrl as string, 'google-auth', 'width=500,height=600')
+    // After popup closes, refresh status and retry the send.
+  }
+}
+```
+
+Pattern: render each feature whose scope is granted; on actions that need a not-yet-granted scope, attempt the call, the requiresOAuth response carries an authUrl pre-built for exactly that missing scope, retry after consent. The platform unions newly granted scopes with previously granted ones, so per-feature acquisition compounds correctly.
 
 ### Error shape when OAuth is needed
 
