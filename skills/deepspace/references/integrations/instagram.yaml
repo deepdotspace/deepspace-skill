@@ -1,12 +1,3 @@
-# Endpoint specs for this integration.
-# Input schemas were initially derived from the api-worker's Zod schemas;
-# descriptions and output schemas were migrated from the prior Miyagi
-# McAPI.yaml where the endpoint has an analog. Fill in missing fields as
-# you touch each endpoint.
-#
-# Call pattern (all POST):  await integration.post('<integration>/<endpoint>', body)
-# Response envelope:        { success: true, data: ... } | { success: false, error: string }
-
 integration: instagram
 endpoint_count: 1
 usage_example: await integration.post('instagram/extract-content', { /* ...params */ })
