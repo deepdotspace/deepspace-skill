@@ -83,6 +83,13 @@ Full endpoint specs — input schemas, descriptions, output schemas — live in 
 
 Call pattern is always POST: `integration.post('<integration>/<endpoint>', body)`.
 
+**How to navigate these files to save context — read one level at a time.** The index is large (all 215 endpoints) and the per-integration YAMLs can each be hundreds of lines; loading them speculatively wastes the window.
+
+1. **Use `integrations.yaml` only to discover** which integration and endpoint name matches the task (search by description, then grab the exact `<integration>/<endpoint>` key). Do not keep the index loaded after you have the names.
+2. **Load exactly one `integrations/<name>.yaml`** — the single file covering the endpoint you're about to call — for the required body shape and output schema. Do not load multiple integration files at once.
+3. **If the app calls endpoints from several integrations, load them one at a time** as you reach each call site. The body/response shape of `openweathermap` has nothing to teach you about `exa`.
+4. **Do not load any integration YAML** for apps that don't call `integration.post(...)` at all — client-only apps with hooks and RBAC never need this directory.
+
 ## Response Format
 
 All endpoints return:
