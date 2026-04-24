@@ -50,22 +50,28 @@ If you can't fill a prompt, you don't understand the product well enough to desi
 
 Apply the **sentence test** at the end: if everything you wrote could describe any other product, rewrite.
 
-### 3. Read ONE inspiration archetype
+### 3. Read ONE inspiration archetype + its example file
 
 Load `landing-design/inspiration-gallery.md` — it's an index of 4 archetypes across different product domains. Pick the one whose *emotion* is closest to your direction (not the one whose product category matches). Read that one row and its "what to learn" paragraph. **Do not absorb all four** — you'll produce a mashup.
 
+Then open the corresponding example file at `landing-design/examples/0N-*.tsx` and read it end-to-end. Focus on the Design Direction block at the top — the lesson is *how a committed direction becomes concrete code*. **Do not import from the example** — it's a read-only teaching artifact and the grep gate will flag any `from.*landing-design/examples` import. Copy concepts, not files.
+
 ### 4. Compose the page
 
-Build section by section:
-- 1 nav (or none — some landing pages don't need one)
-- 1 hero (the commanding visual + 3–8 word headline)
-- 1–2 feature sections (never 3 identical cards — see rule #3)
-- 0–1 social proof (only if it earns its place)
-- 1 CTA
-- 1 footer
-- 0–N scroll/motion sections — only if your Direction calls for scroll choreography; a calm/quiet direction skips these entirely
+Build section by section. Load `landing-design/pattern-library.md` and pick:
+- 1 nav pattern (or none — some landing pages don't need one)
+- 1 hero pattern (the commanding visual + 3–8 word headline)
+- 1–2 feature patterns (never 3 identical cards — see rule #3)
+- 0–1 social proof pattern (only if it earns its place)
+- 1 CTA pattern
+- 1 footer pattern
+- 0–N scroll/motion patterns — only if your Direction calls for scroll choreography; a calm/quiet direction skips these entirely
 
-Each section serves the Design Direction. Copy structure from whatever source makes sense (the scaffolded sections in `.deepspace/features/landing/src/sections/`, component libraries, your own patterns), but **content and aesthetic come from the Direction**. The structure is scaffolding; your Direction is the soul.
+Adapt each pattern's content and visual tokens to serve your Direction. **The pattern is the structure; your Direction is the soul.**
+
+The scaffolded sections at `.deepspace/features/landing/src/sections/` are an alternative source — fine for a quick first pass, but:
+
+> **Scaffold audit note.** The scaffolded `LandingPage.tsx` and `primitives.tsx` (and `GlassCard`, `PlaceholderImage`, `BrowserMockup`, `SectionHeading`) ship with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, hardcoded `bg-emerald-400`, and a violet conic gradient — all of which fail the grep gate (rules #5 and #6). If you install the `landing` feature and use its sections or primitives, run the grep gate from the app root and replace every flagged line with semantic tokens (`bg-muted`, `border-border`, `bg-card`, `bg-primary/10`) before finishing. The patterns in `pattern-library.md` are already grep-clean.
 
 ### 5. Fill images, run the grep gate
 
@@ -139,6 +145,8 @@ Also verify by eye:
 - **`landing-design/design-direction.md`** — how to write a good Design Direction brief. Read this the first time you fill the block, or when the sentence test keeps rejecting what you write.
 - **`landing-design/style-tile.md`** — menus for the 6 Style Tile commits (color, type pair, theme, art direction, motion, voice). Open while filling the Style Tile — scan the relevant table, pick, move on.
 - **`landing-design/inspiration-gallery.md`** — the 4 archetypes. Read this to pick which one row is closest to your direction. Do NOT read all four.
+- **`landing-design/examples/0N-*.tsx`** — four worked example landing pages, one per archetype. Read exactly ONE after you've picked your archetype. Read-only reference — the grep gate flags imports from this folder.
+- **`landing-design/pattern-library.md`** — ~30 copy-pasteable TSX snippets organized by page section (nav, hero, features, social proof, CTA, footer, scroll/motion). Read after filling the Direction; pick one snippet per section; adapt content to serve your Direction.
 - **`landing-design/anti-ai-checklist.md`** — expanded hard rules + the full grep gate commands. Read this before finishing.
 
 ---

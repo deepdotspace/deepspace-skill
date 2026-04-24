@@ -378,7 +378,14 @@ Marketing pages are a separate surface from the authenticated app UI and a separ
 
 Skip it for the authenticated home page of a working app (that's `uiux.md` §1), small maintenance tweaks to an already-themed landing page, or apps without a marketing surface (signed-in-only productivity tools).
 
-`references/landing-design.md` is the entry point — it has the 5-step workflow, 14 hard rules, and a short grep gate. It fans out to four on-demand sub-references (`landing-design/design-direction.md`, `style-tile.md`, `inspiration-gallery.md`, `anti-ai-checklist.md`) for the detailed material — load each one only when you reach the step that needs it.
+`references/landing-design.md` is the entry point — it has the 5-step workflow, 14 hard rules, and a short grep gate. It fans out to on-demand sub-references for the detailed material — load each one only when you reach the step that needs it:
+
+- `landing-design/design-direction.md` — how to write the Direction brief.
+- `landing-design/style-tile.md` — menus for the 6 Style Tile commits.
+- `landing-design/inspiration-gallery.md` — pick ONE of 4 archetypes closest to your Direction.
+- `landing-design/examples/0N-*.tsx` — four worked example landing pages (read-only; do not import from). Read exactly ONE — the one matching the archetype you picked.
+- `landing-design/pattern-library.md` — ~30 copy-pasteable TSX snippets organized by section.
+- `landing-design/anti-ai-checklist.md` — expanded hard rules + the full grep gate commands.
 
 ## Testing
 

@@ -4,18 +4,26 @@ Four archetypal landing-page directions across radically different product domai
 
 ## Rules
 
-1. **Read only ONE row below.** Pick based on emotional adjacency, not product category. A cooking app might learn more from the dev-tool row if its tone is technical; a game might learn more from the cooking row if its tone is nostalgic. Don't absorb all four — you'll end up with a mashup.
-2. **Focus on how the direction becomes code**, not on copying layouts. The lesson is that every design choice in the example traces back to its Design Direction.
+1. **Read only ONE row below** AND **only ONE example file.** Pick based on emotional adjacency, not product category. A cooking app might learn more from the dev-tool row if its tone is technical; a game might learn more from the cooking row if its tone is nostalgic. Don't absorb all four — you'll end up with a mashup.
+2. **Focus on how the direction becomes code**, not on copying layouts. Open the example file for your chosen archetype and read the Design Direction block at the top. The lesson is that every design choice downstream traces back to what's written there.
 3. **Do NOT clone the layout.** Adapt the underlying idea. If the cooking example uses torn-paper dividers, your cooking app might use pressed-flower dividers — same *mechanism* (a signature SVG element that repeats), different *execution* (specific to your direction).
+4. **Do NOT import from the examples folder.** Each example file opens with a do-not-import comment. The grep gate in `anti-ai-checklist.md` flags `from.*landing-design/examples` — a hit is a bug. Copy concepts, not files.
 
 ## The four archetypes
 
-| # | Archetype | Emotion | Visual metaphor | Signature element | Style Tile shorthand |
+| # | Archetype | Emotion | Visual metaphor | Signature element | Example file |
 |---|---|---|---|---|---|
-| 01 | Cooking / warmth | Sunday kitchen warmth, nostalgic, tactile | A handwritten recipe card on a butcher-block table, morning light through a window | Torn-paper SVG section dividers | Warm cream + terracotta · Fraunces + Source Sans 3 · light · editorial · subtle drift · second-person, no em dashes, warm |
-| 02 | Developer tool / precision | Sharp, confident, technical, precise | A blinking cursor in a dark server room, code compiling in real time | A live terminal in the hero that types real commands with realistic variable timing | Slate + cyan accent · JetBrains Mono + Inter · dark · modern minimalism · mechanical · terse, no adjectives, verb-first |
-| 03 | Meditation / calm | Spacious calm, weightless, present | The horizon line at dawn, the pause between breaths | A breath circle pulsing at 4.5s per cycle as the hero centerpiece | Cream + sage · Cormorant + Lato · light · modern minimalism · stillness · lyrical, generous sentences, no urgency |
-| 04 | Children's storybook / playful | Playful, imaginative, tactile, safe | A paper cut-out diorama, crayon scribbles on construction paper | Hand-drawn SVG elements that wobble + paper grain texture overlay | Warm yellow + coral · Nunito + Nunito · light · hand-drawn illustrated · playful bouncy · second-person, short questions, joyful |
+| 01 | Cooking / warmth | Sunday kitchen warmth, nostalgic, tactile | A handwritten recipe card on a butcher-block table, morning light through a window | Torn-paper SVG section dividers | `examples/01-cooking-warmth.tsx` |
+| 02 | Developer tool / precision | Sharp, confident, technical, precise | A blinking cursor in a dark server room, code compiling in real time | A live terminal in the hero that types real commands with realistic variable timing | `examples/02-devtool-precision.tsx` |
+| 03 | Meditation / calm | Spacious calm, weightless, present | The horizon line at dawn, the pause between breaths | A breath circle pulsing at 4.5s per cycle as the hero centerpiece | `examples/03-meditation-calm.tsx` |
+| 04 | Children's storybook / playful | Playful, imaginative, tactile, safe | A paper cut-out diorama, crayon scribbles on construction paper | Hand-drawn SVG elements that wobble + paper grain texture overlay | `examples/04-kids-storybook.tsx` |
+
+**Style Tile shorthand per row** (the full tile lives at the top of each example file):
+
+- 01 — Warm cream + terracotta · Fraunces + Source Sans 3 · light · editorial · subtle drift · second-person, no em dashes, warm.
+- 02 — Near-black + cyan accent · IBM Plex Mono + Inter · dark · modern minimalism · mechanical · verb-first, no adjectives, max 10 words.
+- 03 — Cream + sage · Cormorant + Lato · light · modern minimalism · stillness · generous sentences, no urgency words.
+- 04 — Warm yellow + coral · Nunito only · light · hand-drawn illustrated · playful bouncy · second-person, short questions, joyful.
 
 ## How to pick
 
@@ -27,6 +35,17 @@ Read the four rows above. Ask: *which "emotion" column is closest to the emotion
 - Is your product playful, bright, imaginative, tactile, hand-crafted? → **04 kids-storybook**
 
 If none of the four feels close, pick the closest *metaphor* instead of closest emotion. If none of the metaphors feels close either, pick the one whose **signature element** has the most transferable *mechanism* (dividers, terminal, breath circle, wobble animation) — you can adapt the mechanism to your own context.
+
+## What to look for when reading the example file
+
+Once you've picked, open `examples/0N-*.tsx` and read in this order:
+
+1. **The Design Direction block at the top.** Read it slowly. Notice how each prompt is answered in *prose with concrete imagery*, not bullets. Notice how the sentence test would obviously fail for any other product. This is the quality bar you're aiming for in your own Direction.
+2. **The signature element implementation.** How is it built? Inline SVG? Styled divs? A framer-motion loop? This is the single thing that makes the page memorable — the mechanism is usually transferable even when your execution is completely different.
+3. **The typography + color commitments** in the Style Tile. Each example commits to a specific type pair and one accent — semantic tokens only, but radically different visual identities. This is the existence proof that "same token system" ≠ "same visual identity."
+4. **The motion personality.** Some examples move a lot, some barely move. The personality comes from the direction, not from "use framer-motion everywhere."
+
+After reading, close the example file and go compose your own page. **Don't keep the example open while you write** — you'll copy it.
 
 ## What to learn from each archetype
 
@@ -46,4 +65,9 @@ If none of the four matches your direction and you need a different reference, t
 
 ## What reference code NOT to rely on
 
-Don't clone the scaffolded landing feature's sections (`.deepspace/features/landing/`) verbatim. They're a pre-built skeleton of "typewriter hero + 9 section variants" — useful as structural scaffolding, not as a finished page. If your Direction is closer to archetype 01 (warm/editorial), you'll probably throw most of the scaffolded sections away and build your own from patterns that match — grain overlay, paper-dividers, asymmetric two-column body. If your Direction is closer to archetype 02 (dev-tool precision), the scaffolded FAQ accordion and testimonial carousel are probably both wrong. Direction > scaffold.
+Two failure modes, same root cause (skipping the Direction-first workflow):
+
+- **Don't clone the scaffolded landing feature's sections** (`.deepspace/features/landing/`) verbatim. They're a pre-built skeleton of "typewriter hero + 9 section variants" — useful as structural scaffolding, not as a finished page. If your Direction is closer to archetype 01 (warm/editorial), you'll probably throw most of the scaffolded sections away. If your Direction is closer to archetype 02 (dev-tool precision), the scaffolded FAQ accordion and testimonial carousel are probably both wrong. The scaffold also ships with rule-violating tokens (`bg-foreground/[X]`, hardcoded colors) that need cleanup — see the scaffold audit note in `landing-design.md`.
+- **Don't import from `landing-design/examples/`.** The examples are a teaching artifact. Copy-pasting from them produces "every cooking app is this cooking example" clone syndrome, which is exactly the failure mode the Direction-first workflow was designed to break. The grep gate catches illegal imports.
+
+Direction > scaffold > example. The Direction you commit to is the soul of the page. Patterns are structure. Examples are how other directions turned into structure for a different product.

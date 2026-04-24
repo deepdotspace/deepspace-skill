@@ -28,6 +28,8 @@ No hex (`#8b5cf6`), no Tailwind color names (`violet-400`, `indigo-500`, `amber-
 
 Patterns like `bg-foreground/[0.06]`, `text-foreground/[0.4]`, `border-foreground/[0.08]` are old-template tells. They come from trying to make muted variants by taking the foreground and reducing its opacity. Don't — the theme already has semantic tokens for this: `bg-muted`, `text-muted-foreground`, `border-border`, `bg-card`. Use them.
 
+> **Scaffold audit for rules #5 + #6.** The scaffolded `.deepspace/features/landing/src/LandingPage.tsx` and `primitives.tsx` ship with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, hardcoded `bg-emerald-400`, and a `rgba(139, 92, 246, 0.5)` conic gradient inside `GlassCard`, `PlaceholderImage`, `BrowserMockup`, `SectionHeading`, and the page shell. If you install the `landing` feature and reuse its primitives/sections, the grep gate WILL flag hits *inside the scaffold*. They're bugs to fix in your app's scaffolded copy, not false positives — every flagged line has a semantic-token replacement. The patterns in `pattern-library.md` and the files in `landing-design/examples/` are grep-clean; they primarily use the scaffold's clean primitives (`ScrollReveal`, `StaggerContainer`, `AnimatedStat`, `Typewriter`) and build card/image surfaces inline with semantic tokens.
+
 ### 7. Pick a font that's clear, elegant, and fits the product — never gimmicky
 
 Reason about the product's tone first, then pick a font that serves it. **Clarity and elegance always beat distinctiveness for distinctiveness' sake.** Inter, Montserrat, DM Sans, Manrope are valid headline picks when the product needs clarity over personality — they are deliberate choices, not defaults. Fraunces, Playfair Display, Cormorant, EB Garamond, Spectral for editorial / warm / premium. JetBrains Mono, IBM Plex Mono, Space Mono, IBM Plex Sans for technical / dev.
@@ -54,9 +56,12 @@ Headlines should be at least 3× the size of body text. Linear's hero is 72px ov
 
 The hero must have ONE thing that is unambiguously the centerpiece. Could be an animated React mockup, a full-bleed atmospheric background, a bold gradient environment, a signature element like a breath circle or a terminal. If the hero is "centered text on a flat background," the page is already failing before it loads.
 
-### 12. Never clone the scaffolded landing feature verbatim
+### 12. Never clone a reference verbatim (scaffold OR examples)
 
-If the app installed the `landing` feature (scaffolded sections: hero, features, testimonials, FAQ, CTA, footer), treat those as a **starting skeleton**, not a finished page. Almost every section will need to be replaced or heavily customized to serve your Design Direction. Shipping the scaffolded sections with placeholder copy swapped in is the same failure mode as shipping the "Your DeepSpace app is running" home page — it's the template, not the product.
+Two failure modes, same root cause — the agent skipped the Direction-first workflow and reached for a nearby template:
+
+1. **Shipping the scaffolded `landing` feature with copy swapped in.** Treat the scaffolded sections (hero, features, testimonials, FAQ, CTA, footer) as a skeleton, not a finished page. Shipping them with placeholder copy swapped in reproduces the "Your DeepSpace app is running" failure mode — template, not product.
+2. **Copy-pasting from `landing-design/examples/`.** The four example files are read-only teaching artifacts — they exist so you can learn how a direction becomes code, not so you can clone a file. The grep gate catches illegal imports. If you find yourself wanting to import from examples, stop — what you actually want is to pick a snippet from `pattern-library.md` and adapt it.
 
 ### 13. Animations must respect `prefers-reduced-motion`
 
@@ -107,6 +112,9 @@ grep -rniE "streamline your|transform your|cutting.edge|state.of.the.art|next.ge
 
 # ── Unfilled TODOs ───────────────────────────────────────────────────────────
 grep -rnE "TODO[: ]" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+
+# ── Illegal import from landing-design/examples/ (read-only reference) ──────
+grep -rn "from.*landing-design/examples" --include="*.tsx" src/ 2>/dev/null
 ```
 
 **Any hit is a bug to fix before shipping.** If the grep gate is clean but you're still unsure, run the eyeball checks:
