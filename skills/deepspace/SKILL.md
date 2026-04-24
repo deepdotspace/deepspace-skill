@@ -24,7 +24,7 @@ Build real-time collaborative apps on Cloudflare Workers. One npm package: SQLit
 
 ```bash
 # Published SDK (when available)
-npx deepspace create <app-name>
+npm create deepspace <app-name>
 
 # Local SDK (for development — replace path with your local SDK root)
 <local-sdk-path>/packages/create-deepspace/dist/index.js <app-name> --local <local-sdk-path>
