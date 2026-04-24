@@ -166,8 +166,11 @@ The `landing` feature scaffolds a page shell with pre-built sections (hero, feat
 ### Step 7: Run Locally
 
 ```bash
+npx deepspace login   # only required the first time (or after a session expires) — opens browser
 npx deepspace dev     # starts all workers + Vite with HMR on localhost:5173
 ```
+
+**First run of `dev` requires login.** The CLI mints a fresh `APP_OWNER_JWT` into `.dev.vars` using your identity, and exits immediately with `Not logged in. Run \`deepspace login\` first.` if there's no stored session. If you see that exact string, don't debug or re-run the command in a loop — run `npx deepspace login` once (browser OAuth, one-time), then retry `npx deepspace dev`. The same login also satisfies `npx deepspace test-accounts create` (Step 8) and `npx deepspace deploy` (Step 9); you only re-login if `~/.deepspace/session` is wiped or the session expires.
 
 ### Step 8: Test-Driven Verification (run when code changes)
 
@@ -194,11 +197,10 @@ For deeper surface — `tests/helpers/` API, `npx deepspace test-accounts` setup
 
 ### Step 9: Deploy
 
-On an **initial build**, load `references/uiux.md` §5 and run the pre-deploy checklist (home replaced, theme updated, no browser-default primitives, mutations fire toasts — see **UI/UX Polish** below for the canonical trigger list). On **follow-up deploys** where those were already verified, skip straight to the commands below.
+On an **initial build**, load `references/uiux.md` §5 and run the pre-deploy checklist (home replaced, theme updated, no browser-default primitives, mutations fire toasts — see **UI/UX Polish** below for the canonical trigger list). On **follow-up deploys** where those were already verified, skip straight to the command below.
 
 ```bash
-npx deepspace login  # opens browser — the ONE human step in the whole flow
-npx deepspace deploy  # deploys to <app-name>.app.space
+npx deepspace deploy  # deploys to <app-name>.app.space (re-run `npx deepspace login` if session has expired)
 ```
 
 ## Two Imports
