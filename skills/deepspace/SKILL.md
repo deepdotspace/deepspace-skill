@@ -265,6 +265,9 @@ import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'
 ### Core
 ```typescript
 const { records } = useQuery<Item>('items', { where: { status: 'published' }, orderBy: 'createdAt' })
+// Each record is an ENVELOPE: { recordId, data: { ...your Item fields }, createdBy, createdAt, updatedAt }.
+// Access fields through `.data`, never flat: records.map(r => <li key={r.recordId}>{r.data.title}</li>)
+// To edit, pass r.recordId to put/remove: put(r.recordId, { ...r.data, title: 'new' })
 const { create, put, remove } = useMutations<Item>('items')
 // create returns Promise<string> (the new recordId) — capture it to navigate:
 //   const id = await create({ title: 'New' }); navigate(`/items/${id}`)

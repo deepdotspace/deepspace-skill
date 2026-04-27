@@ -42,7 +42,7 @@ import { ... } from 'deepspace/worker'   // Cloudflare Worker
 - `ScopeRegistryProvider` — required once near the root if using shared scopes.
 
 **Hooks**
-- `useQuery<T>(collection, options?)` — `{ records, loading, error }`. Options: `where`, `orderBy`, `limit`.
+- `useQuery<T>(collection, options?)` — `{ records, status, error }` where `status: 'loading' | 'ready' | 'error'`. Options: `where`, `orderBy`, `orderDir`, `limit`. **Each record is an envelope** — `{ recordId, data: T, createdBy, createdAt, updatedAt }`. User fields live under `.data`: write `r.data.title`, never `r.title`. Use `r.recordId` for keys and to pass into `put` / `remove`. Common bug: `records.map(r => r.title)` returns `undefined` for every row (TS catches it; runtime renders empty list).
 - `useMutations<T>(collection)` — `{ create, put, remove, createConfirmed, putConfirmed, removeConfirmed }`. **`create` returns `Promise<string>`** (the new recordId — capture it for navigation: `const id = await create({...}); navigate(\`/items/${id}\`)`). `put` and `remove` return `Promise<void>`. The `*Confirmed` variants resolve only after the server has acknowledged the write; the plain ones return immediately after the optimistic local apply.
 - `useUsers()` — all users in the room.
 - `useUserLookup()` — map-style lookup by userId.
