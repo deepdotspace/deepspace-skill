@@ -58,16 +58,17 @@ Then open the corresponding example file at `landing-design/examples/0N-*.tsx` a
 
 ### 4. Compose the page
 
-Build section by section. Load `landing-design/pattern-library.md` and pick:
-- 1 nav pattern (or none — some landing pages don't need one)
-- 1 hero pattern (the commanding visual + 3–8 word headline)
-- 1–2 feature patterns (never 3 identical cards — see rule #3)
-- 0–1 social proof pattern (only if it earns its place)
-- 1 CTA pattern
-- 1 footer pattern
-- 0–N scroll/motion patterns — only if your Direction calls for scroll choreography; a calm/quiet direction skips these entirely
+Build section by section. Load `landing-design/pattern-library.md` first — it's a tiny index (~50 lines) that lists which sub-files to load for each page section. Then load **only** the sub-file(s) you need:
 
-Adapt each pattern's content and visual tokens to serve your Direction. **The pattern is the structure; your Direction is the soul.**
+- 1 nav pattern → `landing-design/pattern-library/nav.md` (or skip — some landing pages don't need a nav)
+- 1 hero pattern → `landing-design/pattern-library/hero.md`
+- 1–2 feature patterns → `landing-design/pattern-library/features.md` (never 3 identical cards — see rule #3)
+- 0–1 social proof pattern → `landing-design/pattern-library/social-proof.md` (only if it earns its place)
+- 1 CTA pattern → `landing-design/pattern-library/cta.md`
+- 1 footer pattern → `landing-design/pattern-library/footer.md`
+- 0–N scroll/motion patterns → `landing-design/pattern-library/scroll-motion.md` (only if your Direction calls for scroll choreography; a calm/quiet direction skips these entirely)
+
+A typical landing page reaches for 4–5 of these files. Don't load all 7. Adapt each pattern's content and visual tokens to serve your Direction. **The pattern is the structure; your Direction is the soul.**
 
 The scaffolded sections at `.deepspace/features/landing/src/sections/` are an alternative source — fine for a quick first pass, but:
 
@@ -146,7 +147,8 @@ Also verify by eye:
 - **`landing-design/style-tile.md`** — menus for the 6 Style Tile commits (color, type pair, theme, art direction, motion, voice). Open while filling the Style Tile — scan the relevant table, pick, move on.
 - **`landing-design/inspiration-gallery.md`** — the 4 archetypes. Read this to pick which one row is closest to your direction. Do NOT read all four.
 - **`landing-design/examples/0N-*.tsx`** — five worked example landing pages, one per archetype. Read exactly ONE after you've picked your archetype. Read-only reference — the grep gate flags imports from this folder. (See `inspiration-gallery.md` for the picking guide and which example also covers the floating-pill / FAQ / bento patterns.)
-- **`landing-design/pattern-library.md`** — ~30 copy-pasteable TSX snippets organized by page section (nav, hero, features, social proof, CTA, footer, scroll/motion). Read after filling the Direction; pick one snippet per section; adapt content to serve your Direction.
+- **`landing-design/pattern-library.md`** — small index (~50 lines) of the section-specific pattern files. Read this first to know which sub-files to load.
+- **`landing-design/pattern-library/{nav,hero,features,social-proof,cta,footer,scroll-motion}.md`** — copy-pasteable TSX snippets, one file per page section. Load only the sub-files you need (typically 4–5 of 7).
 - **`landing-design/anti-ai-checklist.md`** — expanded hard rules + the full grep gate commands. Read this before finishing.
 
 ---

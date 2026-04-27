@@ -110,6 +110,20 @@ A smoke test that only loads `/` (or the home page) is not enough. If a route is
 
 Passing a smoke test where the detail page silently shows "Poll not found" is the failure mode that shipped the group-poll regression. A "page loads without JS errors" assertion is insufficient — assert that the data that should be there **is** there.
 
+## Auth-state coverage — public vs gated routes
+
+The scaffold ships the **mixed** auth config (public landing + gated app via `(protected)/_layout.tsx`). Every route falls in one of three buckets — each needs a different smoke assertion:
+
+| Route lives at | Smoke assertion |
+|---|---|
+| `src/pages/<name>.tsx` (public) | `signed-out` visitor sees real content + `[data-testid="auth-overlay"]` has count `0`. If overlay leaks, the route is accidentally gated. |
+| `src/pages/(protected)/<name>.tsx` (gated) | `signed-out` visitor sees `[data-testid="auth-overlay"]` visible AND the page's real content is NOT in the DOM. `signed-in` visitor sees real content + zero overlays. |
+| Any route after a sign-out from inside `(protected)/` | After clicking Sign out, URL navigates to `redirectOnSignOut` (default `'/'`, which usually redirects on to `/home`). Assert the URL change happened AND the overlay didn't appear. The full-page `window.location.replace` is the SDK's safe-redirect; testing it catches the regression where users got stranded staring at the overlay. |
+
+The `[data-testid="auth-overlay"]` attribute is on the SDK's `<AuthOverlay/>` — both the AuthGate's default fallback and the standalone usage. Querying for it is more reliable than text matching ("Sign in" appears in many places).
+
+If you customize a `<AuthGate fallback={<TeaserPage/>}/>` to use a non-default fallback, swap the assertion to a stable selector inside your teaser instead.
+
 ## Proactive Test Authoring
 
 Write and update tests **as you build**, not after. The Step 8 checklist in `SKILL.md` is the canonical trigger list — each rule names a condition on the code and a required test file. Don't duplicate those rules here; instead, treat this section as the worked-example elaboration:

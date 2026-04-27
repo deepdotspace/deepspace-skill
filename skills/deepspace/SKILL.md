@@ -80,20 +80,20 @@ For messaging, add `CHANNELS_SCHEMA`, `MESSAGES_SCHEMA`, `REACTIONS_SCHEMA` (and
 
 ### Step 3: Providers Are Already Wired — Extend, Don't Replace
 
-The scaffolded `src/pages/_app.tsx` already ships the full provider stack. The shape is:
+The scaffolded `src/pages/_app.tsx` ships the global provider stack. The shape is:
 
 ```tsx
 // App() returns:
 <ToastProvider>                           // from ../components/ui (local, NOT 'deepspace')
   <DeepSpaceAuthProvider>
-    <AuthGate>                            // local component in _app.tsx; waits for useAuth().isLoaded
-      <Navigation />                      // built-in Sign In + AuthOverlay + avatar dropdown + sign-out
-      <Outlet />
-    </AuthGate>
+    <AuthBoot>                            // local helper: shows loader while auth resolves, then mounts data layer
+      <Navigation />
+      <main><Outlet /></main>
+    </AuthBoot>
   </DeepSpaceAuthProvider>
 </ToastProvider>
 
-// AuthGate internally wraps its children:
+// AuthBoot mounts the data layer for everyone (signed-in OR signed-out):
 <RecordProvider allowAnonymous>
   <RecordScope roomId={SCOPE_ID} schemas={schemas} appId={APP_NAME}>
     {children}
@@ -101,36 +101,62 @@ The scaffolded `src/pages/_app.tsx` already ships the full provider stack. The s
 </RecordProvider>
 ```
 
+`AuthBoot` is local to `_app.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for `useAuth().isLoaded` so the data layer always mounts with valid auth state, and then renders children regardless of sign-in status. Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default.
+
 Do not rewrite `_app.tsx`. The defaults already:
 - Wrap the tree in the scaffold's local `ToastProvider` (import `useToast` from `../components/ui`, not `deepspace`).
-- Render routes for both signed-in and signed-out users — unauthenticated users just see routes that don't call authed hooks.
+- Render routes for both signed-in and signed-out users.
 - Expose a Sign In button in `Navigation.tsx` that opens `<AuthOverlay onClose={...}/>` (GitHub + Google + email/password) and a sign-out option in the avatar dropdown.
 
-Extend by adding schemas (Step 2), pages (Step 6), and nav entries (`src/nav.ts`). To share data across DeepSpace apps (e.g., the email-handle workspace), pass `sharedScopes` to the existing `<RecordScope>` — but see "Cross-app shared scopes" under Architecture below, because the scaffolded worker needs a small edit for that to actually hit the platform worker's DO.
+Extend by adding schemas (Step 2), pages (Step 6), and nav entries (`src/nav.ts`). To share data across DeepSpace apps (e.g., the email-handle workspace), pass `sharedScopes` to the existing `<RecordScope>` — but see "Cross-app shared scopes" under Architecture below.
 
-### Step 4: Auth — When to Leave the Scaffold Alone vs. Gate the App
+### Step 4: Auth — Three Configurations (Public / Gated / Mixed)
 
-The scaffold's Sign-In-button-in-nav pattern is the right default for any app with public content (landing, public posts, published items). Leave it alone.
+Auth gating is route-scoped via `<AuthGate>` from `'deepspace'`. The scaffold ships the **mixed** config by default (public landing + gated app). Three patterns, pick whichever fits the product:
 
-**Only override** when the app must be fully signed-in-only (personal task board, team-only board). In that case, render `AuthOverlay` non-dismissable and gate the real UI in the page that would otherwise show:
+**1. Fully public** — every page reachable signed-out. Don't import `<AuthGate>` anywhere; rely on `RecordProvider allowAnonymous` (already on by default in `_app.tsx`).
+
+**2. Fully gated** — every page requires sign-in. Wrap the tree in `_app.tsx` with `<AuthGate>` and drop `allowAnonymous`:
 
 ```tsx
-import { useAuth, AuthOverlay } from 'deepspace'
-
-export default function HomePage() {
-  const { isSignedIn, isLoaded } = useAuth()
-  if (!isLoaded) return <LoadingSpinner />
-  if (!isSignedIn) return <AuthOverlay />    // no onClose → user can't dismiss
-  return <Dashboard />
-}
+// src/pages/_app.tsx
+<DeepSpaceAuthProvider>
+  <AuthGate>
+    <RecordProvider>{/* no allowAnonymous — nothing public */}
+      <RecordScope ...>
+        <Navigation />
+        <Outlet />
+      </RecordScope>
+    </RecordProvider>
+  </AuthGate>
+</DeepSpaceAuthProvider>
 ```
 
-Rules either way:
-- Use `useAuth().isSignedIn` for auth gating (session-based, updates immediately). `useUser()` loads async and causes a flash.
-- `<AuthOverlay/>` auto-hides when signed in (returns `null`), so dropping `onClose` is safe when you also gate with `!isSignedIn`.
+**3. Mixed (default)** — public pages live at `src/pages/<name>.tsx`; gated pages go inside the `(protected)/` generouted route group. The scaffolded `src/pages/(protected)/_layout.tsx` applies `<AuthGate>` once for everything inside:
+
+```
+src/pages/
+  home.tsx                  ← public (/home)
+  landing.tsx               ← public (/landing)
+  (protected)/
+    _layout.tsx             ← <AuthGate><Outlet /></AuthGate>
+    settings.tsx            ← gated (/settings)
+    dashboard.tsx           ← gated (/dashboard)
+```
+
+Adding a new gated page is a one-file change: drop it inside `(protected)/`. The folder name is wrapped in literal parentheses — generouted treats it as a route group that does NOT appear in the URL.
+
+**`<AuthGate>` props:**
+- `fallback` — UI shown to signed-out users (default: SDK's frosted-glass `<AuthOverlay/>`). Pass any React node — e.g., `fallback={<TeaserPage />}` for a custom signed-out UI.
+- `redirectOnSignOut` — where the user lands when they sign out from inside the gate (default `'/'`). Triggers a full page reload so cached state can't leak into the signed-out view.
+
+**Rules either way:**
+- Use `useAuth().isSignedIn` for auth-state checks in components (session-based, updates immediately). `useUser()` loads async and causes a flash.
+- `<AuthGate>` controls the **UI layer** — children don't mount until signed in. `RecordProvider allowAnonymous` controls the **data layer** — server accepts unsigned client connections. Inside an `<AuthGate>` subtree the user is always signed in, so `allowAnonymous` is moot there.
 - Don't add a second sign-out — the avatar dropdown in `Navigation.tsx` already calls `signOut()`.
-- **If the app requires sign-in, a sign-out control is non-negotiable.** The scaffold's avatar dropdown provides it. If you replace `Navigation.tsx` with a custom header/dropdown, the replacement must still call `signOut()` from `deepspace` somewhere reachable when signed in (avatar menu, settings page, etc.). Apps without a logout affordance are broken UX.
+- **If the app requires sign-in, a sign-out control is non-negotiable.** Replace-with-care: any custom `Navigation.tsx` must still call `signOut()` from `deepspace` somewhere reachable when signed in.
 - Don't rewrite `Navigation.tsx` just to theme it — edit tokens in `src/styles.css` (Step 5).
+- See `docs/auth/gating-routes.md` in the SDK repo for the canonical reference.
 
 ### Step 5: Pick a Theme
 
@@ -138,12 +164,14 @@ Before building pages on an **initial build**, rewrite the `@theme` block in `sr
 
 ### Step 6: Build Pages and Features
 
-Pages go in `src/pages/` — generouted scans this directory for file-based routing.
+Pages go in `src/pages/` — generouted scans this directory for file-based routing. Files outside `(protected)/` are public; files inside it require sign-in (see Step 4).
 
 ```
-src/pages/home.tsx    → /home
-src/pages/items.tsx   → /items
-src/pages/_app.tsx    → layout wrapper (providers + nav)
+src/pages/home.tsx                    → /home          (public)
+src/pages/items.tsx                   → /items         (public)
+src/pages/(protected)/dashboard.tsx   → /dashboard     (gated)
+src/pages/(protected)/settings.tsx    → /settings      (gated)
+src/pages/_app.tsx                    → layout wrapper (providers + nav)
 ```
 
 Features are reference implementations in `.deepspace/features/` (scaffolded into every app). To add one:
@@ -189,7 +217,7 @@ Tests are the primary way to verify and debug code changes. The scaffolded tests
 
 1. **Apply the extension checklist to what you changed.** Each rule is a hard requirement — if the condition is true, the test update is not optional:
    - **Added a schema?** → `smoke.spec.ts` CRUD happy path is **required** (create → read → edit → delete for a signed-in user).
-   - **Added or edited a route, page, nav item, or top-level UI (landing, gallery, dashboard, settings)?** → `smoke.spec.ts` page-load with a **real-content** assertion is **required** (assert specific content that should be there, not just "no crash" — see route-coverage rule in `references/testing.md`).
+   - **Added or edited a route, page, nav item, or top-level UI (landing, gallery, dashboard, settings)?** → `smoke.spec.ts` page-load with a **real-content** assertion is **required** (assert specific content that should be there, not just "no crash" — see route-coverage rule in `references/testing.md`). **For routes inside `src/pages/(protected)/`** (gated by `<AuthGate>`): also assert the two-state behavior — signed-out visitor sees `[data-testid="auth-overlay"]`, real content is NOT in the DOM; signed-in visitor sees real content, no overlay. **For public landing pages**: assert `[data-testid="auth-overlay"]` has count `0` to catch accidentally-protected routes. See `references/testing.md` § "Auth-state coverage" for the full table.
    - **Added a schema with `visibilityField`, or permissions containing `'public'`, `'shared'`, `'team'`, or `'own'`?** → `collab.spec.ts` two-user assertion is **required** (user A acts, user B sees the effect).
    - **Called `useYjs*`, `useMessages`, `useReactions`, `usePresence`, `useCanvas`, or any hook that syncs state across clients?** → `collab.spec.ts` two-user assertion is **required**.
    - **Added or edited a worker route in `worker.ts`, a server action, `/api/ai/chat`, a cron handler, any `integration.post(...)` call site, or any UI surface whose access depends on an HTTP-enforced auth/role check (e.g., an admin-only button calling `/api/actions/<name>`, even if the route itself wasn't edited)?** → `api.spec.ts` assertion is **required**. For integration calls, POST to `/api/integrations/<endpoint>` with the same body the app uses and assert the envelope comes back `success: true` with the shape your UI consumes — this locks the contract with the api-worker in the same session and catches wrong endpoint names, the #1 failure mode for integration-heavy apps. For routes/actions, assert status codes, response shape, and auth gating — including the negative path (unauthenticated or wrong-role caller gets 401/403) and other error cases (bad input, missing resources).
@@ -384,7 +412,7 @@ Skip it for the authenticated home page of a working app (that's `uiux.md` §1),
 - `landing-design/style-tile.md` — menus for the 6 Style Tile commits.
 - `landing-design/inspiration-gallery.md` — pick ONE of 5 archetypes closest to your Direction.
 - `landing-design/examples/0N-*.tsx` — five worked example landing pages (read-only; do not import from). Read exactly ONE — the one matching the archetype you picked.
-- `landing-design/pattern-library.md` — ~30 copy-pasteable TSX snippets organized by section.
+- `landing-design/pattern-library.md` + `landing-design/pattern-library/{nav,hero,features,social-proof,cta,footer,scroll-motion}.md` — small index pointing at 7 section-specific snippet files. Load the index, then only the section files you need.
 - `landing-design/anti-ai-checklist.md` — expanded hard rules + the full grep gate commands.
 
 ## Testing

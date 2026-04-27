@@ -149,9 +149,10 @@ function FloatingPillNav() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  // navigates to the scaffolded authenticated home; the route exists in any
-  // DeepSpace-scaffolded app. If you drop this file into a standalone harness
-  // without a `/home` route, this will silently no-op — that's expected.
+  // The scaffold's `/home` is public by default. To force sign-in on click,
+  // either swap to a `/(protected)/<page>` route or replace this with a
+  // useState-driven `<AuthOverlay onClose={...} />` open. In a standalone
+  // harness without `/home` routed, this silently no-ops — expected.
   const enterApp = () => { markLandingSeen(); navigate('/home') }
 
   return (
