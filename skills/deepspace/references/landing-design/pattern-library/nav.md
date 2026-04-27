@@ -2,6 +2,8 @@
 
 6 patterns. Pick ONE that fits your Direction. See `pattern-library.md` for the shared rules + import conventions; the patterns below assume those.
 
+> **Before any of these patterns will look right:** the scaffolded `_app.tsx` renders the app's global `<Navigation />` above every route. You must hide it on the landing route or you'll have two stacked navs (landing-page chrome on top of app chrome — the #1 telltale of a bolted-on landing). The required `_app.tsx` patch is in `references/landing-design.md` § "Hide the global Navigation on the landing route" — do this **before** dropping in any pattern below.
+
 ---
 
 ## N1 — Dual-state floating pill (RECOMMENDED for SaaS / consumer products)

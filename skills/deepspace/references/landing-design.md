@@ -19,6 +19,39 @@ Two paths:
 
 Either path, the rest of this workflow is the same.
 
+#### Hide the global Navigation on the landing route — REQUIRED
+
+The scaffolded `_app.tsx` always renders the app's `<Navigation />` (the top bar with Home / Settings / Sign In) above the route's `<Outlet />`. That means stacking your landing's own nav (or your no-nav decision) **on top of** the global app chrome — landing chrome on top of app chrome reads less polished and is the #1 telltale that a landing was bolted on without thought.
+
+Patch `src/pages/_app.tsx` with a route-aware conditional. This is the **one acceptable edit** to `_app.tsx` (see SKILL.md Step 3):
+
+```tsx
+// src/pages/_app.tsx
+import { useLocation } from 'react-router-dom'
+
+export default function App() {
+  const { pathname } = useLocation()
+  const isLanding = pathname === '/' || pathname === '/landing'  // adjust to wherever your landing route lives
+
+  return (
+    <ToastProvider>
+      <DeepSpaceAuthProvider>
+        <AuthBoot>
+          <div className="flex h-screen flex-col bg-background overflow-hidden">
+            {!isLanding && <Navigation />}
+            <main className="flex-1 overflow-y-auto min-h-0">
+              <Suspense fallback={...}><Outlet /></Suspense>
+            </main>
+          </div>
+        </AuthBoot>
+      </DeepSpaceAuthProvider>
+    </ToastProvider>
+  )
+}
+```
+
+The landing page now owns the viewport. If you don't make this edit, every nav pattern in `pattern-library/nav.md` will look stacked-on rather than integrated — that's the most common landing-page regression.
+
 ### 2. Fill the Design Direction block BEFORE any JSX
 
 At the top of `src/pages/landing.tsx`, write a prose block with two halves: a 6-prompt **brief** (product, emotion, visual metaphor, three references, signature element, hero visual) and a 6-token **Style Tile** (color, type pair, theme, art direction, motion personality, voice). The brief is prose. The Style Tile is six one-line commitments.

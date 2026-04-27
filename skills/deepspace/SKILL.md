@@ -110,6 +110,18 @@ Do not rewrite `_app.tsx`. The defaults already:
 
 Extend by adding schemas (Step 2), pages (Step 6), and nav entries (`src/nav.ts`). To share data across DeepSpace apps (e.g., the email-handle workspace), pass `sharedScopes` to the existing `<RecordScope>` — but see "Cross-app shared scopes" under Architecture below.
 
+**One exception — landing pages only:** if (and only if) you're building a public landing page, you must conditionally hide the global `<Navigation />` on the landing route(s) so your landing's own nav (or no-nav) owns the viewport. The default scaffold stacks Navigation above every `<Outlet />`, which would put landing-page chrome on top of app chrome. The fix is a one-liner with `useLocation()` from `react-router-dom`:
+
+```tsx
+import { useLocation } from 'react-router-dom'
+// inside App(), above the existing markup:
+const isLanding = useLocation().pathname === '/' || useLocation().pathname === '/landing'
+// then in the layout:
+{!isLanding && <Navigation />}
+```
+
+That's the entire edit. The full landing-page workflow (Direction → Style Tile → archetype → patterns → grep gate) lives in `references/landing-design.md` — only load it when actually building a landing page (see triggers under **Landing Page Design** below).
+
 ### Step 4: Auth — Three Configurations (Public / Gated / Mixed)
 
 Auth gating is route-scoped via `<AuthGate>` from `'deepspace'`. The scaffold ships the **mixed** config by default (public landing + gated app). Three patterns, pick whichever fits the product:
