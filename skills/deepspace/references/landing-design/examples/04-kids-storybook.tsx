@@ -138,7 +138,7 @@ function Hero() {
         <span className="font-sans font-bold text-2xl text-foreground">Story Box</span>
         <button
           onClick={() => { markLandingSeen(); navigate('/home') }}
-          className="font-sans text-sm text-foreground/80 hover:text-foreground"
+          className="font-sans text-sm text-muted-foreground hover:text-foreground"
         >
           Open the app
         </button>
@@ -158,7 +158,7 @@ function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="mt-5 font-sans text-lg text-foreground/75 max-w-md"
+            className="mt-5 font-sans text-lg text-muted-foreground max-w-md"
           >
             Tiny picture books your kid picks the theme for. Seven pages, every night, all yours.
           </motion.p>
@@ -176,7 +176,7 @@ function Hero() {
             >
               Start tonight&rsquo;s story
             </motion.button>
-            <span className="font-sans text-sm text-foreground/60">or tap a dinosaur ↓</span>
+            <span className="font-sans text-sm text-muted-foreground">or tap a dinosaur ↓</span>
           </motion.div>
         </div>
 
@@ -206,7 +206,7 @@ function HowItWorks() {
   const steps = [
     { n: '1', title: 'Pick tonight&rsquo;s thing.', body: 'Dinos. Space. The cat. Whatever they just asked about.', bg: 'bg-primary/25' },
     { n: '2', title: 'We make a little book.', body: 'Seven pages, short words, pictures on every page.', bg: 'bg-accent/35' },
-    { n: '3', title: 'You read. They trace.', body: 'Finger on the words. Giggle. Next page.', bg: 'bg-foreground/5' },
+    { n: '3', title: 'You read. They trace.', body: 'Finger on the words. Giggle. Next page.', bg: 'bg-card' },
   ]
   return (
     <section className="relative max-w-6xl mx-auto px-6 py-24">
@@ -226,7 +226,7 @@ function HowItWorks() {
                 {s.n}
               </div>
               <h3 className="mt-4 font-sans font-bold text-2xl text-foreground" dangerouslySetInnerHTML={{ __html: s.title }} />
-              <p className="mt-2 font-sans text-foreground/75">{s.body}</p>
+              <p className="mt-2 font-sans text-muted-foreground">{s.body}</p>
             </motion.div>
           </ScrollReveal>
         ))}
@@ -241,7 +241,7 @@ function ProofLine() {
     <section className="max-w-4xl mx-auto px-6 py-20 text-center">
       <ScrollReveal>
         <p className="font-sans font-extrabold text-7xl md:text-8xl text-primary">7 pages</p>
-        <p className="mt-3 font-sans text-foreground/70 text-lg">
+        <p className="mt-3 font-sans text-muted-foreground text-lg">
           That&rsquo;s it. Then the app goes away and you both go to sleep.
         </p>
       </ScrollReveal>
@@ -278,7 +278,7 @@ function CTA() {
 function Footer() {
   return (
     <footer className="max-w-6xl mx-auto px-6 py-8 text-center">
-      <p className="font-sans text-xs text-foreground/60">
+      <p className="font-sans text-xs text-muted-foreground">
         Story Box · made for someone&rsquo;s bedroom at 7:30 PM
       </p>
     </footer>
