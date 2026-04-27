@@ -1,15 +1,15 @@
 # Inspiration Gallery
 
-Four archetypal landing-page directions across radically different product domains. They exist to prove one thing: **landing pages look different per product when the designer commits to a specific direction**. Pick the one whose *emotion* is closest to the direction you've committed to, and let its Style Tile + signature element inform your own — without cloning the page.
+Five archetypal landing-page directions across radically different product domains. They exist to prove one thing: **landing pages look different per product when the designer commits to a specific direction**. Pick the one whose *emotion* is closest to the direction you've committed to, and let its Style Tile + signature element inform your own — without cloning the page.
 
 ## Rules
 
-1. **Read only ONE row below** AND **only ONE example file.** Pick based on emotional adjacency, not product category. A cooking app might learn more from the dev-tool row if its tone is technical; a game might learn more from the cooking row if its tone is nostalgic. Don't absorb all four — you'll end up with a mashup.
+1. **Read only ONE row below** AND **only ONE example file.** Pick based on emotional adjacency, not product category. A cooking app might learn more from the dev-tool row if its tone is technical; a game might learn more from the cooking row if its tone is nostalgic. Don't absorb all five — you'll end up with a mashup.
 2. **Focus on how the direction becomes code**, not on copying layouts. Open the example file for your chosen archetype and read the Design Direction block at the top. The lesson is that every design choice downstream traces back to what's written there.
 3. **Do NOT clone the layout.** Adapt the underlying idea. If the cooking example uses torn-paper dividers, your cooking app might use pressed-flower dividers — same *mechanism* (a signature SVG element that repeats), different *execution* (specific to your direction).
 4. **Do NOT import from the examples folder.** Each example file opens with a do-not-import comment. The grep gate in `anti-ai-checklist.md` flags `from.*landing-design/examples` — a hit is a bug. Copy concepts, not files.
 
-## The four archetypes
+## The five archetypes
 
 | # | Archetype | Emotion | Visual metaphor | Signature element | Example file |
 |---|---|---|---|---|---|
@@ -17,6 +17,7 @@ Four archetypal landing-page directions across radically different product domai
 | 02 | Developer tool / precision | Sharp, confident, technical, precise | A blinking cursor in a dark server room, code compiling in real time | A live terminal in the hero that types real commands with realistic variable timing | `examples/02-devtool-precision.tsx` |
 | 03 | Meditation / calm | Spacious calm, weightless, present | The horizon line at dawn, the pause between breaths | A breath circle pulsing at 4.5s per cycle as the hero centerpiece | `examples/03-meditation-calm.tsx` |
 | 04 | Children's storybook / playful | Playful, imaginative, tactile, safe | A paper cut-out diorama, crayon scribbles on construction paper | Hand-drawn SVG elements that wobble + paper grain texture overlay | `examples/04-kids-storybook.tsx` |
+| 05 | SaaS / clarity | The Friday-afternoon recap that lets the laptop close | A one-page-per-week paper folio in a manager's bottom drawer | An animated bento dashboard mockup that runs once on entry: chart draws itself, status flips, recap paragraph types in | `examples/05-saas-clarity.tsx` |
 
 **Style Tile shorthand per row** (the full tile lives at the top of each example file):
 
@@ -24,17 +25,21 @@ Four archetypal landing-page directions across radically different product domai
 - 02 — Near-black + cyan accent · IBM Plex Mono + Inter · dark · modern minimalism · mechanical · verb-first, no adjectives, max 10 words.
 - 03 — Cream + sage · Cormorant + Lato · light · modern minimalism · stillness · generous sentences, no urgency words.
 - 04 — Warm yellow + coral · Nunito only · light · hand-drawn illustrated · playful bouncy · second-person, short questions, joyful.
+- 05 — Warm off-white + ink-blue + moss-green status · Inter + IBM Plex Mono · light · bento-modular with editorial restraint · subtle drift · declarative, second-person, max 14 words, no exclamation points.
+
+**Example 05 also doubles as the worked reference for the N1 dual-state floating-pill nav with active-section highlighting + FAQ accordion + bento hero with animated React mockup** — three patterns common enough in SaaS landings that having a worked composition saves you re-deriving them.
 
 ## How to pick
 
-Read the four rows above. Ask: *which "emotion" column is closest to the emotion I committed to in my Design Direction?*
+Read the five rows above. Ask: *which "emotion" column is closest to the emotion I committed to in my Design Direction?*
 
 - Is your product warm, tactile, nostalgic, editorial? → **01 cooking-warmth**
 - Is your product sharp, technical, precise, confident, data-dense? → **02 devtool-precision**
 - Is your product spacious, calm, soft, minimal, wellness-oriented? → **03 meditation-calm**
 - Is your product playful, bright, imaginative, tactile, hand-crafted? → **04 kids-storybook**
+- Is your product polished SaaS — clear, decision-oriented, made for the close of a workweek? → **05 saas-clarity**
 
-If none of the four feels close, pick the closest *metaphor* instead of closest emotion. If none of the metaphors feels close either, pick the one whose **signature element** has the most transferable *mechanism* (dividers, terminal, breath circle, wobble animation) — you can adapt the mechanism to your own context.
+If none of the five feels close, pick the closest *metaphor* instead of closest emotion. If none of the metaphors feels close either, pick the one whose **signature element** has the most transferable *mechanism* (dividers, terminal, breath circle, wobble, bento-mockup-on-load) — you can adapt the mechanism to your own context.
 
 ## What to look for when reading the example file
 
@@ -57,11 +62,11 @@ After reading, close the example file and go compose your own page. **Don't keep
 
 **04 — Children's storybook / playful.** The lesson: imperfection is a design choice, not a failure of polish. Wobble animations, slightly-wonky SVG paths, mismatched but coordinated colors, grain overlay, rounded-everything. The grain + wobble combo is the single thing that moves the page from "generic kids app template" to "feels like construction paper."
 
-## Why only four archetypes
+## Why only five archetypes
 
-Four is enough to prove the range. More is a bigger menu, and menus cause cloning.
+Five is enough to prove the range. More is a bigger menu, and bigger menus cause cloning.
 
-If none of the four matches your direction and you need a different reference, the right move isn't to wait for a fifth archetype — it's to find your own reference outside this repo (a real landing page, a magazine spread, a product photograph) that shares your emotion, and build from that.
+If none of the five matches your direction and you need a different reference, the right move isn't to wait for a sixth archetype — it's to find your own reference outside this repo (a real landing page, a magazine spread, a product photograph) that shares your emotion, and build from that.
 
 ## What reference code NOT to rely on
 

@@ -382,8 +382,8 @@ Skip it for the authenticated home page of a working app (that's `uiux.md` §1),
 
 - `landing-design/design-direction.md` — how to write the Direction brief.
 - `landing-design/style-tile.md` — menus for the 6 Style Tile commits.
-- `landing-design/inspiration-gallery.md` — pick ONE of 4 archetypes closest to your Direction.
-- `landing-design/examples/0N-*.tsx` — four worked example landing pages (read-only; do not import from). Read exactly ONE — the one matching the archetype you picked.
+- `landing-design/inspiration-gallery.md` — pick ONE of 5 archetypes closest to your Direction.
+- `landing-design/examples/0N-*.tsx` — five worked example landing pages (read-only; do not import from). Read exactly ONE — the one matching the archetype you picked.
 - `landing-design/pattern-library.md` — ~30 copy-pasteable TSX snippets organized by section.
 - `landing-design/anti-ai-checklist.md` — expanded hard rules + the full grep gate commands.
 

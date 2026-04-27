@@ -96,7 +96,7 @@ grep -rnE "rgba?\([0-9]" --include="*.tsx" src/pages/landing.tsx src/components/
 grep -rnE "\b(violet|indigo|purple|fuchsia|rose|amber|emerald|teal|cyan|sky|blue|green|red|orange|yellow|lime|pink)-[0-9]{3}" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
 
 # ── Fractional-opacity foreground patterns ───────────────────────────────────
-grep -rnE "(bg|text|border)-foreground/\[?0" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "(bg|text|border)-foreground/(\[|[0-9])" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
 
 # ── Continuous animations — advisory; review each for a useReducedMotion gate
 grep -rnE "repeat:\s*Infinity|setInterval\(|requestAnimationFrame\(" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null

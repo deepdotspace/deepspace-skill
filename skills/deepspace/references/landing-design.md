@@ -52,7 +52,7 @@ Apply the **sentence test** at the end: if everything you wrote could describe a
 
 ### 3. Read ONE inspiration archetype + its example file
 
-Load `landing-design/inspiration-gallery.md` — it's an index of 4 archetypes across different product domains. Pick the one whose *emotion* is closest to your direction (not the one whose product category matches). Read that one row and its "what to learn" paragraph. **Do not absorb all four** — you'll produce a mashup.
+Load `landing-design/inspiration-gallery.md` — it's an index of 5 archetypes across different product domains. Pick the one whose *emotion* is closest to your direction (not the one whose product category matches). Read that one row and its "what to learn" paragraph. **Do not absorb all five** — you'll produce a mashup.
 
 Then open the corresponding example file at `landing-design/examples/0N-*.tsx` and read it end-to-end. Focus on the Design Direction block at the top — the lesson is *how a committed direction becomes concrete code*. **Do not import from the example** — it's a read-only teaching artifact and the grep gate will flag any `from.*landing-design/examples` import. Copy concepts, not files.
 
@@ -118,7 +118,7 @@ cd ~/Desktop/Work/<app-name>
 grep -rnE "#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}\b|rgba?\([0-9]|\b(violet|indigo|purple|blue|emerald|teal|amber|rose|pink|cyan|sky|green|red|orange|yellow|lime|fuchsia)-[0-9]{3}" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
 
 # fractional-opacity foreground
-grep -rnE "(bg|text|border)-foreground/\[?0" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "(bg|text|border)-foreground/(\[|[0-9])" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
 
 # pictograph emojis
 grep -rnP "[\x{1F000}-\x{1FFFF}]" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
@@ -145,7 +145,7 @@ Also verify by eye:
 - **`landing-design/design-direction.md`** — how to write a good Design Direction brief. Read this the first time you fill the block, or when the sentence test keeps rejecting what you write.
 - **`landing-design/style-tile.md`** — menus for the 6 Style Tile commits (color, type pair, theme, art direction, motion, voice). Open while filling the Style Tile — scan the relevant table, pick, move on.
 - **`landing-design/inspiration-gallery.md`** — the 4 archetypes. Read this to pick which one row is closest to your direction. Do NOT read all four.
-- **`landing-design/examples/0N-*.tsx`** — four worked example landing pages, one per archetype. Read exactly ONE after you've picked your archetype. Read-only reference — the grep gate flags imports from this folder.
+- **`landing-design/examples/0N-*.tsx`** — five worked example landing pages, one per archetype. Read exactly ONE after you've picked your archetype. Read-only reference — the grep gate flags imports from this folder. (See `inspiration-gallery.md` for the picking guide and which example also covers the floating-pill / FAQ / bento patterns.)
 - **`landing-design/pattern-library.md`** — ~30 copy-pasteable TSX snippets organized by page section (nav, hero, features, social proof, CTA, footer, scroll/motion). Read after filling the Direction; pick one snippet per section; adapt content to serve your Direction.
 - **`landing-design/anti-ai-checklist.md`** — expanded hard rules + the full grep gate commands. Read this before finishing.
 

@@ -141,7 +141,7 @@ function Hero() {
           <h1 className="mt-4 font-serif text-5xl md:text-7xl leading-[0.95] text-foreground">
             Dinner, written by hand.
           </h1>
-          <p className="mt-6 max-w-md text-base text-foreground/80 leading-relaxed">
+          <p className="mt-6 max-w-md text-base text-muted-foreground leading-relaxed">
             Three recipes every Sunday, each with a shopping list and a story.
             Cook better weeknights without having to decide.
           </p>
@@ -191,11 +191,11 @@ function WhatYouGet() {
             <ScrollReveal direction={i % 2 ? 'right' : 'left'} className="flex-1 w-full">
               {/* Tiny hand-drawn visual — styled divs, no AI image. */}
               <div className="aspect-[5/4] bg-card border border-border relative overflow-hidden">
-                <div className="absolute inset-6 border border-foreground/30 p-4">
-                  <div className="h-2 w-2/3 bg-foreground/60" />
+                <div className="absolute inset-6 border border-border p-4">
+                  <div className="h-2 w-2/3 bg-foreground" />
                   <div className="mt-3 space-y-1.5">
                     {[68, 52, 78, 44].map((w, k) => (
-                      <div key={k} className="h-[2px] bg-foreground/30" style={{ width: `${w}%` }} />
+                      <div key={k} className="h-[2px] bg-border" style={{ width: `${w}%` }} />
                     ))}
                   </div>
                   <div className="mt-5 font-serif italic text-lg text-primary">{i === 0 ? '— turns out chicken —' : '— she called it Monday stew —'}</div>
