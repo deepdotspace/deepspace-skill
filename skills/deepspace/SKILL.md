@@ -254,6 +254,11 @@ import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'
 ```typescript
 const { records } = useQuery<Item>('items', { where: { status: 'published' }, orderBy: 'createdAt' })
 const { create, put, remove } = useMutations<Item>('items')
+// create returns Promise<string> (the new recordId) — capture it to navigate:
+//   const id = await create({ title: 'New' }); navigate(`/items/${id}`)
+// put/remove return Promise<void>. Use createConfirmed / putConfirmed / removeConfirmed
+// when you must wait for server ack (read-after-write); the plain ones resolve after
+// the optimistic local apply.
 const { user } = useUser()          // storage-level: id, name, email, role
 const { isSignedIn } = useAuth()    // auth state (use this as primary check)
 const { users } = useUsers()        // all room users

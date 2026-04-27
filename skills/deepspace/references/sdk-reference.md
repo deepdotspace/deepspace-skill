@@ -43,7 +43,7 @@ import { ... } from 'deepspace/worker'   // Cloudflare Worker
 
 **Hooks**
 - `useQuery<T>(collection, options?)` — `{ records, loading, error }`. Options: `where`, `orderBy`, `limit`.
-- `useMutations<T>(collection)` — `{ create, put, remove }`.
+- `useMutations<T>(collection)` — `{ create, put, remove, createConfirmed, putConfirmed, removeConfirmed }`. **`create` returns `Promise<string>`** (the new recordId — capture it for navigation: `const id = await create({...}); navigate(\`/items/${id}\`)`). `put` and `remove` return `Promise<void>`. The `*Confirmed` variants resolve only after the server has acknowledged the write; the plain ones return immediately after the optimistic local apply.
 - `useUsers()` — all users in the room.
 - `useUserLookup()` — map-style lookup by userId.
 - `useRecordContext()` — low-level store access.
