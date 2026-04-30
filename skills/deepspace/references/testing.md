@@ -89,19 +89,30 @@ Older or simpler suites also use the local helpers in `tests/helpers/`:
 
 `createTestUsers` does not cache `storageState`, so it signs in fresh per test — fine for one or two specs, slow and rate-limit-prone for a larger suite. **Default to the `deepspace/testing` fixture for new multi-user tests**; keep `signInAs` / `loadLocalAccounts` for one-off single-user flows and the error-tracking helpers for any suite.
 
-## Authenticated tests — use `npx deepspace test-accounts`
+## Authenticated tests — reuse the existing pool first
 
-Public signup is intentionally disabled. Tests sign in (not sign up) using credentials created via the `deepspace test-accounts` CLI — the scaffold's `tests/helpers/auth.ts` already wires this up.
+Public signup is intentionally disabled. Tests sign in (not sign up) using credentials in `~/.deepspace/test-accounts.json` — populated via the `deepspace test-accounts` CLI and consumed automatically by the `users(N)` fixture from `'deepspace/testing'`.
 
-**If `createTestUsers` throws** saying there aren't enough local accounts, the error message prints exact copy-paste commands with a `Date.now()` millisecond timestamp that keeps them globally unique across developers and machines (the auth worker enforces email uniqueness at the user-table level):
+**The pool is global per developer with a hard cap of 10 accounts.** It is **not** scoped to one app. Apps share it. Treat the pool as a fixed resource — burning slots for "themed" accounts (`team-kanban-a@`, `pair-doc-alice@`, …) hits the cap within a few sessions and benefits nothing, since the apps don't care which test identity they get.
+
+**Before writing any spec that needs N signed-in users, in this order:**
+
+1. **Check what's there.** Run `npx deepspace test-accounts list` and count. If ≥ N, **stop here** — use them.
+2. **Use the fixture, not hardcoded emails.** `const [a, b] = await users(2)` picks the first N existing accounts; `await users(['Alice', 'Bob'])` picks specific ones by name. Either way, no creation happens. `pickTestAccounts(N)` does the same outside a fixture context.
+3. **Only create new accounts if `list` shows fewer than N**, and only as many as you actually need to reach N. Use the timestamped emails the SDK suggests (uniqueness is enforced at the auth-worker user table) — never bake the app name into the email.
+
+**The scaffolded `collab.spec.ts` ships with `await users(['Collab A', 'Collab B'])`.** If those names aren't in your local pool, the call throws `No test account named "Collab A"…` and the SDK's error message helpfully suggests `Create with: deepspace test-accounts create …`. **Don't follow that suggestion when your pool already has ≥ N accounts — it's the wrong fork.** The right fix is a one-token edit: change the call to `await users(2)`, which picks the first N accounts in the pool by `createdAt` regardless of name. Reserve the named form (`users(['Alice', 'Bob'])`) for tests that genuinely need specific identities — e.g., a feature whose behavior differs by user name or a fixture you're hand-curating across runs.
 
 ```bash
+# Only when the pool is genuinely below N:
 npx deepspace login   # if not already
 npx deepspace test-accounts create --email test-1-1776798210521@deepspace.test --password Pass123! --name "Test User 1"
 npx deepspace test-accounts create --email test-2-1776798210521@deepspace.test --password Pass123! --name "Test User 2"
 ```
 
-Credentials persist at `~/.deepspace/test-accounts.json` (mode 0600). Emails must end `@deepspace.test`. Max 10 per developer. Run as part of the same session — don't silently skip collab tests or punt with "requires manual QA." Run `npx deepspace test-accounts --help` for the full CLI.
+If `createTestUsers` (the older non-fixture helper) throws about missing accounts, the error message prints the same copy-paste commands. The same rule applies — only create as many as you need to reach N, and only after verifying with `list`.
+
+Credentials persist at `~/.deepspace/test-accounts.json` (mode 0600). Emails must end `@deepspace.test`. Run any creation in the same session — don't silently skip collab tests or punt with "requires manual QA." Run `npx deepspace test-accounts --help` for the full CLI (includes `delete --email`, `clear`, `clear --label e2e`, `clear --yes` for cleanup).
 
 ## Writing New Tests
 
