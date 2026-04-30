@@ -1,0 +1,42 @@
+[
+  {
+    "query": "scaffold a fresh deepspace project called team-kanban with columns Backlog / In Progress / Review / Done. cards have title, assignee, and a thread of comments. drag-drop reorders for everyone live.",
+    "should_trigger": true,
+    "_rationale": "Direct: names 'deepspace' + scaffold + multi-user CRUD + real-time."
+  },
+  {
+    "query": "make a real-time collaborative doc editor — each doc has a thread of comments, only signed-in users can edit but anyone can read",
+    "should_trigger": true,
+    "_rationale": "Indirect: Yjs collaborative editing + RBAC + mixed auth. Doesn't name deepspace."
+  },
+  {
+    "query": "want a real-time scoreboard for our weekly trivia night — host inputs scores and everyone watching sees the bar chart update live",
+    "should_trigger": true,
+    "_rationale": "Casual: real-time multiplayer + deploy. No deepspace keywords."
+  },
+  {
+    "query": "fix the bug in this app where dragging a card to another column doesn't update for the second user. drag logic is in src/pages/board.tsx",
+    "should_trigger": true,
+    "_rationale": "Maintenance: 'doesn't update for the second user' is the canonical deepspace collab regression. src/pages/ is the scaffold path."
+  },
+  {
+    "query": "use Convex to build a kanban board with drag-drop",
+    "should_trigger": false,
+    "_rationale": "Near-miss: same app shape (kanban + drag-drop), but explicitly names a competing real-time backend."
+  },
+  {
+    "query": "set up Supabase Realtime for a multiplayer todo list",
+    "should_trigger": false,
+    "_rationale": "Near-miss: 'multiplayer' + 'realtime' but Supabase, not deepspace."
+  },
+  {
+    "query": "write a Cloudflare Worker that proxies api requests to my origin with KV caching, deploy via wrangler",
+    "should_trigger": false,
+    "_rationale": "Near-miss: Cloudflare Workers + wrangler, but a pure HTTP-proxy worker — no DOs, no real-time."
+  },
+  {
+    "query": "write a postgres schema for a kanban board with cards, columns, comments, and assignees",
+    "should_trigger": false,
+    "_rationale": "Pure database design. No app, no real-time."
+  }
+]

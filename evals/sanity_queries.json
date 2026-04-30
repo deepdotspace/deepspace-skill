@@ -1,0 +1,27 @@
+[
+  {
+    "query": "build me a multiplayer pictionary game where one person draws and others guess in chat",
+    "should_trigger": true,
+    "_rationale": "Fresh: collaborative canvas + channel-based chat + multi-user. Indirect."
+  },
+  {
+    "query": "add a 'who's currently on this page' bar to my app",
+    "should_trigger": true,
+    "_rationale": "Fresh: presence is in the trigger description."
+  },
+  {
+    "query": "rewrite my app so the avatar dropdown actually signs the user out — currently it does nothing",
+    "should_trigger": true,
+    "_rationale": "Fresh maintenance: matches the scaffold's Navigation.tsx + signOut() pattern. Doesn't name deepspace but the artifact path is canonical."
+  },
+  {
+    "query": "use Pusher Channels to add presence to my React app",
+    "should_trigger": false,
+    "_rationale": "Near-miss: presence + React, but Pusher (different stack)."
+  },
+  {
+    "query": "explain when to use Cloudflare Workers KV vs R2 vs Durable Objects",
+    "should_trigger": false,
+    "_rationale": "Conceptual Cloudflare question — keyword overlap on Durable Objects, but no app to build."
+  }
+]

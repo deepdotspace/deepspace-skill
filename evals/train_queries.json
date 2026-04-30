@@ -1,0 +1,62 @@
+[
+  {
+    "query": "build a deepspace app at ~/Desktop/Work/poll-night — users vote on which movie we watch friday and votes update live for everyone",
+    "should_trigger": true,
+    "_rationale": "Direct: names 'deepspace' + real-time + multi-user."
+  },
+  {
+    "query": "the app at /Users/me/proj1 — worker.ts imports RecordRoom and i need to add an admin page that lists all users with the ability to suspend them",
+    "should_trigger": true,
+    "_rationale": "Maintenance: names RecordRoom + admin/RBAC; should trigger even mid-task."
+  },
+  {
+    "query": "i want a multiplayer drawing whiteboard for my classroom — students share one canvas, each cursor labeled with their name, deployable to a subdomain",
+    "should_trigger": true,
+    "_rationale": "Indirect: collaborative canvas + presence + deploy. Doesn't name 'deepspace'."
+  },
+  {
+    "query": "build a slack-clone with channels, threads, reactions, unread counts. small team only, deploy it on a subdomain",
+    "should_trigger": true,
+    "_rationale": "Indirect: channel-based chat with reactions + read receipts is a deepspace strength."
+  },
+  {
+    "query": "i need to ship something to mytool.app.space where teammates can edit the same kanban board live",
+    "should_trigger": true,
+    "_rationale": "Direct domain hint: '.app.space' is the deepspace deploy target."
+  },
+  {
+    "query": "build me a multiplayer whiteboard plz",
+    "should_trigger": true,
+    "_rationale": "Casual + vague. Strong signal for the skill's collaborative-canvas wheelhouse."
+  },
+  {
+    "query": "show me how to wire up Liveblocks for cursor presence in my Figma plugin",
+    "should_trigger": false,
+    "_rationale": "Near-miss: shares 'cursor presence' but explicitly names a different real-time stack."
+  },
+  {
+    "query": "build a real-time chat with Socket.IO and Express, deploy to Heroku. nothing fancy, just rooms and messages",
+    "should_trigger": false,
+    "_rationale": "Near-miss: real-time chat, but Socket.IO + Heroku, not deepspace + Cloudflare."
+  },
+  {
+    "query": "explain how Cloudflare Durable Objects work and when to use them",
+    "should_trigger": false,
+    "_rationale": "Near-miss: shares the underlying primitive, but it's a conceptual question — no app to build."
+  },
+  {
+    "query": "show me how to set up y-websocket and Yjs in plain JS — no react, no framework",
+    "should_trigger": false,
+    "_rationale": "Near-miss: Yjs is in deepspace's trigger list, but the user explicitly wants no framework."
+  },
+  {
+    "query": "build a Next.js marketing site at ~/Work/landing with a hero, features grid, pricing table, and FAQ",
+    "should_trigger": false,
+    "_rationale": "Generic web work; no real-time, no multi-user. Pure Next.js task."
+  },
+  {
+    "query": "set up tailwind v4 in my vite project — i added @theme but classes aren't being picked up",
+    "should_trigger": false,
+    "_rationale": "Pure CSS/build tooling; the @theme keyword overlaps with the skill's theme guide but the task isn't deepspace."
+  }
+]
