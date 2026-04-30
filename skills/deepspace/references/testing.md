@@ -8,12 +8,28 @@ Every scaffolded app includes Playwright tests in `tests/` with helpers for auth
 
 ## Running Tests
 
+Two paths — pick based on what you're doing:
+
 ```bash
-npx playwright test              # run all tests
-npx playwright test smoke.spec   # run a specific test file
+# Official entry point. Auto-installs Playwright + chromium on first run, writes
+# .dev.vars against dev workers, forwards $DEEPSPACE_PORT to the Playwright child.
+npx deepspace test                    # default = smoke + api
+npx deepspace test smoke              # smoke only
+npx deepspace test api                # api only
+npx deepspace test e2e                # all Playwright specs
+npx deepspace test unit               # vitest unit tests
+npx deepspace test all                # vitest + Playwright
+npx deepspace test tests/foo.spec.ts  # one file
+npx deepspace test --port 5180        # match a parallel `deepspace dev --port 5180`
+
+# Plain Playwright. Works once chromium is installed; no .dev.vars regeneration,
+# no APP_OWNER_JWT mint. Use it to iterate on a single spec or run with custom flags.
+npx playwright test                   # all specs
+npx playwright test smoke.spec        # one file
+npx playwright test --ui              # Playwright's interactive UI
 ```
 
-No separate dev server required — the scaffolded `tests/playwright.config.ts` has a `webServer` block that starts Vite on port 5173 and reuses an existing one if present (`reuseExistingServer: true`).
+No separate dev server required either way — the scaffolded `tests/playwright.config.ts` has a `webServer` block that starts Vite on port 5173 and reuses an existing one if present (`reuseExistingServer: true`).
 
 ## Scaffolded Test Files
 

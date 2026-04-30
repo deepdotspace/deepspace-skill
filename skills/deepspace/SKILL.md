@@ -30,11 +30,25 @@ npm create deepspace@latest <app-name>
 
 `npm create` invokes `create-deepspace` via npx — no global install required, and npm fetches it on demand. Use `@latest` to avoid a stale cached version.
 
-This generates: generouted file-based routing, `_app.tsx` providers, `nav.ts`, `worker.ts`, Cloudflare Vite plugin, and a working dev setup.
+This generates a Vite + Cloudflare-Worker app with generouted file-based routing and a working dev setup. Files you'll touch most often:
+
+- `worker.ts` — Hono app worker; declares the `__DO_MANIFEST__` and the five DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). Don't edit unless adding cross-app proxies (see Architecture).
+- `src/pages/_app.tsx` — global provider stack (`ToastProvider → DeepSpaceAuthProvider → AuthBoot → RecordProvider → RecordScope`). Extend, don't replace (Step 3).
+- `src/pages/` — generouted scans here for routes; `(protected)/` is the gated route group (Step 4).
+- `src/schemas.ts` + `src/schemas/` — collection schemas. Ships `usersSchema` and `settingsSchema` (Step 2).
+- `src/themes.ts` + `src/themes.css` — 15 theme presets; active one set on `<html data-theme>` in `index.html` (Step 5).
+- `src/styles.css` — Tailwind v4 entry; the `@theme { ... }` block holds the slate baseline.
+- `src/nav.ts` — top-nav entries. Add new pages here so Navigation picks them up.
+- `src/constants.ts` — `APP_NAME`, `SCOPE_ID = "app:${APP_NAME}"`, role re-exports.
+- `src/actions/index.ts` — server-action handlers (Server Extensions §1).
+- `src/cron.ts` — scheduled tasks for the `AppCronRoom` DO (Server Extensions §3).
+- `src/integrations.ts` — per-integration billing config (`developer` vs `user`).
+- `src/ai/tools.ts` — system prompt + read-only tools for `/api/ai/chat` (Server Extensions §2).
+- `tests/` — Playwright `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` plus `playwright.config.ts` (Step 8).
 
 ### Step 2: Define Schemas
 
-Add one file per collection under `src/schemas/` and register it in `src/schemas.ts`. Every collection needs `name`, `columns`, and `permissions`. The scaffold already ships `usersSchema` — add your own alongside it.
+Add one file per collection under `src/schemas/` and register it in `src/schemas.ts`. Every collection needs `name`, `columns`, and `permissions`. The scaffold already ships `usersSchema` (in `users-schema.ts`) and `settingsSchema` (in `admin-schema.ts`) — add your own alongside them, never replace them.
 
 ```typescript
 // src/schemas/items-schema.ts
@@ -208,9 +222,13 @@ The `landing` feature scaffolds a page shell with pre-built sections (hero, feat
 ### Step 7: Run Locally
 
 ```bash
-npx deepspace login   # one-time (or after `~/.deepspace/session` is wiped / expires) — opens browser
-npx deepspace dev     # starts all workers + Vite with HMR on localhost:5173
+npx deepspace login            # one-time (or after `~/.deepspace/session` is wiped / expires) — opens browser
+npx deepspace dev              # dev workers + Vite with HMR on localhost:5173
+npx deepspace dev --prod       # same UI, but workers point at production (real auth, real API)
+npx deepspace dev --port 5180  # bind a different port (run multiple apps side-by-side)
 ```
+
+`dev` uses `--strictPort`, so a port clash fails loudly instead of jumping to 5174 — set `--port` (or `$DEEPSPACE_PORT`) when running parallel apps so test/Playwright config and Vite agree on the same number.
 
 **First run of `dev` requires login.** The CLI mints an app-specific `APP_OWNER_JWT` into `.dev.vars` using your identity, and exits immediately with `Not logged in. Run \`deepspace login\` first.` if there's no stored session. When you see that exact string:
 
@@ -236,7 +254,7 @@ Tests are the primary way to verify and debug code changes. The scaffolded tests
    - **Called `useYjs*`, `useMessages`, `useReactions`, `usePresence`, `useCanvas`, or any hook that syncs state across clients?** → `collab.spec.ts` two-user assertion is **required**.
    - **Added or edited a worker route in `worker.ts`, a server action, `/api/ai/chat`, a cron handler, any `integration.post(...)` call site, or any UI surface whose access depends on an HTTP-enforced auth/role check (e.g., an admin-only button calling `/api/actions/<name>`, even if the route itself wasn't edited)?** → `api.spec.ts` assertion is **required**. For integration calls, POST to `/api/integrations/<endpoint>` with the same body the app uses and assert the envelope comes back `success: true` with the shape your UI consumes — this locks the contract with the api-worker in the same session and catches wrong endpoint names, the #1 failure mode for integration-heavy apps. For routes/actions, assert status codes, response shape, and auth gating — including the negative path (unauthenticated or wrong-role caller gets 401/403) and other error cases (bad input, missing resources).
    - **Fixing a bug?** → write a failing test that reproduces it first, then fix the code until it passes. Leave the test in place.
-2. **Run the relevant tests** (`npx playwright test <file>`). The scaffolded `tests/playwright.config.ts` has a `webServer` block that auto-starts Vite on port 5173 and reuses an existing one if present — you don't need to run `npx deepspace dev` in a separate shell just to run tests.
+2. **Run the relevant tests** with `npx deepspace test [suite|file]` — the official entry point. It auto-installs Playwright + chromium on first run, writes `.dev.vars` against dev workers, and forwards the chosen port to the Playwright child via `$DEEPSPACE_PORT` so the config + webServer agree. Suites: `smoke`, `api`, `e2e` (all Playwright), `unit` (vitest), `all`, default (= `smoke + api`). Pass any `*.spec.ts` filename for a single file. The scaffolded `tests/playwright.config.ts` has a `webServer` block that starts Vite on port 5173 and reuses an existing one if present (`reuseExistingServer: true`), so you don't need a separate `deepspace dev` shell. Plain `npx playwright test ...` still works once Playwright is installed.
 3. **Debug from failures, not from console logs.** If a test fails, read the assertion message, read the failing selector, then fix the code. Do not add `console.log` to diagnose — write a more specific assertion. Do not weaken or delete tests to make them green.
 4. **Re-run after each follow-up change.** When the user asks for a tweak or new feature later, re-apply the checklist to the new change, update the tests, then run them. Treat tests as a living contract — but only exercise them when the contract actually changes.
 
@@ -336,7 +354,7 @@ The scaffolded `AppRecordRoom` already passes your `schemas` to `RecordRoom` —
 
 The scaffolded `/ws/:roomId` handler routes **every** scope to the app's own `RECORD_ROOMS` DO. That's fine for app-scoped data. If the app needs to read/write shared scopes (`workspace:*`, `dir:*`, `conv:*`) that must sync across DeepSpace apps (e.g., the email-handle workspace), two things need changing:
 
-1. **Add the service binding to `wrangler.toml`** — the scaffold declares `PLATFORM_WORKER: Fetcher` in the TypeScript `Env` interface but does not ship the wrangler binding. Without it, `c.env.PLATFORM_WORKER` is `undefined` at runtime and the proxy silently falls through.
+1. **Add the service binding to `wrangler.toml`** for production. The scaffold declares `PLATFORM_WORKER?: Fetcher` (and `PLATFORM_WORKER_URL?: string`) in the `Env` interface but does not ship the wrangler binding. Cross-worker calls over plain `*.workers.dev` URLs return Cloudflare error 1042 in production, so the service binding is the only working transport for deployed apps. The `PLATFORM_WORKER_URL` fallback that `deepspace dev` writes into `.dev.vars` is a dev-only convenience — adequate for `wrangler dev`, never enough for prod.
 
    ```toml
    [[services]]
@@ -344,14 +362,16 @@ The scaffolded `/ws/:roomId` handler routes **every** scope to the app's own `RE
    service = "deepspace-platform"   # name of the deployed platform worker
    ```
 
-2. **Edit the `/ws/:roomId` handler** to proxy shared scopes to the platform worker:
+2. **Edit the `/ws/:roomId` handler** to proxy shared scopes to the platform worker. Use `platformWorkerFetch` from `deepspace/worker` instead of `c.env.PLATFORM_WORKER.fetch(...)` directly — the helper picks the binding in prod and the URL in dev, so the same code works in both environments:
 
    ```typescript
    // worker.ts — replace the single-line app.get('/ws/:roomId', wsRoute(...))
+   import { platformWorkerFetch } from 'deepspace/worker'
+
    app.get('/ws/:roomId', async (c) => {
      const roomId = c.req.param('roomId')
-     if (c.env.PLATFORM_WORKER && /^(workspace|dir|conv):/.test(roomId)) {
-       return c.env.PLATFORM_WORKER.fetch(c.req.raw)
+     if (/^(workspace|dir|conv):/.test(roomId)) {
+       return platformWorkerFetch(c.env, c.req.raw)
      }
      return wsRoute((env) => env.RECORD_ROOMS)(c)
    })

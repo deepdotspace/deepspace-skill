@@ -45,7 +45,7 @@ import { ... } from 'deepspace/worker'   // Cloudflare Worker
 - `useQuery<T>(collection, options?)` — `{ records, status, error }` where `status: 'loading' | 'ready' | 'error'`. Options: `where`, `orderBy`, `orderDir`, `limit`. **Each record is an envelope** — `{ recordId, data: T, createdBy, createdAt, updatedAt }`. User fields live under `.data`: write `r.data.title`, never `r.title`. Use `r.recordId` for keys and to pass into `put` / `remove`. Common bug: `records.map(r => r.title)` returns `undefined` for every row (TS catches it; runtime renders empty list).
 - `useMutations<T>(collection)` — `{ create, put, remove, createConfirmed, putConfirmed, removeConfirmed }`. **`create` returns `Promise<string>`** (the new recordId — capture it for navigation: `const id = await create({...}); navigate(\`/items/${id}\`)`). `put` and `remove` return `Promise<void>`. The `*Confirmed` variants resolve only after the server has acknowledged the write; the plain ones return immediately after the optimistic local apply.
 - `useUsers()` — all users in the room.
-- `useUserLookup()` — map-style lookup by userId.
+- `useUserLookup()` — `{ getUser(id), getEmail(id), getName(id), getRole(id), getImageUrl(id), usersLoaded }`. O(1) wrapper around `useUsers()` for resolving a userId from the wire (e.g., a `MessageRecord.AuthorId`) to display fields without scanning the full users array each render.
 - `useRecordContext()` — low-level store access.
 
 **Classes**
@@ -60,7 +60,7 @@ Requires channels + messages schemas in the room.
 - `useReactions(channelId)` — `{ getReactionsForMessage, toggle }`.
 - `useChannelMembers(channelId)` — `{ isMember, join, leave }`.
 - `useReadReceipts()` — `{ markAsRead, getUnreadCount }`.
-- `useConversation(options?)` — single-conversation object (for DMs or focused channel views).
+- `useConversation(options?)` — for **DM/conversation DOs** (scope `conv:<id>`) backed by the `conv_messages` / `conv_reactions` / `conv_members` collections. Returns a single `ConversationObject` with `{ messages, reactions, members, send, edit, remove, toggleReaction }`. **Different from `useMessages` / `useReactions` / `useChannelMembers`**, which target the channel-style collections (`messages` / `reactions` / `channel_members`). Use `useConversation` only when mounted inside a `RecordScope` for a `conv:<id>` DO; use the channel hooks for `app:<APP_NAME>` channels.
 
 **Helpers**
 - `groupReactionsForMessage(reactions, messageId, currentUserId)`
@@ -83,9 +83,9 @@ Requires channels + messages schemas in the room.
 - `useYjsText(collection, recordId, fieldName)` — collaborative text input (for textareas / contenteditable).
 - `useYjsRoom(docId, fieldName)` — standalone collab doc, not tied to a record.
 - `useCanvas(roomId)` — collaborative canvas state.
-- `usePresence(options?)` — cursor/user presence in the current scope.
-- `usePresenceRoom(scopeId)` — presence for an explicit scope (e.g., a separate doc room).
-- `useGameRoom(roomId)` — game-room abstraction.
+- `usePresence(options?)` — cursor/user presence inside the current `RecordScope`. Convenience wrapper that picks the active scope's presence channel; use this for app-default presence.
+- `usePresenceRoom(scopeId)` — presence on an **explicit** PresenceRoom scope (its own DO at `/ws/presence/:scopeId`). Pass any string (`canvas:${id}`, `thread:${channelId}`, `doc:${docId}`). Returns `{ peers, connected, updateState(state) }`. `updateState` merges, so you can call it for cursor (`{ cursor: { x, y } }`), typing (`{ typing: true }`), viewport, etc. Each peer is `{ userId, userName, userEmail, userImageUrl?, joinedAt, state }`. Self is excluded from `peers`.
+- `useGameRoom(roomId)` — connects to a `GameRoom` DO at `/ws/game/:roomId`. Returns `{ state, tick, players, running, connected, sendInput(action, data?), setReady(), startGame(), endGame() }`. Each player is `{ userId, userName, ready, connectedAt, data }`. State migration on schema bumps lives in the worker — override `onHydrateState(stored)` on the DO subclass.
 - `useCronMonitor(roomId)` — admin/monitor stream for the `AppCronRoom` DO. Pass `app:<APP_NAME>` for the app's default cron room. Returns task list, last-run state, and execution history.
 
 > Audio/video rooms have no SDK hook. Use the `livekit/*` endpoints (`create-room`, `generate-token`, `list-rooms`, `delete-room`) via `integration.post(...)` — see `references/integrations.md`.
@@ -160,11 +160,21 @@ function Gallery() {
 
 ### Platform / Integrations
 
-- `integration` — `{ post(endpoint, params) }`. See `references/integrations.md` for endpoint list.
-- `usePlatform()` — platform context (env, URLs, registry).
-- `PlatformContext` — raw context (rarely needed).
-- `useInbox()` — cross-app inbox entries.
-- `usePlatformWS<S>()` — platform WebSocket subscription.
+- `integration` — `{ get / post / put / delete (endpoint, data?, options?) }`. Returns `Promise<IntegrationResponse<T>>` where the envelope is `{ success: true, data } | { success: false, error }`. See `references/integrations.md` for endpoint list and the `requiresOAuth` retry shape.
+
+**Cross-app platform context (opt-in, NOT in the scaffold by default).** The platform exports below let an app subscribe to its cross-app inbox (DMs / notifications routed through the platform-worker). They require `<PlatformProvider>` to be mounted somewhere above the consumers — the scaffolded `_app.tsx` does **not** include it, so wrap the tree manually if you need this surface:
+
+```tsx
+import { PlatformProvider, usePlatform, useInbox } from 'deepspace'
+// inside _app.tsx, ABOVE <RecordProvider>:
+<PlatformProvider>{/* ...rest of tree... */}</PlatformProvider>
+```
+
+- `PlatformProvider` — context wrapper. Inbox WebSocket activates only when at least one component subscribes via `useInbox()` (zero-cost otherwise).
+- `usePlatform()` — `{ platformFetch(path, init?), inbox, subscribeInbox }`. Throws if no `<PlatformProvider>` is mounted. `platformFetch` prepends `/platform` and adds the auth header automatically.
+- `useInbox()` — `InboxEntry[]`. Each entry: `{ conversationId, scope, displayName, muted, joinedAt, lastMessageAt, lastMessagePreview, lastMessageAuthor, unreadCount }`.
+- `usePlatformWS<S>(options)` — generic platform WebSocket subscription (`PlatformWSOptions` / `PlatformWSResult`). For the rare case you need a custom platform-side stream beyond the inbox.
+- `PlatformContext` — raw context. Almost never needed; consume via `usePlatform()`.
 
 **OAuth management endpoints** (authenticated, app-worker-proxied — call via `fetch` with the session token):
 - `GET /api/integrations/status` — per-scope connection flags for all OAuth providers (currently only `google`). Response shape and per-scope fields documented in `references/integrations.md` → OAuth section.
@@ -180,7 +190,11 @@ For the `requiresOAuth` response shape and client retry pattern, see `references
 - `applyDeepSpaceTheme(config, root?)` / `clearDeepSpaceTheme(root?)` / `readThemeFromDOM(root?)`
 - `applyUIThemeTokens(theme, root?, accent?)` — sets UI CSS variables.
 - `DEEPSPACE_THEME_PROPERTIES` — list of CSS custom properties the theme defines.
-- `DEFAULT_USER_COLORS` / `getUserColor(userId, palette?)` — per-user color assignment.
+
+### User colors
+
+- `DEFAULT_USER_COLORS` — frozen 12-color palette of cursor/avatar tints.
+- `getUserColor(userId, palette?)` — deterministic hash → palette index. Same userId always returns the same color across sessions. Use it for cursor dots in `usePresence` / `usePresenceRoom`, avatar fallbacks, and "who's typing" pills. Pass a custom palette to match a brand.
 
 ### UI primitives (SDK-provided)
 
@@ -255,6 +269,18 @@ Omit the override to keep the legacy behavior (load the stored blob as-is).
 
 ### R2 helpers
 - `createScopedR2Handler(...)` — route handler for scoped R2 reads/writes.
+
+### Upstream worker proxy helpers
+
+The scaffolded `worker.ts` already uses these for every cross-worker call (auth proxy, integration proxy, file proxy, AI helper) — you rarely need to call them directly, but you do need to keep them when editing `worker.ts` so the same code works in dev and prod.
+
+- `apiWorkerFetch(env, path, init?)` — fetch the api-worker. Prefers the `API_WORKER` service binding; falls back to `API_WORKER_URL`.
+- `platformWorkerFetch(env, pathOrRequest, init?)` — fetch the platform-worker. Accepts either a path string or a full `Request` (so you can hand off `c.req.raw` derivatives with method/headers/body intact). Prefers `PLATFORM_WORKER` binding; falls back to `PLATFORM_WORKER_URL`.
+- `authWorkerFetch(env, path, init?)` — fetch the auth-worker. URL-only by design (`AUTH_WORKER_URL`); the auth-worker has no service binding so `Set-Cookie` headers stay verbatim over plain HTTPS.
+- Env interface types: `ApiWorkerEnv`, `PlatformWorkerEnv`, `AuthWorkerEnv`. Extend the app's `Env` from these (the starter does).
+- Each helper throws an actionable Error if neither transport is configured. **Do not** replace these with raw `c.env.X.fetch(...)` — `wrangler dev` doesn't surface service bindings cross-process for SDK apps, so the binding is `undefined` locally and the fetch silently fails. The helpers paper over the dev/prod mismatch.
+
+Production note: cross-worker calls over plain `*.workers.dev` URLs return Cloudflare error 1042 in production. The service binding is the only working transport for deployed apps; the URL fallback is a dev-only convenience the CLI writes into `.dev.vars`. If a deployed app needs `apiWorkerFetch` / `platformWorkerFetch`, the corresponding `[[services]]` binding must be in `wrangler.toml`.
 
 ### Schema constants (drop-in collections)
 - `USERS_COLUMNS` — standard users columns.
