@@ -22,13 +22,13 @@ Build real-time collaborative apps on Cloudflare Workers. One npm package: SQLit
 
 ### Step 1: Scaffold
 
-```bash
-# Published SDK (when available)
-npm create deepspace <app-name>
+This skill targets **`deepspace` and `create-deepspace` v0.2.4** (latest published on npm at the time this skill was written).
 
-# Local SDK (for development — replace path with your local SDK root)
-<local-sdk-path>/packages/create-deepspace/dist/index.js <app-name> --local <local-sdk-path>
+```bash
+npm create deepspace@latest <app-name>
 ```
+
+`npm create` invokes `create-deepspace` via npx — no global install required, and npm fetches it on demand. Use `@latest` to avoid a stale cached version.
 
 This generates: generouted file-based routing, `_app.tsx` providers, `nav.ts`, `worker.ts`, Cloudflare Vite plugin, and a working dev setup.
 
@@ -172,7 +172,9 @@ Adding a new gated page is a one-file change: drop it inside `(protected)/`. The
 
 ### Step 5: Pick a Theme
 
-Before building pages on an **initial build**, rewrite the `@theme` block in `src/styles.css` and update `<title>` / favicon in `index.html` so subsequent UI reflects the real brand instead of default dark-blue. If the user didn't specify a palette, pick one that fits the app's domain and tell them in one line. Load `references/uiux.md` §2 for the palette picker and token list (see **UI/UX Polish** below for the full trigger list). On maintenance work against an already-themed app, skip this step.
+Before building pages on an **initial build**, pick one of the 15 presets shipped in `src/themes.ts` (`slate`, `ink`, `aurora`, `midnight`, `forest`, `ember`, `graphite`, `noir`, `linen`, `mist`, `sand`, `bloom`, `paper`, `lavender`, `citrus`) and set it on `<html data-theme="...">` in `index.html`. Then update `<title>` and the favicon. **Don't ship the default `slate`** — variety matters more than picking a "safe" palette. If the user didn't specify, pick one that fits the app's domain and tell them in one line.
+
+Load `references/uiux.md` §2 for the picker, the customize-an-existing-preset path, and the wordmark/nav rules (see **UI/UX Polish** below for the full trigger list). On maintenance work against an already-themed app, skip this step.
 
 ### Step 6: Build Pages and Features
 
@@ -303,7 +305,8 @@ The hooks shown above (Core, Messaging, Directory) are the data-and-identity pri
 - **Collaborative text editing** (docs, comments, notes) → `useYjsText` / `useYjsField`
 - **Live cursors, typing indicators, "who's online"** → `usePresence`
 - **Canvas / whiteboard features** → `useCanvas`
-- **Video/audio rooms** → `useMediaRoom`
+- **Audio/video rooms** → no SDK hook. Use the `livekit/*` endpoints in `integrations.yaml` (`create-room`, `generate-token`, `list-rooms`, `delete-room`) — load `references/integrations.md`.
+- **Scheduled task monitoring UI** → `useCronMonitor` (pairs with the `AppCronRoom` DO from Step 6 / Server Extensions)
 - **Theme customization** → `DeepSpaceThemeProvider`, `applyUIThemeTokens`
 - **Environment-specific logic** → `isLocalDev()`, `getApiUrl()`
 - **Any export not covered in this file** — `sdk-reference.md` is the canonical index.
@@ -312,7 +315,7 @@ For exact type signatures of any export, read `node_modules/deepspace/dist/index
 
 ## Architecture
 
-Each app has its own set of Durable Objects with schemas baked in at deploy time. The scaffold declares five DO classes in `__DO_MANIFEST__` and wires them in `worker.ts`: `AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppMediaRoom`, `AppPresenceRoom`.
+Each app has its own set of Durable Objects with schemas baked in at deploy time. The scaffold declares five DO classes in `__DO_MANIFEST__` and wires them in `worker.ts`: `AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`. (Audio/video uses LiveKit via the `livekit/*` integrations — there is no `MediaRoom` DO.)
 
 ```
 App Worker (per-app)                 Platform Worker (shared)
@@ -320,8 +323,8 @@ App Worker (per-app)                 Platform Worker (shared)
 ├── /ws/:roomId                     └── /api/health
 ├── /ws/yjs/:docId
 ├── /ws/canvas/:docId
-├── /ws/media/:roomId
 ├── /ws/presence/:scopeId
+├── /ws/cron/:roomId                ← admin/monitor stream for AppCronRoom
 ├── /api/auth/* → auth-worker
 ├── /api/integrations/* → api-worker
 └── Static assets (SPA fallback)

@@ -23,11 +23,55 @@ No separate dev server required — the scaffolded `tests/playwright.config.ts` 
 
 These three files are where every test lives. Installing a feature (e.g., `docs`, `kanban`, `messaging`) does not add a new spec file — extend these three per the Step 8 checklist in `SKILL.md`.
 
-## Test Helpers (`tests/helpers/`)
+## Two layers of helpers
 
-- `auth.ts` — `signInAs(page, email, password)`, `createTestUsers(browser, N)`, `loadLocalAccounts()`, and `signOut(page)`. All read credentials from `~/.deepspace/test-accounts.json` (written by the `deepspace test-accounts` CLI). There is **no `signUp` helper** — public sign-up is intentionally disabled server-side. If the local file is missing accounts, `createTestUsers` throws an error that prints the exact commands to create them.
+The SDK now ships two layers — pick based on the test you're writing:
+
+### `deepspace/testing` — the published Playwright fixture (preferred for new multi-user tests)
+
+The SDK publishes a `users` fixture and account helpers from `'deepspace/testing'` — built on top of cached `storageState` so each test account signs in **once** per machine, not once per test. This sidesteps Better Auth's per-IP rate limit on `/api/auth/sign-in/email` and is materially faster than `createTestUsers` for suites that grow.
+
+```typescript
+import { test, expect } from 'deepspace/testing'
+
+test('A sends, B sees', async ({ users }) => {
+  const [a, b] = await users(2)              // first 2 accounts from ~/.deepspace/test-accounts.json
+  await a.page.goto('/chat')
+  await b.page.goto('/chat')
+  await a.page.getByTestId('send-btn').click()
+  await expect(b.page.getByText('hi')).toBeVisible()
+})
+
+// Or pick specific accounts by name:
+test('alice and bob', async ({ users }) => {
+  const [alice, bob] = await users(['Alice', 'Bob'])
+  // ...
+})
+```
+
+`MultiplayerUser` returned from `users(...)` is `{ context, page, email, name, userId? }`. Contexts are auto-closed when the test finishes — no `try/finally` needed for cleanup of contexts (you still clean up *records* you create — see "Test data cleanup" below).
+
+**Requires `baseURL`** in `tests/playwright.config.ts` (the scaffold sets it; check if your suite errors with `users fixture requires a baseURL`).
+
+**Escape hatches** — when the fixture isn't enough, import directly:
+- `loadAllTestAccounts()` — return every cached account.
+- `pickTestAccounts(n, options?)` — first N accounts; pass `{ label }` to filter.
+- `findTestAccountByName(name)` — lookup by display name.
+- `ensureStorageState(browser, account, baseURL)` — sign in once, return the storageState path. Reuse via `browser.newContext({ storageState: path })`.
+- `newSignedInContext(email, browser)` — one-liner for a signed-in BrowserContext.
+- `getStatePathForEmail(email)` / `readCachedState(path)` — direct cache access.
+
+Types: `MultiplayerUser`, `UsersFixture`, `TestAccount`, `EnsureStorageStateOptions`.
+
+### `tests/helpers/` (local — still scaffolded for single-user flows and error tracking)
+
+Older or simpler suites also use the local helpers in `tests/helpers/`:
+
+- `auth.ts` — `signInAs(page, email, password)`, `createTestUsers(browser, N)`, `loadLocalAccounts()`, `signOut(page)`. Reads credentials from `~/.deepspace/test-accounts.json`. Public sign-up is intentionally disabled server-side, so there is **no `signUp` helper**.
 - `global-setup.ts` — warms up the auth worker before tests run.
 - `errors.ts` — captures console errors and page errors during tests.
+
+`createTestUsers` does not cache `storageState`, so it signs in fresh per test — fine for one or two specs, slow and rate-limit-prone for a larger suite. **Default to the `deepspace/testing` fixture for new multi-user tests**; keep `signInAs` / `loadLocalAccounts` for one-off single-user flows and the error-tracking helpers for any suite.
 
 ## Authenticated tests — use `npx deepspace test-accounts`
 
@@ -47,24 +91,21 @@ Credentials persist at `~/.deepspace/test-accounts.json` (mode 0600). Emails mus
 
 **Single-user flows** (CRUD, navigation, UI state): import `signInAs` and `loadLocalAccounts` from `./helpers/auth` and sign one page in.
 
-**Multi-user flows** (real-time sync, sharing, permissions): use the scaffold's `createTestUsers(browser, N)` helper — it opens N isolated browser contexts, signs each into a distinct local test account, and returns `{ context, page, email, name }[]`.
+**Multi-user flows** (real-time sync, sharing, permissions): use the published fixture from `'deepspace/testing'`. It opens N isolated browser contexts with cached `storageState`, returns `{ context, page, email, name, userId? }[]`, and auto-closes contexts when the test finishes.
 
 ```typescript
-import { createTestUsers } from './helpers/auth'
+import { test, expect } from 'deepspace/testing'
 
-test('user A's action appears for user B', async ({ browser }) => {
-  const [userA, userB] = await createTestUsers(browser, 2)
-  try {
-    await userA.page.getByTestId('create-btn').click()
-    await userA.page.getByTestId('title-input').fill('My Item')
-    await userA.page.getByTestId('save-btn').click()
-    await expect(userB.page.getByText('My Item')).toBeVisible()
-  } finally {
-    await userA.context.close()
-    await userB.context.close()
-  }
+test("user A's action appears for user B", async ({ users }) => {
+  const [userA, userB] = await users(2)
+  await userA.page.getByTestId('create-btn').click()
+  await userA.page.getByTestId('title-input').fill('My Item')
+  await userA.page.getByTestId('save-btn').click()
+  await expect(userB.page.getByText('My Item')).toBeVisible()
 })
 ```
+
+> Existing suites may use `createTestUsers(browser, N)` from `./helpers/auth` with a `try/finally` that closes contexts manually. That still works, but prefer the fixture for new tests — it's faster (cached sign-in) and avoids rate limits.
 
 ## Test data cleanup — tests must not pollute the dev DB
 
@@ -76,15 +117,18 @@ Tests run against the same local Durable Object the dev server uses, so any reco
 2. **Clean up in `afterEach` / `afterAll`**: iterate the mutations you made in the test and delete the records you created. Keep a list of created `recordId`s inside the test, then remove them.
 
 ```typescript
-test('user A posts a message user B sees', async ({ browser }) => {
-  const [userA, userB] = await createTestUsers(browser, 2)
+import { test, expect } from 'deepspace/testing'
+
+test('user A posts a message user B sees', async ({ users }) => {
+  const [userA, userB] = await users(2)
   const created: string[] = []
   try {
     const title = `__test-${Date.now()}__ Hello`
     // ... create, grab the resulting recordId, push to `created` ...
     // ... assertions ...
   } finally {
-    // Delete in reverse order, best-effort
+    // Delete in reverse order, best-effort. Contexts auto-close — no need to
+    // close them here; only records you created need explicit cleanup.
     for (const id of created.reverse()) {
       try { await userA.page.evaluate(
         async (recordId) => {
@@ -92,8 +136,6 @@ test('user A posts a message user B sees', async ({ browser }) => {
         }, id,
       ) } catch { /* swallow */ }
     }
-    await userA.context.close()
-    await userB.context.close()
   }
 })
 ```

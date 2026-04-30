@@ -86,8 +86,9 @@ Requires channels + messages schemas in the room.
 - `usePresence(options?)` — cursor/user presence in the current scope.
 - `usePresenceRoom(scopeId)` — presence for an explicit scope (e.g., a separate doc room).
 - `useGameRoom(roomId)` — game-room abstraction.
-- `useMediaRoom(roomId)` — LiveKit media room.
-- `useCronMonitor(roomId)` — cron job status stream.
+- `useCronMonitor(roomId)` — admin/monitor stream for the `AppCronRoom` DO. Pass `app:<APP_NAME>` for the app's default cron room. Returns task list, last-run state, and execution history.
+
+> Audio/video rooms have no SDK hook. Use the `livekit/*` endpoints (`create-room`, `generate-token`, `list-rooms`, `delete-room`) via `integration.post(...)` — see `references/integrations.md`.
 
 **Collaborative text input** — bind a `<textarea>` to a Yjs text field and multiple users editing the same record see each other's keystrokes live:
 
@@ -218,10 +219,12 @@ The scaffold declares five DO classes in `__DO_MANIFEST__` and extends these bas
   ```
 - `YjsRoom` — per-doc collaborative text (Y.Text) and rich fields.
 - `CanvasRoom` — collaborative canvas state (shapes, strokes).
-- `MediaRoom` — LiveKit-backed audio/video rooms.
 - `PresenceRoom` — cursors, typing indicators, "who's online".
+- `CronRoom` — scheduled-task DO. Construct with `{ tasks: CronTask[] }` and override `onTask(name)`. See `references/server-extensions.md` § Cron for the scaffold pattern.
 
-Each has its own WebSocket route wired in `worker.ts` (`/ws/yjs/:docId`, `/ws/canvas/:docId`, `/ws/media/:roomId`, `/ws/presence/:scopeId`).
+Each has its own WebSocket route wired in `worker.ts` (`/ws/yjs/:docId`, `/ws/canvas/:docId`, `/ws/presence/:scopeId`, `/ws/cron/:roomId`).
+
+> No `MediaRoom` — LiveKit replaces it. Use `livekit/*` integration endpoints (see `references/integrations.md`).
 
 ### Game rooms (state migration)
 
@@ -235,7 +238,7 @@ Omit the override to keep the legacy behavior (load the stored blob as-is).
 
 ### Auth
 - `verifyJwt(request, env)` — validates the session JWT, returns `{ userId, ... }` or throws.
-- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` — HMAC verification for internal platform → app calls (e.g., the `/internal/cron` endpoint).
+- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` — HMAC sign / verify for internal platform → app calls. (Cron no longer uses these — see `references/server-extensions.md` § Cron.)
 
 ### AI provider helper
 - `createDeepSpaceAI(env, provider, options?)` — returns a Vercel-AI-SDK-compatible provider routed through the DeepSpace API worker. `provider` is `'anthropic' | 'openai' | 'cerebras'`. Pass `{ authToken }` for user-billed calls (inside a request handler); omit for server-side autonomous calls (falls back to `env.APP_OWNER_JWT`, billed to the app owner).

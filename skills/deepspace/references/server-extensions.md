@@ -65,13 +65,55 @@ Client-side, use `@ai-sdk/react`'s `useChat` hook pointed at `/api/ai/chat` — 
 
 ---
 
-## 3. Cron (`cron.json` + `src/cron.ts`)
+## 3. Cron (`src/cron.ts` + `AppCronRoom`)
 
-For scheduled background work (digests, cleanup, syncing):
+For scheduled background work (digests, cleanups, sync jobs). The scaffold ships a per-app `AppCronRoom extends CronRoom` DO; tasks live in `src/cron.ts` and run on the DO's alarm. There is no `cron.json`, no `/internal/cron` endpoint, and no platform dispatch worker — every app schedules and runs its own work in its own DO.
 
-- Add tasks to `cron.json`:
-  ```json
-  { "tasks": [{ "name": "daily-digest", "schedule": "0 9 * * *" }] }
-  ```
-- Handle them in `handleCron(payload)` in `src/cron.ts`. The worker's `/internal/cron` endpoint is HMAC-authed (verified via `verifyInternalSignature` + `buildInternalPayload` from `deepspace/worker`) and called by the platform's dispatch worker — you don't invoke it yourself.
-- Cron handlers run server-side as the app owner; use `createDeepSpaceAI(env, ...)` (falls back to `APP_OWNER_JWT`) for autonomous LLM calls, and direct DO access for mutations.
+Edit `src/cron.ts` to declare tasks and the runner:
+
+```typescript
+import type { CronTask } from 'deepspace/worker'
+import { buildCronContext } from 'deepspace/worker'
+
+export const tasks: CronTask[] = [
+  { name: 'heartbeat', intervalMinutes: 1 },
+  { name: 'daily-digest', schedule: '0 9 * * *', timezone: 'America/New_York' },
+]
+
+export async function runTask(name: string, env: Env): Promise<void> {
+  const ctx = buildCronContext(env, env.OWNER_USER_ID, `app:${env.APP_NAME}`)
+  if (name === 'heartbeat') {
+    // ctx.tools.{create,update,remove,get,query} — same shape as server actions, runs as app owner
+    // ctx.integration(endpoint, data) — proxied through api-worker, billed to the owner JWT
+  } else if (name === 'daily-digest') {
+    // ...
+  }
+}
+```
+
+**Task declaration rules:**
+- Each task declares **either** `intervalMinutes` (every N minutes) **or** `schedule` + `timezone` (5-field cron expression evaluated against an IANA timezone). Declaring both, or neither, throws at DO construction time.
+- Cron mode is DST-aware — the wall-clock comparison happens after the timezone shift.
+- Optional `paused: true` starts the task disabled; toggle it later via the `useCronMonitor` UI.
+
+The scaffolded `worker.ts` already wires `AppCronRoom` to the manifest and routes `/ws/cron/:roomId`:
+
+```typescript
+export class AppCronRoom extends CronRoom {
+  constructor(state: DurableObjectState, env: Env) {
+    super(state, env, { tasks: cronTasks })
+    this.env = env
+  }
+  protected async onTask(taskName: string): Promise<void> {
+    await runCronTask(taskName, this.env)
+  }
+}
+```
+
+Don't edit those bindings — add tasks in `src/cron.ts` and the DO picks them up at construction.
+
+**Monitoring UI** — render task status, history, and pause/resume controls with `useCronMonitor('app:<APP_NAME>')` from `deepspace`. Auth-gate the page (admin role) — `useCronMonitor` does not enforce who can pause tasks.
+
+**Outbound calls in handlers** — `runTask` runs as the app owner. Use the `ctx` from `buildCronContext` for record mutations and integration calls; the api-worker bills `APP_OWNER_JWT`. For autonomous LLM calls use `createDeepSpaceAI(env, 'anthropic')` without `authToken` — it falls back to `APP_OWNER_JWT` automatically.
+
+**Migration note** — if you find a stale `cron.json`, `handleCron`, `/internal/cron`, `verifyInternalSignature`, or `buildInternalPayload` in an existing app, those are the pre-`CronRoom` pattern. Delete them and rewrite to the shape above; `verifyInternalSignature` / `buildInternalPayload` still exist in `deepspace/worker` for other internal HMAC use, but cron does not need them.

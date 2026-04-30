@@ -33,36 +33,50 @@ A good home page in < 60 lines of JSX using `Card`, `CardGrid`, `EmptyState`, an
 
 ---
 
-## 2. Theme — Retheme the `@theme` Block in `src/styles.css`
+## 2. Theme — Pick a Preset, or Customize One
 
-The scaffold's theme lives in `src/styles.css` inside an `@theme { ... }` block (shadcn/ui-compatible token system, Tailwind v4 `@theme` syntax). **This is the retheming surface for 95% of cases — not `DeepSpaceThemeProvider`.**
+The scaffold ships **15 ready-to-use theme presets** as `[data-theme="<id>"]` CSS blocks in `src/themes.css`, with a typed catalog in `src/themes.ts`. The active theme is set on `<html data-theme="...">` in `index.html`. Switching themes is one attribute change; no JS, no FOUC. **This is the retheming surface for 95% of cases — not `DeepSpaceThemeProvider`.**
 
-Default palette (dark slate + indigo) — these are the values to change:
-```css
---color-background: #0a0f1a;   /* page background */
---color-foreground: #f1f5f9;   /* primary text */
---color-card: #0f172a;         /* card surfaces */
---color-primary: #818cf8;      /* indigo — the default "DeepSpace blue" */
---color-secondary: #1e293b;
---color-muted: #1e293b;
---color-accent: #1e293b;
---color-border: rgba(51, 65, 85, 0.5);
---color-ring: rgba(129, 140, 248, 0.5);
-/* + backward-compat aliases + status colors + shadow glows */
-```
+### The 15 presets
 
-**Steps when scaffolding a new app:**
-1. Pick a palette **before** writing features. Any palette that reasonably fits the app's concept is fair game — cool blues, warm earth tones, paper neutrals with a vivid accent, dark with neon, muted monochrome, high-contrast mid-century, whatever. The only hard rule: don't keep the default dark-blue + indigo look. Beyond that, variety matters more than matching a "productivity = warm neutrals" heuristic — avoid cream/amber, slate/teal, or any single family just because it "feels safe."
-2. Replace the `@theme` block — swap at least: `--color-background`, `--color-foreground`, `--color-primary`, `--color-secondary`, `--color-card`, `--color-accent`, `--color-ring`, and the `--shadow-glow-*` tokens so glows match the new accent. A single token swap is not enough — the UI will still read as "default DeepSpace".
-3. Update the backward-compat aliases at the bottom of the `@theme` block (`--color-surface`, `--color-primary-hover`, `--color-primary-muted`, `--color-primary-border`) — several components still read these.
-4. Update the favicon and `<title>` in `index.html`. The defaults say "DeepSpace".
-5. If the app has a distinct identity, add a simple wordmark or logo to `Navigation.tsx` (plain text in a distinctive font counts — `font-serif`, `tracking-tight`, larger size). **Don't rewrite the rest of `Navigation.tsx`** — sign-in (`AuthOverlay` modal), sign-out (`signOut()` in avatar dropdown), user avatar, role badge, mobile menu, and nav links are already wired to the SDK and `src/nav.ts`. To add a nav item, append to `src/nav.ts`; Navigation picks it up automatically.
+**Dark** — `slate` (default; cool gray + indigo), `ink` (warm-deep + violet), `aurora` (cyan on near-black; AI/cyber), `midnight` (deep navy + sky-blue; data/finance), `forest` (deep green + sage), `ember` (near-black + amber; cozy), `graphite` (pure monochrome), `noir` (true black + crimson; dramatic).
 
-If the user has not specified a palette, **pick one and tell them in one line** what you picked (e.g., "Picked a deep teal + cream palette"). Do not silently keep the default. Do not ask for hex codes up front. Do not explain your reasoning unless asked — just ship and move on.
+**Light** — `linen` (warm off-white + sky-blue; docs/blogs), `mist` (cool pale slate; calm/wellness), `sand` (cream + terracotta; lifestyle), `bloom` (pale rose + pink), `paper` (white + near-black; typography/reading), `lavender` (pale purple + mauve), `citrus` (cream + lime; energetic).
 
-**When to use `DeepSpaceThemeProvider` / `applyDeepSpaceTheme` instead:** these are exported from `deepspace` (the root package — there is no `deepspace/theme` subpath) and drive `--theme-*` CSS variables consumed by cross-app / deployed DeepSpace components (pills, directory panels, mini-apps). They read from `--color-*` by default (`readThemeFromDOM`), so editing the `@theme` block is usually enough and they just follow. Reach for them explicitly only when embedding DeepSpace surfaces on a deployed site or mini-app that needs a different theme from the main app.
+### The fast path (90% of apps)
 
-**UI dark/light mode:** the SDK reads `data-ui-theme="dark" | "light"` on `<html>` to switch between `UI_TOKENS_DARK` and `UI_TOKENS_LIGHT` (see `applyUIThemeTokens`). Set this attribute if the app supports a light/dark toggle.
+1. **Pick a preset that fits the app's domain.** Match the descriptions above to the app's concept — `aurora` for AI tools, `paper` for a reader, `forest` for wellness, etc. **Don't ship `slate`** (the scaffold default). If the user hasn't specified a palette, pick one and tell them in one line: "Picked `aurora` — cyan on near-black, fits the AI/cyber feel." Don't ask for hex codes; don't explain reasoning unless asked.
+2. **Edit `index.html`** — change `<html data-theme="slate">` to `<html data-theme="<your-id>">`.
+3. **Update `<title>`** in `index.html` and replace the favicon. The defaults say "DeepSpace App".
+4. **Add a wordmark** to `Navigation.tsx` if the app has a distinct identity — plain text in a distinctive font is enough (`font-serif`, `tracking-tight`, larger size). **Don't rewrite the rest of `Navigation.tsx`** — sign-in (`AuthOverlay` modal), sign-out (`signOut()` in avatar dropdown), user avatar, role badge, mobile menu, and nav links are already wired to the SDK and `src/nav.ts`. To add a nav item, append to `src/nav.ts`; Navigation picks it up automatically.
+
+That's it. Move on to features.
+
+### The customize path (preset close, but not exact)
+
+If a preset is close but the accent or background needs tuning:
+
+1. Set `data-theme="<closest-preset>"` in `index.html`.
+2. Open `src/themes.css`, find the matching `[data-theme="<id>"] { ... }` block, override the tokens you want changed (`--color-primary`, `--color-background`, `--color-card`, `--color-accent`, `--color-ring`, etc.). Light themes also include `color-scheme: light` — keep it.
+3. Optional: if you're tuning the **default** (`slate`), edit the `@theme { ... }` block in `src/styles.css` instead — that block holds slate's values and is the inherited baseline.
+
+A single token swap is not enough; if the result still looks like the preset, swap at least: background, foreground, card, primary, secondary, accent, ring, plus the `--shadow-card*` tokens for cohesion.
+
+### The build-from-scratch path (rare)
+
+If none of the presets fit, append a new block to `src/themes.css` (`[data-theme="my-id"] { ... }` with the full token set — copy any existing preset as a template), add an entry to the `THEMES` array in `src/themes.ts` for type safety, and set `data-theme="my-id"` in `index.html`. The themes.ts file's header has these instructions inline.
+
+### Backward-compat aliases
+
+The slate `@theme` block in `src/styles.css` includes a chunk of legacy aliases (`--color-surface`, `--color-primary-hover`, `--color-primary-muted`, `--color-primary-border`, etc.) some older components still read. They derive from the modern tokens via `var(...)`, so once the modern tokens are correct (preset or customized), the aliases follow automatically. Only touch them if you find a component still reading a literal value that's drifted.
+
+### When to use `DeepSpaceThemeProvider` / `applyDeepSpaceTheme` instead
+
+These are exported from `deepspace` (the root package — there is no `deepspace/theme` subpath) and drive `--theme-*` CSS variables consumed by cross-app / deployed DeepSpace components (pills, directory panels, mini-apps). They read from `--color-*` by default (`readThemeFromDOM`), so the preset / `@theme` setup is usually enough and they just follow. Reach for them explicitly only when embedding DeepSpace surfaces on a deployed site or mini-app that needs a different theme from the main app.
+
+### UI dark/light mode
+
+Light themes set `color-scheme: light` inside the preset block, so native form controls (calendar icons, scrollbars) match. The SDK also reads `data-ui-theme="dark" | "light"` on `<html>` to switch between `UI_TOKENS_DARK` and `UI_TOKENS_LIGHT` (see `applyUIThemeTokens`) — set this if the app supports a light/dark toggle distinct from the theme picker.
 
 ---
 
