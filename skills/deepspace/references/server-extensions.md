@@ -112,7 +112,9 @@ export class AppCronRoom extends CronRoom {
 
 Don't edit those bindings — add tasks in `src/cron.ts` and the DO picks them up at construction.
 
-**Monitoring UI** — render task status, history, and pause/resume controls with `useCronMonitor('app:<APP_NAME>')` from `deepspace`. Auth-gate the page (admin role) — `useCronMonitor` does not enforce who can pause tasks.
+**Monitoring UI** — render task status, history, and `trigger` / `pause` / `resume` controls with `useCronMonitor('app:<APP_NAME>')` from `deepspace`. The hook returns `{ tasks, history, connected, trigger(name), pause(name), resume(name) }`. Auth-gate the page (admin role) — the DO does not enforce who can call `trigger`/`pause`/`resume`, so without a client-side role check any signed-in user can fire owner-billed tasks.
+
+**Testing cron without waiting for the schedule** — `trigger(taskName)` runs `onTask` immediately on the DO via the same code path as the alarm scheduler. So the right way to E2E-test cron is a Playwright spec that signs in as admin, navigates to `/cron`, clicks the "Run now" button (which calls `trigger(taskName)`), and asserts the new entry in `history` appears within a second. Don't write tests that wait for `0 9 * * 1-5` to fire — and don't change schedules to `intervalMinutes: 1` just for testing (use `trigger` instead). The only reason to use a 1-minute interval temporarily is to verify the alarm path itself, which `trigger` bypasses.
 
 **Outbound calls in handlers** — `runTask` runs as the app owner. Use the `ctx` from `buildCronContext` for record mutations and integration calls; the api-worker bills `APP_OWNER_JWT`. For autonomous LLM calls use `createDeepSpaceAI(env, 'anthropic')` without `authToken` — it falls back to `APP_OWNER_JWT` automatically.
 
