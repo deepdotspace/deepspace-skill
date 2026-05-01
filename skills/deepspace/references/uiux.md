@@ -45,7 +45,23 @@ The scaffold ships **15 ready-to-use theme presets** as `[data-theme="<id>"]` CS
 
 ### The fast path (90% of apps)
 
-1. **Pick a preset that fits the app's domain.** Match the descriptions above to the app's concept — `aurora` for AI tools, `paper` for a reader, `forest` for wellness, etc. **Don't ship `slate`** (the scaffold default). If the user hasn't specified a palette, pick one and tell them in one line: "Picked `aurora` — cyan on near-black, fits the AI/cyber feel." Don't ask for hex codes; don't explain reasoning unless asked.
+1. **Pick a preset that fits the app's domain.** The 15 presets above cover most app concepts — read their one-line descriptions and pick the one whose feel matches the product. **Don't ship `slate`** (the scaffold default — every untouched scaffold looks the same). If the user hasn't specified a palette, pick one and tell them in one line: "Picked `<id>` — <one-phrase rationale>." Don't ask for hex codes; don't explain reasoning unless asked. **Vary your picks across apps** — don't reach for the same preset every time. The 15 presets exist so different apps look different.
+
+   Worked examples (illustrative, not prescriptive — match the actual product):
+
+   | App concept | Reasonable pick | Why |
+   |---|---|---|
+   | Data dashboard / finance / analytics | `midnight` | deep navy + sky-blue, reads as data-dense |
+   | Cooking / recipes / lifestyle | `sand` | cream + terracotta, warm and tactile |
+   | AI / dev tool / cyber | `aurora` | cyan on near-black, technical |
+   | Wellness / meditation / journaling | `mist` | cool pale slate, calm |
+   | Reader / docs / blog | `paper` | white + near-black, typography-first |
+   | Kids / playful / education | `citrus` or `bloom` | high-energy or soft-rose, friendly |
+   | Editorial / agency / premium | `noir` or `linen` | dramatic or warm off-white |
+   | Outdoor / eco / health | `forest` | deep green + sage |
+
+   These are starting points — read the full preset list and pick what fits *this* app, not what fits the table category.
+
 2. **Edit `index.html`** — change `<html data-theme="slate">` to `<html data-theme="<your-id>">`.
 3. **Update `<title>`** in `index.html` and replace the favicon. The defaults say "DeepSpace App".
 4. **Add a wordmark** to `Navigation.tsx` if the app has a distinct identity — plain text in a distinctive font is enough (`font-serif`, `tracking-tight`, larger size). **Don't rewrite the rest of `Navigation.tsx`** — sign-in (`AuthOverlay` modal), sign-out (`signOut()` in avatar dropdown), user avatar, role badge, mobile menu, and nav links are already wired to the SDK and `src/nav.ts`. To add a nav item, append to `src/nav.ts`; Navigation picks it up automatically.
