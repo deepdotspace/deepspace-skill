@@ -15,26 +15,26 @@ oauth_required_integrations:
   - google
 categories:
   amazon:
-    file: integrations/amazon.yaml
+    file: amazon.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: amazon/search-products
         description: Search Amazon products
   anthropic:
-    file: integrations/anthropic.yaml
+    file: anthropic.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: anthropic/chat-completion
         description: Generate text completions using Anthropic Claude models via the
           Messages API
   cloudconvert:
-    file: integrations/cloudconvert.yaml
+    file: cloudconvert.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: cloudconvert/convert-file
         description: Convert a file by URL or base64
   elevenlabs:
-    file: integrations/elevenlabs.yaml
+    file: elevenlabs.yaml
     endpoint_count: 4
     endpoints:
       - endpoint: elevenlabs/create-agent
@@ -47,14 +47,14 @@ categories:
       - endpoint: elevenlabs/list-voices
         description: List available ElevenLabs voices
   email:
-    file: integrations/email.yaml
+    file: email.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: email/send
         description: Send a transactional email via Resend (html or text body; optional
           cc, bcc, reply_to)
   exa:
-    file: integrations/exa.yaml
+    file: exa.yaml
     endpoint_count: 6
     endpoints:
       - endpoint: exa/answer
@@ -81,7 +81,7 @@ categories:
           Supports categories, content extraction (text, highlights, summaries),
           and advanced filtering.
   finance:
-    file: integrations/finance.yaml
+    file: finance.yaml
     endpoint_count: 5
     endpoints:
       - endpoint: alphavantage/search-symbols
@@ -96,7 +96,7 @@ categories:
         description: Get real-time US stock quote (price, change, high, low, open,
           previous close)
   firecrawl:
-    file: integrations/firecrawl.yaml
+    file: firecrawl.yaml
     endpoint_count: 4
     endpoints:
       - endpoint: firecrawl/crawl
@@ -114,7 +114,7 @@ categories:
           Combines search with scraping. 2 credits per 10 results + scrape
           costs.
   freepik:
-    file: integrations/freepik.yaml
+    file: freepik.yaml
     endpoint_count: 21
     endpoints:
       - endpoint: freepik/download-icons
@@ -168,14 +168,14 @@ categories:
       - endpoint: freepik/upscale-image-precision
         description: Precision upscale an image
   gemini:
-    file: integrations/gemini.yaml
+    file: gemini.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: gemini/generate-image
         description: "[DEPRECATED — prefer using newer models instead like Gemini]
           Generate image from prompt (async)"
   github:
-    file: integrations/github.yaml
+    file: github.yaml
     endpoint_count: 18
     endpoints:
       - endpoint: github/get-commit
@@ -215,7 +215,7 @@ categories:
       - endpoint: github/search-repositories
         description: Search GitHub repositories
   google:
-    file: integrations/google.yaml
+    file: google.yaml
     oauth_required: true
     endpoint_count: 10
     endpoints:
@@ -242,13 +242,13 @@ categories:
       - endpoint: google/gmail-send
         description: Send email via Gmail
   instagram:
-    file: integrations/instagram.yaml
+    file: instagram.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: instagram/extract-content
         description: Extract content from Instagram posts (captions and media)
   latex:
-    file: integrations/latex.yaml
+    file: latex.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: latex-compiler/compile
@@ -257,7 +257,7 @@ categories:
           resources, and bibliography processing. Returns the compiled PDF as
           base64.
   linkedin:
-    file: integrations/linkedin.yaml
+    file: linkedin.yaml
     endpoint_count: 2
     endpoints:
       - endpoint: linkedin/analyze-profile-url
@@ -265,7 +265,7 @@ categories:
       - endpoint: linkedin/search-profiles
         description: Search LinkedIn profiles
   livekit:
-    file: integrations/livekit.yaml
+    file: livekit.yaml
     endpoint_count: 4
     endpoints:
       - endpoint: livekit/create-room
@@ -282,7 +282,7 @@ categories:
       - endpoint: livekit/list-rooms
         description: List active LiveKit rooms
   mta:
-    file: integrations/mta.yaml
+    file: mta.yaml
     endpoint_count: 4
     endpoints:
       - endpoint: mta/alerts
@@ -297,7 +297,7 @@ categories:
       - endpoint: mta/list-feeds
         description: List all available NYC Subway GTFS-RT feeds and the lines they cover
   nasa:
-    file: integrations/nasa.yaml
+    file: nasa.yaml
     endpoint_count: 7
     endpoints:
       - endpoint: nasa/apod
@@ -322,7 +322,7 @@ categories:
         description: Lookup a specific Near-Earth Object by its NASA JPL small body
           (SPK-ID) ID
   newsapi:
-    file: integrations/newsapi.yaml
+    file: newsapi.yaml
     endpoint_count: 2
     endpoints:
       - endpoint: newsapi/search-everything
@@ -332,7 +332,7 @@ categories:
         description: "[DEPRECATED — use /news-search-exa instead] Get top headlines.
           Limited to truncated content and 24-hour delay."
   openai:
-    file: integrations/openai.yaml
+    file: openai.yaml
     endpoint_count: 2
     endpoints:
       - endpoint: openai/chat-completion
@@ -341,7 +341,7 @@ categories:
         description: "[DEPRECATED — prefer using newer models instead like Gemini]
           Generate image from prompt (async)"
   openweathermap:
-    file: integrations/openweathermap.yaml
+    file: openweathermap.yaml
     endpoint_count: 3
     endpoints:
       - endpoint: openweathermap/current
@@ -351,7 +351,7 @@ categories:
       - endpoint: openweathermap/geocoding
         description: Geocode a city name
   polymarket:
-    file: integrations/polymarket.yaml
+    file: polymarket.yaml
     endpoint_count: 12
     endpoints:
       - endpoint: polymarket/comments
@@ -403,7 +403,7 @@ categories:
           price, side (buy/sell), timestamp, and transaction details. Supports
           filtering by market, user, side, and more.
   serpapi:
-    file: integrations/serpapi.yaml
+    file: serpapi.yaml
     endpoint_count: 12
     endpoints:
       - endpoint: scholar/get-author-details
@@ -433,7 +433,7 @@ categories:
       - endpoint: serpapi/web-search
         description: Google Web Search via SerpApi
   slack:
-    file: integrations/slack.yaml
+    file: slack.yaml
     endpoint_count: 4
     endpoints:
       - endpoint: slack/channel-history
@@ -445,7 +445,7 @@ categories:
       - endpoint: slack/team-info
         description: Get Slack workspace/team information
   speech:
-    file: integrations/speech.yaml
+    file: speech.yaml
     endpoint_count: 2
     endpoints:
       - endpoint: speech/speech-to-text
@@ -453,7 +453,7 @@ categories:
       - endpoint: speech/text-to-speech
         description: Convert text to speech audio
   sports:
-    file: integrations/sports.yaml
+    file: sports.yaml
     endpoint_count: 71
     endpoints:
       - endpoint: api-american-football/games
@@ -635,7 +635,7 @@ categories:
         description: Get sprint race results. Returns empty array if the race weekend
           did not include a sprint race.
   submagic:
-    file: integrations/submagic.yaml
+    file: submagic.yaml
     endpoint_count: 3
     endpoints:
       - endpoint: submagic/create-video
@@ -646,7 +646,7 @@ categories:
         description: Submit + poll a SubMagic project until it finishes (handles the
           polling loop)
   tiktok:
-    file: integrations/tiktok.yaml
+    file: tiktok.yaml
     endpoint_count: 4
     endpoints:
       - endpoint: tiktok/cancel-scheduled-post
@@ -658,13 +658,13 @@ categories:
       - endpoint: tiktok/user-info
         description: Get TikTok user profile
   websearch:
-    file: integrations/websearch.yaml
+    file: websearch.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: websearch/advanced-search
         description: Advanced multi-modal web search with structured output for widgets
   wikipedia:
-    file: integrations/wikipedia.yaml
+    file: wikipedia.yaml
     endpoint_count: 4
     endpoints:
       - endpoint: wikipedia/get-page-content
@@ -676,7 +676,7 @@ categories:
       - endpoint: wikipedia/search-pages
         description: Search Wikipedia articles
   youtube:
-    file: integrations/youtube.yaml
+    file: youtube.yaml
     endpoint_count: 3
     endpoints:
       - endpoint: youtube/get-trending-videos

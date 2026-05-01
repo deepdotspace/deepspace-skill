@@ -139,7 +139,7 @@ const result = await integration.post('openweathermap/geocoding', { q: city })
 // Returns: { success: true, data: {...} } or { success: false, error: "..." }
 ```
 
-**Endpoint names are two segments: `<integration>/<endpoint>`.** Don't guess — names like `geocode-city` or `weather-forecast` aren't real and return 404 at runtime. Verify in `references/integrations.yaml` before calling.
+**Endpoint names are two segments: `<integration>/<endpoint>`.** Don't guess — names like `geocode-city` or `weather-forecast` aren't real and return 404 at runtime. Verify in `assets/integrations/index.yaml` before calling.
 
 **Auth-gate any UI that calls `integration.post(...)`.** Default billing is owner-pays. The api-worker accepts anonymous callers, so a public endpoint silently bills the owner for every visitor (or bot) hit. Wrap calling components in `useAuth().isSignedIn`.
 

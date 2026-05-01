@@ -15,7 +15,7 @@ Four endpoints. **Billing varies by endpoint** — read the table carefully befo
 | `livekit/delete-room` | `roomName` | `{ deleted, roomName }` | **Only the room creator can delete.** Refund for unused time is applied automatically based on actual duration. |
 | `livekit/list-rooms` | (none) | `{ rooms: [...] }` (Twirp `ListRooms` shape) | — |
 
-Full input/output schemas live in `references/integrations/livekit.yaml`.
+Full input/output schemas live in `assets/integrations/livekit.yaml`.
 
 ## Two flows — pick the right one
 
@@ -58,4 +58,4 @@ The deepspace SDK only handles the auth/room-lifecycle proxy; the client-side We
 ## See also
 
 - `references/integrations.md` for general `integration.post(...)` patterns and billing setup.
-- `references/integrations/livekit.yaml` for full input/output schemas.
+- `assets/integrations/livekit.yaml` for full input/output schemas.

@@ -8,7 +8,7 @@ const result = await integration.post('<integration-name>/<endpoint-name>', { ..
 // Returns: { success: true, data: ... } or { success: false, error: "..." }
 ```
 
-**Endpoint keys are two segments: `<integration>/<endpoint>`.** Use the exact names from `integrations.yaml` — do not invent or paraphrase.
+**Endpoint keys are two segments: `<integration>/<endpoint>`.** Use the exact names from `assets/integrations/index.yaml` — do not invent or paraphrase.
 
 **Body shapes** — full optional-parameter coverage (enum values, ranges, defaults) lives in the api-worker's Zod schema (mirrored in `integrations/<name>.yaml`). A wrong body just returns `{ success: false, error: "..." }` in the envelope, so the fast path is: try the required shape, then widen with optionals as needed.
 
@@ -41,17 +41,17 @@ For Google's OAuth surface specifically (mocking connected / `requiresOAuth` / D
 
 ## Endpoint catalog
 
-Full endpoint specs — input schemas, descriptions, output schemas — live in YAML:
+Full endpoint specs — input schemas, descriptions, output schemas — live in YAML under `assets/integrations/` (data files, not prose; sibling to `references/`):
 
-- Index: [`integrations.yaml`](./integrations.yaml) — all 215 endpoints grouped by integration, with one-line descriptions.
-- Per-integration specs: [`integrations/<name>.yaml`](./integrations/) — one file per integration (31 total), with full input/output schemas.
+- Index: [`assets/integrations/index.yaml`](../../assets/integrations/index.yaml) — all 215 endpoints grouped by integration, with one-line descriptions.
+- Per-integration specs: [`assets/integrations/<name>.yaml`](../../assets/integrations/) — one file per integration (31 total), with full input/output schemas.
 
 Call pattern is always POST: `integration.post('<integration>/<endpoint>', body)`.
 
 **How to navigate these files to save context — read one level at a time.** The index is large (all 215 endpoints) and the per-integration YAMLs can each be hundreds of lines; loading them speculatively wastes the window.
 
-1. **Use `integrations.yaml` only to discover** which integration and endpoint name matches the task (search by description, then grab the exact `<integration>/<endpoint>` key). Do not keep the index loaded after you have the names.
-2. **Load exactly one `integrations/<name>.yaml`** — the single file covering the endpoint you're about to call — for the required body shape and output schema. Do not load multiple integration files at once.
+1. **Use `assets/integrations/index.yaml` only to discover** which integration and endpoint name matches the task (search by description, then grab the exact `<integration>/<endpoint>` key). Do not keep the index loaded after you have the names.
+2. **Load exactly one `assets/integrations/<name>.yaml`** — the single file covering the endpoint you're about to call — for the required body shape and output schema. Do not load multiple integration files at once.
 3. **If the app calls endpoints from several integrations, load them one at a time** as you reach each call site. The body/response shape of `openweathermap` has nothing to teach you about `exa`.
 4. **Do not load any integration YAML** for apps that don't call `integration.post(...)` at all — client-only apps with hooks and RBAC never need this directory.
 
