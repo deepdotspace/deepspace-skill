@@ -80,3 +80,4 @@ Each helper throws an actionable Error if neither transport is configured. See `
 - Schemas baked in at deploy time — no runtime schema loading.
 - Direct WebSocket per scope — no mux/gateway.
 - No user-scope DOs — user-scoped data lives in app DOs with RBAC filtering.
+- **Use `npx deepspace dev`** for local dev — never run `wrangler dev` + `vite dev` separately. The CLI's combined runner is what writes `.dev.vars` (with a freshly-minted `APP_OWNER_JWT`) and routes the app through the Cloudflare Vite plugin so service bindings, DO classes, and WebSocket routes all resolve in-process.

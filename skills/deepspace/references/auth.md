@@ -56,6 +56,8 @@ Adding a new gated page is a one-file change: drop it inside `(protected)/`. The
 - Don't add a second sign-out — the avatar dropdown in `Navigation.tsx` already calls `signOut()`.
 - **If the app requires sign-in, a sign-out control is non-negotiable.** If you replace `Navigation.tsx`, ensure it still calls `signOut()` from `deepspace` somewhere reachable when signed in.
 - Don't rewrite `Navigation.tsx` just to theme it — edit the `@theme` tokens or pick a `data-theme` preset (see `references/uiux.md` §2).
+- **Safari + localhost cookies** — `__Secure-` cookies require HTTPS; Safari enforces this on localhost, Chrome doesn't. Auth appears broken on Safari in local dev. Works fine once deployed.
+- **JWT provides user profile** — no separate `/api/users/me` call needed.
 
 ## Provider stack — extend, don't replace
 

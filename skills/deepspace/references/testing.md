@@ -2,9 +2,32 @@
 
 Load this reference when writing or updating a Playwright test, when `createTestUsers` errors with missing accounts, when a test fails and you need to decide how to diagnose, or when extending `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` / per-feature specs. Skip it for conversation, planning, code-reading, or code changes whose runtime behavior is already covered by an existing test.
 
-The build-phase testing workflow lives inline in `SKILL.md` Step 8 (when to run, which file to extend, debug-from-failures rule). This file covers the deeper surface: helpers, auth setup, cleanup conventions, route coverage, multi-user patterns, and self-diagnosis.
+This file is canonical for the test extension checklist (the Step 8 rules below), the helpers, auth setup, cleanup conventions, route coverage, multi-user patterns, and self-diagnosis. `SKILL.md` links here.
 
 Every scaffolded app includes Playwright tests in `tests/` with helpers for auth, error tracking, and multi-user flows. Use these tests to verify your work — don't rely on manual testing or console logs to debug issues.
+
+## Step 8 extension checklist
+
+**Run tests only after a runtime-affecting code change** (`src/`, `worker.ts`, etc.). Skip them for conversation, planning, reading, or pure documentation edits — don't run as a ritual.
+
+**Each row is a hard requirement:**
+
+| Trigger | Required test |
+|---|---|
+| Added a schema | `smoke.spec.ts` — CRUD happy path (create → read → edit → delete for a signed-in user) |
+| Added/edited a route, page, nav item, or top-level UI (landing, gallery, dashboard, settings) | `smoke.spec.ts` — page-load with **real-content** assertion (not just "no crash"). For `(protected)/` routes: also assert two-state (signed-out → `[data-testid="auth-overlay"]` visible **and** content not in DOM; signed-in → content visible, no overlay). For public routes: `[data-testid="auth-overlay"]` count is `0`. |
+| Schema with `visibilityField` or `'public'`/`'shared'`/`'team'`/`'own'` permissions | `collab.spec.ts` — two-user assertion (A acts, B sees) |
+| Used `useYjs*` / `useMessages` / `useReactions` / `usePresence` / `useCanvas` | `collab.spec.ts` — two-user assertion |
+| Added/edited worker route, server action, `/api/ai/chat`, cron handler, `integration.post(...)`, or auth-gated UI calling `/api/actions/<name>` | `api.spec.ts` — status codes + response shape + auth gating (incl. 401/403 negative path). For integrations: POST and assert `success: true` with the shape the UI consumes — locks the contract, catches wrong endpoint names. |
+| Fixing a bug | Write a failing test that reproduces it **first**, then fix until it passes. Leave the test in place. |
+
+**Workflow rules:**
+
+- **All tests use real services** — never mock internal hooks.
+- **Debug from failures, not console logs.** Read the assertion + selector, fix the code. Don't add `console.log` to diagnose — write a more specific assertion. Don't weaken or delete tests to make them green.
+- **Re-run after each follow-up change.** Re-apply the checklist; tests are a living contract.
+
+Skipping the checklist when its conditions fire is the most common cause of "I built it but it crashes on page load" handoffs and "looks fine for me, broken for the second user" regressions.
 
 ## Running Tests
 
