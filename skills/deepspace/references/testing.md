@@ -238,3 +238,5 @@ When something isn't working, do **not** start with console logs. Start with:
 4. Leave the test in place — it now guards against regression.
 
 Console logs are a last resort, not a first step. A failing test tells you more than a log ever will: what was expected, what was observed, where in the flow it diverged. If a test is flaky or passes locally but fails in CI, investigate the flake — do not mark it `.skip` or delete it.
+
+Don't make the user do the agent's debugging — having them click around the app and paste console output is not a substitute for running a Playwright test. Reach for that path only after a test has genuinely failed to reproduce the bug, and say so explicitly when you do.

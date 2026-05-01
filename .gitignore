@@ -1,0 +1,8 @@
+# Personal Claude Code session settings (per-user permission allowlist, etc.)
+.claude/
+
+# Editor / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/
