@@ -65,7 +65,7 @@ The scaffold generates a Vite + Cloudflare-Worker app. Files you'll touch most o
 
 | Path | Purpose |
 |---|---|
-| `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 5 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). Edit only when adding cross-app proxies. |
+| `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 5 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). Edit when adding new DO classes / WebSocket routes, customizing `AppRecordRoom` options, switching the AI chat model or tools, adding custom HTTP routes, or wiring cross-app proxies. |
 | `src/pages/_app.tsx` | Provider stack: `ToastProvider → DeepSpaceAuthProvider → AuthBoot → RecordProvider → RecordScope`. **Extend, don't replace.** |
 | `src/pages/` | File-based routes via generouted. `(protected)/` is the gated route group. |
 | `src/schemas.ts` + `src/schemas/` | Collection schemas. Ships `usersSchema` + `settingsSchema`. |
@@ -100,7 +100,8 @@ The data-and-identity primitives every app uses. For other hooks (R2 files, Yjs,
 ### Core
 
 ```typescript
-const { records } = useQuery<Item>('items', { where: { status: 'published' }, orderBy: 'createdAt' })
+const { records, status } = useQuery<Item>('items', { where: { status: 'published' }, orderBy: 'createdAt' })
+// `status` is 'loading' | 'ready' | 'error' — gate skeleton states on it.
 // Each record is an envelope: { recordId, data: { ...your Item fields }, createdBy, createdAt, updatedAt }.
 // Access fields through `.data`, never flat: records.map(r => <li key={r.recordId}>{r.data.title}</li>)
 // To edit: pass r.recordId to put/remove — put(r.recordId, { ...r.data, title: 'new' })
@@ -110,9 +111,9 @@ const { create, put, remove } = useMutations<Item>('items')
 // `put` / `remove` return Promise<void>. Use createConfirmed / putConfirmed / removeConfirmed
 // when you must wait for server ack (read-after-write); the plain ones resolve after
 // the optimistic local apply.
-const { user } = useUser()          // storage-level: id, name, email, role
-const { isSignedIn } = useAuth()    // auth state — primary check (session-based, updates immediately)
-const { users } = useUsers()        // all room users
+const { user } = useUser()                     // storage-level: id, name, email, role
+const { isSignedIn, isLoaded } = useAuth()     // primary auth check; isLoaded gates UI before session resolves
+const { users, usersLoaded } = useUsers()      // all room users
 ```
 
 ### Messaging (channel-based)
@@ -120,9 +121,9 @@ const { users } = useUsers()        // all room users
 ```typescript
 const { channels, create } = useChannels()
 const { messages, send, edit, remove } = useMessages(channelId)
-const { getReactionsForMessage, toggle } = useReactions(channelId)
-const { isMember, join, leave } = useChannelMembers(channelId)
-const { markAsRead, getUnreadCount } = useReadReceipts()
+const { reactions, getReactionsForMessage, toggle } = useReactions(channelId)
+const { members, isMember, join, leave } = useChannelMembers(channelId)
+const { receipts, markAsRead, getUnreadCount } = useReadReceipts()
 ```
 
 ### Directory (cross-app)
