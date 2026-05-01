@@ -24,7 +24,7 @@ The Design Direction asks for 6 concrete tokens (color, type pair, theme, art di
 
 **Hard floor:** WCAG 4.5:1 contrast for normal text, 3:1 for large.
 
-**Cohesion constraint:** The color palette MUST match the app's `@theme` block in `src/styles.css`. The landing page reads the same `--color-background` / `--color-primary` / `--color-foreground` the app does. If you want a different accent for the hero, scope it to the hero component — don't edit the global tokens.
+**Cohesion constraint:** The color palette **must** match the app's `@theme` block in `src/styles.css`. The landing page reads the same `--color-background` / `--color-primary` / `--color-foreground` the app does. If you want a different accent for the hero, scope it to the hero component — don't edit the global tokens.
 
 **Pick rule:** name a dominant + accent + saturation level in one sentence. Example: *"Warm cream dominant, deep terracotta accent, muted everywhere except CTAs which go vivid."*
 
@@ -59,8 +59,8 @@ Every headline font you pick must pass both:
 
 **Hard don'ts:**
 - Don't pair two serifs (they fight).
-- Don't use Arial/Helvetica/Times/system-ui as the *headline* font — that's the #1 default-mode tell.
-- Inter, Montserrat, and DM Sans are valid headline picks when the product calls for clarity over personality. They are NOT a fallback — they are a deliberate choice you can defend in one sentence.
+- Don't use Arial/Helvetica/Times/system-ui as the *headline* font — that's the most-common default-mode tell.
+- Inter, Montserrat, and DM Sans are valid headline picks when the product calls for clarity over personality. They are **not** a fallback — they are a deliberate choice you can defend in one sentence.
 
 **Cohesion constraint:** the **body** font should match the app's body font. The **heading** font is your free pick — the landing page can have a more distinctive heading voice than the app itself. Load the heading font via `<link>` in `index.html` or a CSS `@import` in `styles.css`, and reference it via a Tailwind utility class (`font-serif`, `font-display`) or a scoped font-family declaration.
 

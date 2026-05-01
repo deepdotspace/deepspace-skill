@@ -1,276 +1,53 @@
 ---
 name: deepspace
 description: >
-  Use when building real-time collaborative apps with the DeepSpace SDK on
-  Cloudflare Workers — scaffolding a new app, adding a feature, or
-  maintaining/bug-fixing a project whose `worker.ts` uses `RecordRoom` or
-  which imports from `deepspace` or `deepspace/worker`. Also use when the
-  user mentions DeepSpace, app.space, RecordRoom, `__DO_MANIFEST__`, or
-  `npx deepspace`, or asks to build anything involving real-time sync,
-  multiplayer state, live cursors / presence, shared whiteboards or
-  canvases, collaborative text or document editing (Yjs), channel-based
-  chat, per-role permissions (RBAC), Durable Object rooms, or an app that
-  deploys end-to-end to `.app.space` / Cloudflare Workers in one package —
-  even if they don't name DeepSpace explicitly.
+  Use when building or maintaining real-time collaborative apps with the
+  DeepSpace SDK on Cloudflare Workers — scaffolding new apps, adding
+  features, debugging a `worker.ts` that imports from `deepspace` /
+  `deepspace/worker` or uses `RecordRoom`, `__DO_MANIFEST__`, or `npx
+  deepspace`. Also use when the user mentions DeepSpace or app.space, or
+  asks for anything involving real-time sync, multiplayer state, live
+  cursors / presence, whiteboards or canvases, collaborative text editing
+  (Yjs), channel-based chat, per-role permissions (RBAC), Durable Object
+  rooms, or one-package deploy to `.app.space` — even if they don't name
+  DeepSpace explicitly.
 ---
 
 # DeepSpace SDK
 
-Build real-time collaborative apps on Cloudflare Workers. One npm package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth.
-
-## Build a New App
-
-### Step 1: Scaffold
+Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn/ui primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
 
 This skill targets **`deepspace` and `create-deepspace` v0.2.4** (latest published on npm at the time this skill was written).
 
+## Quickstart — the development lifecycle
+
+CLI commands, in order. Each step is rerunnable; only `login` needs the user at the keyboard.
+
 ```bash
+# 1. Scaffold (no auth required — npm fetches create-deepspace via npx on demand)
 npm create deepspace@latest <app-name>
+cd <app-name>
+
+# 2. One-time login — opens browser, polls up to 10 minutes
+npx deepspace login
+
+# 3. Local dev (Vite + workers + HMR on localhost:5173)
+npx deepspace dev                  # default
+npx deepspace dev --port 5180      # parallel apps (uses --strictPort, fails loudly on clash)
+npx deepspace dev --prod           # same UI, but workers point at production
+
+# 4. Run tests (auto-installs Playwright + chromium on first run)
+npx deepspace test                 # default suite (smoke + api)
+npx deepspace test e2e             # all Playwright specs
+npx deepspace test unit            # vitest
+
+# 5. Deploy
+npx deepspace deploy               # → <app-name>.app.space
 ```
 
-`npm create` invokes `create-deepspace` via npx — no global install required, and npm fetches it on demand. Use `@latest` to avoid a stale cached version.
+**Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Re-login only when `~/.deepspace/session` is wiped or the session expires. See "Login, test, deploy" below for non-obvious rules.
 
-This generates a Vite + Cloudflare-Worker app with generouted file-based routing and a working dev setup. Files you'll touch most often:
-
-- `worker.ts` — Hono app worker; declares the `__DO_MANIFEST__` and the five DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). Don't edit unless adding cross-app proxies (see Architecture).
-- `src/pages/_app.tsx` — global provider stack (`ToastProvider → DeepSpaceAuthProvider → AuthBoot → RecordProvider → RecordScope`). Extend, don't replace (Step 3).
-- `src/pages/` — generouted scans here for routes; `(protected)/` is the gated route group (Step 4).
-- `src/schemas.ts` + `src/schemas/` — collection schemas. Ships `usersSchema` and `settingsSchema` (Step 2).
-- `src/themes.ts` + `src/themes.css` — 15 theme presets; active one set on `<html data-theme>` in `index.html` (Step 5).
-- `src/styles.css` — Tailwind v4 entry; the `@theme { ... }` block holds the slate baseline.
-- `src/nav.ts` — top-nav entries. Add new pages here so Navigation picks them up.
-- `src/constants.ts` — `APP_NAME`, `SCOPE_ID = "app:${APP_NAME}"`, role re-exports.
-- `src/actions/index.ts` — server-action handlers (Server Extensions §1).
-- `src/cron.ts` — scheduled tasks for the `AppCronRoom` DO (Server Extensions §3).
-- `src/integrations.ts` — per-integration billing config (`developer` vs `user`).
-- `src/ai/tools.ts` — system prompt + read-only tools for `/api/ai/chat` (Server Extensions §2).
-- `tests/` — Playwright `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` plus `playwright.config.ts` (Step 8).
-
-### Step 2: Define Schemas
-
-Add one file per collection under `src/schemas/` and register it in `src/schemas.ts`. Every collection needs `name`, `columns`, and `permissions`. The scaffold already ships `usersSchema` (in `users-schema.ts`) and `settingsSchema` (in `admin-schema.ts`) — add your own alongside them, never replace them.
-
-```typescript
-// src/schemas/items-schema.ts
-import type { CollectionSchema } from 'deepspace/worker'
-
-export const itemsSchema: CollectionSchema = {
-  name: 'items',
-  columns: [
-    { name: 'title', storage: 'text', interpretation: 'plain' },
-    { name: 'status', storage: 'text', interpretation: { kind: 'select', options: ['draft', 'published'] } },
-  ],
-  visibilityField: { field: 'status', value: 'published' },
-  permissions: {
-    viewer: { read: 'published', create: false, update: false, delete: false },
-    member: { read: true, create: true, update: 'own', delete: 'own' },
-    admin: { read: true, create: true, update: true, delete: true },
-  },
-}
-```
-
-```typescript
-// src/schemas.ts
-import type { CollectionSchema } from 'deepspace/worker'
-import { usersSchema } from './schemas/users-schema'
-import { itemsSchema } from './schemas/items-schema'
-
-export const schemas: CollectionSchema[] = [usersSchema, itemsSchema]
-```
-
-For messaging, add `CHANNELS_SCHEMA`, `MESSAGES_SCHEMA`, `REACTIONS_SCHEMA` (and optionally `CHANNEL_MEMBERS_SCHEMA`, `READ_RECEIPTS_SCHEMA`) from `deepspace/worker` to the array.
-
-**Roles and permission keys:**
-- Built-in roles are `viewer | member | admin` (see `ROLES`). New authenticated users are `member` by default.
-- `ownerField` is only required if you use `'own'`, `'shared'`, or `'team'` permission levels **and** want ownership tied to a column other than the record's creator. Omit it and `'own'` matches `record.createdBy` (from the envelope — no extra column needed).
-- To grant permissions to unauthenticated connections, use `'*'` as a wildcard key — there is no built-in `anonymous` role:
-  ```typescript
-  permissions: {
-    '*':    { read: 'published', create: false, update: false, delete: false },
-    member: { read: true, create: true, update: 'own', delete: 'own' },
-    admin:  { read: true, create: true, update: true, delete: true },
-  }
-  ```
-
-### Step 3: Providers Are Already Wired — Extend, Don't Replace
-
-The scaffolded `src/pages/_app.tsx` ships the global provider stack. The shape is:
-
-```tsx
-// App() returns:
-<ToastProvider>                           // from ../components/ui (local, NOT 'deepspace')
-  <DeepSpaceAuthProvider>
-    <AuthBoot>                            // local helper: shows loader while auth resolves, then mounts data layer
-      <Navigation />
-      <main><Outlet /></main>
-    </AuthBoot>
-  </DeepSpaceAuthProvider>
-</ToastProvider>
-
-// AuthBoot mounts the data layer for everyone (signed-in OR signed-out):
-<RecordProvider allowAnonymous>
-  <RecordScope roomId={SCOPE_ID} schemas={schemas} appId={APP_NAME}>
-    {children}
-  </RecordScope>
-</RecordProvider>
-```
-
-`AuthBoot` is local to `_app.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for `useAuth().isLoaded` so the data layer always mounts with valid auth state, and then renders children regardless of sign-in status. Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default.
-
-Do not rewrite `_app.tsx`. The defaults already:
-- Wrap the tree in the scaffold's local `ToastProvider` (import `useToast` from `../components/ui`, not `deepspace`).
-- Render routes for both signed-in and signed-out users.
-- Expose a Sign In button in `Navigation.tsx` that opens `<AuthOverlay onClose={...}/>` (GitHub + Google + email/password) and a sign-out option in the avatar dropdown.
-
-Extend by adding schemas (Step 2), pages (Step 6), and nav entries (`src/nav.ts`). To share data across DeepSpace apps (e.g., the email-handle workspace), pass `sharedScopes` to the existing `<RecordScope>` — but see "Cross-app shared scopes" under Architecture below.
-
-**One exception — landing pages only:** if (and only if) you're building a public landing page, you must conditionally hide the global `<Navigation />` on the landing route(s) so your landing's own nav (or no-nav) owns the viewport. The default scaffold stacks Navigation above every `<Outlet />`, which would put landing-page chrome on top of app chrome. The fix is a one-liner with `useLocation()` from `react-router-dom`:
-
-```tsx
-import { useLocation } from 'react-router-dom'
-// inside App(), above the existing markup:
-const isLanding = useLocation().pathname === '/' || useLocation().pathname === '/landing'
-// then in the layout:
-{!isLanding && <Navigation />}
-```
-
-That's the entire edit. The full landing-page workflow (Direction → Style Tile → archetype → patterns → grep gate) lives in `references/landing-design.md` — only load it when actually building a landing page (see triggers under **Landing Page Design** below).
-
-### Step 4: Auth — Three Configurations (Public / Gated / Mixed)
-
-Auth gating is route-scoped via `<AuthGate>` from `'deepspace'`. The scaffold ships the **mixed** config by default (public landing + gated app). Three patterns, pick whichever fits the product:
-
-**1. Fully public** — every page reachable signed-out. Don't import `<AuthGate>` anywhere; rely on `RecordProvider allowAnonymous` (already on by default in `_app.tsx`).
-
-**2. Fully gated** — every page requires sign-in. Wrap the tree in `_app.tsx` with `<AuthGate>` and drop `allowAnonymous`:
-
-```tsx
-// src/pages/_app.tsx
-<DeepSpaceAuthProvider>
-  <AuthGate>
-    <RecordProvider>{/* no allowAnonymous — nothing public */}
-      <RecordScope ...>
-        <Navigation />
-        <Outlet />
-      </RecordScope>
-    </RecordProvider>
-  </AuthGate>
-</DeepSpaceAuthProvider>
-```
-
-**3. Mixed (default)** — public pages live at `src/pages/<name>.tsx`; gated pages go inside the `(protected)/` generouted route group. The scaffolded `src/pages/(protected)/_layout.tsx` applies `<AuthGate>` once for everything inside:
-
-```
-src/pages/
-  home.tsx                  ← public (/home)
-  landing.tsx               ← public (/landing)
-  (protected)/
-    _layout.tsx             ← <AuthGate><Outlet /></AuthGate>
-    settings.tsx            ← gated (/settings)
-    dashboard.tsx           ← gated (/dashboard)
-```
-
-Adding a new gated page is a one-file change: drop it inside `(protected)/`. The folder name is wrapped in literal parentheses — generouted treats it as a route group that does NOT appear in the URL.
-
-**`<AuthGate>` props:**
-- `fallback` — UI shown to signed-out users (default: SDK's frosted-glass `<AuthOverlay/>`). Pass any React node — e.g., `fallback={<TeaserPage />}` for a custom signed-out UI.
-- `redirectOnSignOut` — where the user lands when they sign out from inside the gate (default `'/'`). Triggers a full page reload so cached state can't leak into the signed-out view.
-
-**Rules either way:**
-- Use `useAuth().isSignedIn` for auth-state checks in components (session-based, updates immediately). `useUser()` loads async and causes a flash.
-- `<AuthGate>` controls the **UI layer** — children don't mount until signed in. `RecordProvider allowAnonymous` controls the **data layer** — server accepts unsigned client connections. Inside an `<AuthGate>` subtree the user is always signed in, so `allowAnonymous` is moot there.
-- Don't add a second sign-out — the avatar dropdown in `Navigation.tsx` already calls `signOut()`.
-- **If the app requires sign-in, a sign-out control is non-negotiable.** Replace-with-care: any custom `Navigation.tsx` must still call `signOut()` from `deepspace` somewhere reachable when signed in.
-- Don't rewrite `Navigation.tsx` just to theme it — edit tokens in `src/styles.css` (Step 5).
-- See `docs/auth/gating-routes.md` in the SDK repo for the canonical reference.
-
-### Step 5: Pick a Theme
-
-Before building pages on an **initial build**, pick one of the 15 presets shipped in `src/themes.ts` (`slate`, `ink`, `aurora`, `midnight`, `forest`, `ember`, `graphite`, `noir`, `linen`, `mist`, `sand`, `bloom`, `paper`, `lavender`, `citrus`) and set it on `<html data-theme="...">` in `index.html`. Then update `<title>` and the favicon. **Don't ship the default `slate`** — variety matters more than picking a "safe" palette. If the user didn't specify, pick one that fits the app's domain and tell them in one line.
-
-Load `references/uiux.md` §2 for the picker, the customize-an-existing-preset path, and the wordmark/nav rules (see **UI/UX Polish** below for the full trigger list). On maintenance work against an already-themed app, skip this step.
-
-### Step 6: Build Pages and Features
-
-Pages go in `src/pages/` — generouted scans this directory for file-based routing. Files outside `(protected)/` are public; files inside it require sign-in (see Step 4).
-
-```
-src/pages/home.tsx                    → /home          (public)
-src/pages/items.tsx                   → /items         (public)
-src/pages/(protected)/dashboard.tsx   → /dashboard     (gated)
-src/pages/(protected)/settings.tsx    → /settings      (gated)
-src/pages/_app.tsx                    → layout wrapper (providers + nav)
-```
-
-Features are reference implementations in `.deepspace/features/` (scaffolded into every app). To add one:
-
-1. Read `.deepspace/features/<name>/feature.json` — a declarative manifest with:
-   - `files[]`: each entry has `src` (path inside the feature folder) and `dest` (path in your app). Copy each file to its `dest`.
-   - `schema`: if present, import the named export from its `importPath` and push it into the `schemas` array in `src/schemas.ts` (respect `spreadOperator: true` — those export arrays that need to be spread).
-   - `route`: if present, add `{ path, label }` to `src/nav.ts` so the page appears in the top nav.
-   - `requires`: feature IDs this one depends on — install them first.
-   - `instructions`: any extra shell commands (e.g., `npm install yjs`).
-
-2. Re-run `npx deepspace dev` if new DO classes or worker imports were added.
-
-Replace the scaffold home page, wire mutations to `useToast`, and use scaffolded UI primitives from `src/components/ui/` — never browser defaults. See the **UI/UX Polish** section below for the full list of triggers to load `references/uiux.md` (initial builds, new UI patterns, or the app "feels generic"). For building a public-facing landing/marketing page, see **Landing Page Design** below and load `references/landing-design.md`.
-
-Available features (check `.deepspace/features/` in the scaffolded app for the canonical list — names may evolve): `admin-page`, `ai-chat`, `canvas`, `cron`, `docs`, `file-manager`, `integration-test`, `items`, `kanban`, `landing`, `leaderboard`, `messaging`, `presence-test`, `sidebar`, `tasks`, `testing`, `topbar`, `tree`.
-
-The `landing` feature scaffolds a page shell with pre-built sections (hero, features, testimonials, FAQ, CTA, footer). It is a **skeleton**, not a finished page — shipping its placeholder content reproduces the AI-generic look. Load `references/landing-design.md` to customize it, or to build a landing page from scratch for a different shape.
-
-### Step 7: Run Locally
-
-```bash
-npx deepspace login            # one-time (or after `~/.deepspace/session` is wiped / expires) — opens browser
-npx deepspace dev              # dev workers + Vite with HMR on localhost:5173
-npx deepspace dev --prod       # same UI, but workers point at production (real auth, real API)
-npx deepspace dev --port 5180  # bind a different port (run multiple apps side-by-side)
-```
-
-`dev` uses `--strictPort`, so a port clash fails loudly instead of jumping to 5174 — set `--port` (or `$DEEPSPACE_PORT`) when running parallel apps so test/Playwright config and Vite agree on the same number.
-
-**First run of `dev` requires login.** The CLI mints an app-specific `APP_OWNER_JWT` into `.dev.vars` using your identity, and exits immediately with `Not logged in. Run \`deepspace login\` first.` if there's no stored session. When you see that exact string:
-
-1. **Pause and tell the user.** The command opens a browser tab (GitHub/Google OAuth) on their machine and polls for up to 10 minutes. They need to be at the keyboard to complete it — a blind background run can still time out if the user isn't ready.
-2. **Run the login command without an artificial time bound.** Do not wrap it in `timeout N`, `sleep N && kill`, or any other cutoff — those terminate login before OAuth completes and leave no session file, looking like a bug when it's actually your own kill signal. (`timeout` isn't installed on macOS by default, so don't reach for it either.) If your harness supports running a long command in the background, use that; otherwise run it in the foreground and wait.
-3. **Wait for `~/.deepspace/session` to exist** before retrying `npx deepspace dev`. Re-running `dev` while login is still polling produces the same error — that's not a bug, it's the expected order.
-4. **Never copy `.dev.vars` from a sibling app.** Every `.dev.vars` contains an `APP_OWNER_JWT` minted against that app's wrangler name; borrowing one from a neighbor causes silent auth mismatches later. The only correct way to get `.dev.vars` is to let `npx deepspace dev` regenerate it after login succeeds.
-
-The same login satisfies `npx deepspace test-accounts create` (Step 8) and `npx deepspace deploy` (Step 9); you only re-login if `~/.deepspace/session` is wiped or the session expires.
-
-### Step 8: Test-Driven Verification (run when code changes)
-
-Tests are the primary way to verify and debug code changes. The scaffolded tests (`smoke.spec.ts`, `api.spec.ts`, `collab.spec.ts`) are **starting points** — extend them for every code change that affects runtime behavior.
-
-**When to run tests**: only after a code change (added/edited files in `src/`, `worker.ts`, or similar). Skip tests for conversation, planning, reading files, or answering questions — don't run them as a ritual.
-
-**Workflow for any code change that touches runtime behavior:**
-
-1. **Apply the extension checklist to what you changed.** Each rule is a hard requirement — if the condition is true, the test update is not optional:
-   - **Added a schema?** → `smoke.spec.ts` CRUD happy path is **required** (create → read → edit → delete for a signed-in user).
-   - **Added or edited a route, page, nav item, or top-level UI (landing, gallery, dashboard, settings)?** → `smoke.spec.ts` page-load with a **real-content** assertion is **required** (assert specific content that should be there, not just "no crash" — see route-coverage rule in `references/testing.md`). **For routes inside `src/pages/(protected)/`** (gated by `<AuthGate>`): also assert the two-state behavior — signed-out visitor sees `[data-testid="auth-overlay"]`, real content is NOT in the DOM; signed-in visitor sees real content, no overlay. **For public landing pages**: assert `[data-testid="auth-overlay"]` has count `0` to catch accidentally-protected routes. See `references/testing.md` § "Auth-state coverage" for the full table.
-   - **Added a schema with `visibilityField`, or permissions containing `'public'`, `'shared'`, `'team'`, or `'own'`?** → `collab.spec.ts` two-user assertion is **required** (user A acts, user B sees the effect).
-   - **Called `useYjs*`, `useMessages`, `useReactions`, `usePresence`, `useCanvas`, or any hook that syncs state across clients?** → `collab.spec.ts` two-user assertion is **required**.
-   - **Added or edited a worker route in `worker.ts`, a server action, `/api/ai/chat`, a cron handler, any `integration.post(...)` call site, or any UI surface whose access depends on an HTTP-enforced auth/role check (e.g., an admin-only button calling `/api/actions/<name>`, even if the route itself wasn't edited)?** → `api.spec.ts` assertion is **required**. For integration calls, POST to `/api/integrations/<endpoint>` with the same body the app uses and assert the envelope comes back `success: true` with the shape your UI consumes — this locks the contract with the api-worker in the same session and catches wrong endpoint names, the #1 failure mode for integration-heavy apps. For routes/actions, assert status codes, response shape, and auth gating — including the negative path (unauthenticated or wrong-role caller gets 401/403) and other error cases (bad input, missing resources).
-   - **Fixing a bug?** → write a failing test that reproduces it first, then fix the code until it passes. Leave the test in place.
-2. **Run the relevant tests** with `npx deepspace test [suite|file]` — the official entry point. It auto-installs Playwright + chromium on first run, writes `.dev.vars` against dev workers, and forwards the chosen port to the Playwright child via `$DEEPSPACE_PORT` so the config + webServer agree. Suites: `smoke`, `api`, `e2e` (all Playwright), `unit` (vitest), `all`, default (= `smoke + api`). Pass any `*.spec.ts` filename for a single file. The scaffolded `tests/playwright.config.ts` has a `webServer` block that starts Vite on port 5173 and reuses an existing one if present (`reuseExistingServer: true`), so you don't need a separate `deepspace dev` shell. Plain `npx playwright test ...` still works once Playwright is installed.
-3. **Debug from failures, not from console logs.** If a test fails, read the assertion message, read the failing selector, then fix the code. Do not add `console.log` to diagnose — write a more specific assertion. Do not weaken or delete tests to make them green.
-4. **Re-run after each follow-up change.** When the user asks for a tweak or new feature later, re-apply the checklist to the new change, update the tests, then run them. Treat tests as a living contract — but only exercise them when the contract actually changes.
-
-Skipping tests after a code change is the #1 source of "I built it but it crashes on page load" handoffs. Skipping `collab.spec.ts` when rule 3 or 4 fires is the #1 source of "looks fine for me, broken for the second user" regressions.
-
-For deeper surface — `tests/helpers/` API, `npx deepspace test-accounts` setup, record-cleanup convention, route-coverage rule, multi-user patterns, self-diagnosis — load `references/testing.md`. Trigger it on: writing or meaningfully extending a `*.spec.ts`; adding a new route, page, or CRUD feature (for the route-coverage rule — static and dynamic routes both need real-content assertions); `createTestUsers` erroring about missing accounts; or any failing, flaky, or passing-locally-failing-in-CI test you need to diagnose. Skip it for re-running existing tests, tiny selector/assertion tweaks inside a spec already extended this session, or code changes with no runtime behavior.
-
-### Step 9: Deploy
-
-On an **initial build**, load `references/uiux.md` §5 and run the pre-deploy checklist (home replaced, theme updated, no browser-default primitives, mutations fire toasts — see **UI/UX Polish** below for the canonical trigger list). On **follow-up deploys** where those were already verified, skip straight to the command below.
-
-```bash
-npx deepspace deploy  # deploys to <app-name>.app.space (re-run `npx deepspace login` if session has expired)
-```
-
-## Two Imports
+## Two imports
 
 ```typescript
 // Frontend (React)
@@ -280,26 +57,66 @@ import { RecordProvider, RecordScope, useQuery, useMutations, useAuth } from 'de
 import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'
 ```
 
-## Frontend Hooks
+A third entry point — `'deepspace/testing'` — exports a Playwright fixture for multi-user specs. See `references/testing.md`.
+
+## Project layout
+
+The scaffold generates a Vite + Cloudflare-Worker app. Files you'll touch most often:
+
+| Path | Purpose |
+|---|---|
+| `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 5 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). Edit only when adding cross-app proxies. |
+| `src/pages/_app.tsx` | Provider stack: `ToastProvider → DeepSpaceAuthProvider → AuthBoot → RecordProvider → RecordScope`. **Extend, don't replace.** |
+| `src/pages/` | File-based routes via generouted. `(protected)/` is the gated route group. |
+| `src/schemas.ts` + `src/schemas/` | Collection schemas. Ships `usersSchema` + `settingsSchema`. |
+| `src/themes.ts` + `src/themes.css` | 15 theme presets; active one set on `<html data-theme>` in `index.html`. |
+| `src/styles.css` | Tailwind v4 entry; `@theme` block holds the slate baseline. |
+| `src/nav.ts` | Top-nav entries — add new pages here so `Navigation.tsx` picks them up. |
+| `src/constants.ts` | `APP_NAME`, `SCOPE_ID = "app:${APP_NAME}"`, role re-exports. |
+| `src/actions/index.ts` | Server-action handlers. |
+| `src/cron.ts` | Scheduled tasks for `AppCronRoom`. |
+| `src/integrations.ts` | Per-integration billing config (`developer` vs `user`). |
+| `src/ai/tools.ts` | System prompt + read-only tools for `/api/ai/chat`. |
+| `tests/` | Playwright `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` + `playwright.config.ts`. |
+
+## Build a new app
+
+Steps run in dependency order. Each links its deep-dive reference; load that reference only when you reach the step.
+
+1. **Scaffold** — see Quickstart.
+2. **Schemas** — define collections with `name`, `columns`, `permissions`. Add to `src/schemas/`, register in `src/schemas.ts` alongside `usersSchema` + `settingsSchema` (never replace those). For messaging, also add `CHANNELS_SCHEMA` / `MESSAGES_SCHEMA` / `REACTIONS_SCHEMA` from `deepspace/worker`. → `references/schemas.md`
+3. **Auth model** — pick public, gated, or **mixed** (the default; gated routes drop into `src/pages/(protected)/`). → `references/auth.md`
+4. **Theme** — pick a preset on `<html data-theme="...">` in `index.html`, update `<title>`/favicon. **Don't ship the default `slate`.** → `references/uiux.md` §2
+5. **Pages and features** — pages in `src/pages/`. 18 ready features in `.deepspace/features/`; install with `npx deepspace add <feature>`. → `references/uiux.md` for UI primitives.
+6. **Tests** — extend `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` per the checklist below.
+7. **Deploy** — `npx deepspace deploy`. Pre-deploy checklist: home replaced, theme picked, browser-default primitives removed, toasts wired to mutations. → `references/uiux.md` §5
+
+For maintenance work on an existing app, jump straight to the relevant reference.
+
+## Frontend hooks
+
+The data-and-identity primitives every app uses. For other hooks (R2 files, Yjs, presence, canvas, theme, env), see "References" below.
 
 ### Core
+
 ```typescript
 const { records } = useQuery<Item>('items', { where: { status: 'published' }, orderBy: 'createdAt' })
-// Each record is an ENVELOPE: { recordId, data: { ...your Item fields }, createdBy, createdAt, updatedAt }.
+// Each record is an envelope: { recordId, data: { ...your Item fields }, createdBy, createdAt, updatedAt }.
 // Access fields through `.data`, never flat: records.map(r => <li key={r.recordId}>{r.data.title}</li>)
-// To edit, pass r.recordId to put/remove: put(r.recordId, { ...r.data, title: 'new' })
+// To edit: pass r.recordId to put/remove — put(r.recordId, { ...r.data, title: 'new' })
 const { create, put, remove } = useMutations<Item>('items')
-// create returns Promise<string> (the new recordId) — capture it to navigate:
+// `create` returns Promise<string> (the new recordId — capture for navigation):
 //   const id = await create({ title: 'New' }); navigate(`/items/${id}`)
-// put/remove return Promise<void>. Use createConfirmed / putConfirmed / removeConfirmed
+// `put` / `remove` return Promise<void>. Use createConfirmed / putConfirmed / removeConfirmed
 // when you must wait for server ack (read-after-write); the plain ones resolve after
 // the optimistic local apply.
 const { user } = useUser()          // storage-level: id, name, email, role
-const { isSignedIn } = useAuth()    // auth state (use this as primary check)
+const { isSignedIn } = useAuth()    // auth state — primary check (session-based, updates immediately)
 const { users } = useUsers()        // all room users
 ```
 
 ### Messaging (channel-based)
+
 ```typescript
 const { channels, create } = useChannels()
 const { messages, send, edit, remove } = useMessages(channelId)
@@ -309,103 +126,28 @@ const { markAsRead, getUnreadCount } = useReadReceipts()
 ```
 
 ### Directory (cross-app)
+
 ```typescript
 const { conversations, createChannel, createDM } = useConversations()
 const { communities, createCommunity, joinCommunity } = useCommunities()
 const { posts, createPost } = usePosts()
 ```
 
-### Other hooks and exports
-
-The hooks shown above (Core, Messaging, Directory) are the data-and-identity primitives most apps use. For other SDK surfaces, read **`references/sdk-reference.md`** — it indexes every export grouped by domain, with usage snippets for the common non-obvious ones. Load it when building a feature that involves:
-
-- **File uploads or image/video handling** → `useR2Files` (includes a local-dev caveat about `APP_IDENTITY_TOKEN` uploads)
-- **Collaborative text editing** (docs, comments, notes) → `useYjsText` / `useYjsField`
-- **Live cursors, typing indicators, "who's online"** → `usePresence`
-- **Canvas / whiteboard features** → `useCanvas`
-- **Audio/video rooms** → no SDK hook. Use the `livekit/*` endpoints in `integrations.yaml` (`create-room`, `generate-token`, `list-rooms`, `delete-room`) — load `references/integrations.md`.
-- **Scheduled task monitoring UI** → `useCronMonitor` (pairs with the `AppCronRoom` DO from Step 6 / Server Extensions)
-- **Theme customization** → `DeepSpaceThemeProvider`, `applyUIThemeTokens`
-- **Environment-specific logic** → `isLocalDev()`, `getApiUrl()`
-- **Any export not covered in this file** — `sdk-reference.md` is the canonical index.
-
 For exact type signatures of any export, read `node_modules/deepspace/dist/index.d.ts` (frontend) or `node_modules/deepspace/dist/worker.d.ts` (worker). Do not guess hook names or argument shapes.
 
-## Architecture
+## Worker-side extensions
 
-Each app has its own set of Durable Objects with schemas baked in at deploy time. The scaffold declares five DO classes in `__DO_MANIFEST__` and wires them in `worker.ts`: `AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`. (Audio/video uses LiveKit via the `livekit/*` integrations — there is no `MediaRoom` DO.)
+Three independent surfaces. Load only what you need:
 
-```
-App Worker (per-app)                 Platform Worker (shared)
-├── App{Record,Yjs,Canvas,…}Room    ├── Shared DOs for workspace / dir / conv
-├── /ws/:roomId                     └── /api/health
-├── /ws/yjs/:docId
-├── /ws/canvas/:docId
-├── /ws/presence/:scopeId
-├── /ws/cron/:roomId                ← admin/monitor stream for AppCronRoom
-├── /api/auth/* → auth-worker
-├── /api/integrations/* → api-worker
-└── Static assets (SPA fallback)
-```
+- **Server actions** (privileged writes that bypass caller RBAC) → `references/server-actions.md`
+- **AI chat** (streamed Claude / OpenAI / Cerebras with read-only tool use) → `references/ai-chat.md`
+- **Cron** (scheduled tasks via `AppCronRoom` + `useCronMonitor`) → `references/cron.md`
 
-The scaffolded `AppRecordRoom` already passes your `schemas` to `RecordRoom` — you rarely need to touch `worker.ts`. The one case where you do is cross-app data sharing, below.
-
-### Cross-app shared scopes
-
-The scaffolded `/ws/:roomId` handler routes **every** scope to the app's own `RECORD_ROOMS` DO. That's fine for app-scoped data. If the app needs to read/write shared scopes (`workspace:*`, `dir:*`, `conv:*`) that must sync across DeepSpace apps (e.g., the email-handle workspace), two things need changing:
-
-1. **Add the service binding to `wrangler.toml`** for production. The scaffold declares `PLATFORM_WORKER?: Fetcher` (and `PLATFORM_WORKER_URL?: string`) in the `Env` interface but does not ship the wrangler binding. Cross-worker calls over plain `*.workers.dev` URLs return Cloudflare error 1042 in production, so the service binding is the only working transport for deployed apps. The `PLATFORM_WORKER_URL` fallback that `deepspace dev` writes into `.dev.vars` is a dev-only convenience — adequate for `wrangler dev`, never enough for prod.
-
-   ```toml
-   [[services]]
-   binding = "PLATFORM_WORKER"
-   service = "deepspace-platform"   # name of the deployed platform worker
-   ```
-
-2. **Edit the `/ws/:roomId` handler** to proxy shared scopes to the platform worker. Use `platformWorkerFetch` from `deepspace/worker` instead of `c.env.PLATFORM_WORKER.fetch(...)` directly — the helper picks the binding in prod and the URL in dev, so the same code works in both environments:
-
-   ```typescript
-   // worker.ts — replace the single-line app.get('/ws/:roomId', wsRoute(...))
-   import { platformWorkerFetch } from 'deepspace/worker'
-
-   app.get('/ws/:roomId', async (c) => {
-     const roomId = c.req.param('roomId')
-     if (/^(workspace|dir|conv):/.test(roomId)) {
-       return platformWorkerFetch(c.env, c.req.raw)
-     }
-     return wsRoute((env) => env.RECORD_ROOMS)(c)
-   })
-   ```
-
-Without both edits, `sharedScopes: [{ roomId: 'workspace:default', ... }]` on `<RecordScope>` writes to the app's own DO instead of the platform's shared DO, and cross-app data (e.g., other users' `@app.space` handles) won't appear.
-
-## RBAC
-
-Permissions are per-role, per-collection. Common values (cover 95% of apps):
-- `true` / `false` — allow/deny all
-- `'own'` — only records where `ownerField` matches userId (falls back to `record.createdBy` if `ownerField` is omitted)
-- `'published'` — owner OR passes `visibilityField` check
-- `'shared'` — owner OR collaborator OR published (uses `collaboratorsField` + `visibilityField`)
-- `'team'` — owner OR collaborator OR team member
-
-Advanced values (supported by `PermissionRule` but rarely needed — check `packages/deepspace/src/shared/types/index.ts` `PermissionRule` before using):
-- `'unclaimed-or-own'` — record has no owner OR the caller owns it
-- `'collaborator'` — caller is in `collaboratorsField`
-- `'access'` — caller passes a per-collection access check
-
-Built-in roles: `viewer | member | admin`. New authenticated users get `member` by default (override via `defaultRole` on the users schema). For unauthenticated connections use the `'*'` wildcard permission key — there is no built-in `anonymous` role.
-
-### Data Visibility
-
-When creating records scoped to specific users (e.g., conversations, private data):
-- Set `Visibility: 'private'` — not `'public'`
-- Populate `ParticipantIds` (or the relevant `collaboratorsField`) with all participant user IDs
-- The SDK filters server-side in the DO — `canRead()` checks ownerField, collaboratorsField, and visibilityField before sending data over WebSocket
-- Never rely on client-side filtering alone — data still syncs over WebSocket and is visible in dev tools
+Skip all three for apps that only need client hooks and `integration.post(...)`.
 
 ## Integrations
 
-Call external APIs (OpenAI, weather, email, GitHub, Slack, Google, etc.) through the api-worker proxy:
+Call external APIs through the api-worker proxy:
 
 ```typescript
 import { integration } from 'deepspace'
@@ -413,83 +155,107 @@ const result = await integration.post('openweathermap/geocoding', { q: city })
 // Returns: { success: true, data: {...} } or { success: false, error: "..." }
 ```
 
-**Do not guess endpoint names.** The format is `<integration-name>/<endpoint-name>` (two segments). Names like `geocode-city` or `weather-forecast` are not real — a wrong name will return a 404 at runtime.
+**Endpoint names are two segments: `<integration>/<endpoint>`.** Don't guess — names like `geocode-city` or `weather-forecast` aren't real and return 404 at runtime. Verify in `references/integrations.yaml` before calling.
 
-**Auth-gate any UI that calls `integration.post(...)`.** Integrations default to owner-billed and the api-worker allows anonymous callers, so without a sign-in gate any visitor can spend the owner's credits. Wrap the calling page/button behind `useAuth().isSignedIn`. (For the app where end-users should pay for integration calls instead, see `references/integrations.md` § "Billing & access control" for the `billing: 'user'` flip.)
+**Auth-gate any UI that calls `integration.post(...)`.** Default billing is owner-pays. The api-worker accepts anonymous callers, so a public endpoint silently bills the owner for every visitor (or bot) hit. Wrap calling components in `useAuth().isSignedIn`.
 
-**Load `references/integrations.md` when the app needs to call any external API** — LLMs (OpenAI, Anthropic, Gemini), search (Exa, Firecrawl, SerpAPI), media (Freepik, ElevenLabs, CloudConvert), communication (Email, Slack, LiveKit), Google Workspace (Gmail, Drive, Calendar), social (GitHub, LinkedIn, YouTube, TikTok, Instagram), finance (Polymarket, stocks, crypto), sports, NASA, MTA, Wikipedia, and more. Verify the endpoint exists in that reference before calling it. Skip it for apps that only use client hooks.
+## Login, test, deploy
 
-## Server-Side Extensions
+### Login (`npx deepspace login`)
 
-The scaffold ships three worker-side extension points in `worker.ts` beyond hooks and integrations: **server actions** (privileged writes that bypass the caller's RBAC), **AI chat** (streamed Claude/OpenAI/Cerebras with read-only tools over the app's records), and **cron** (scheduled background work). Load `references/server-extensions.md` when the user asks for any of those — it has the full usage for each, with code examples and rules. Skip it for apps that only need client hooks and `integration.post(...)`.
+The first run of `dev`/`test`/`deploy` requires a stored session at `~/.deepspace/session`. If absent, the command exits with `Not logged in. Run \`deepspace login\` first.` Four hard rules:
 
-## UI/UX Polish
+1. **Pause and tell the user.** Login opens a browser tab (GitHub/Google OAuth) on their machine and polls up to 10 minutes. They need to be at the keyboard.
+2. **Run login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. (`timeout` isn't installed on macOS by default; don't reach for it.) Run in foreground or a true background process.
+3. **Wait for `~/.deepspace/session` to exist** before retrying `dev` / `test` / `deploy`. Re-running while login is still polling produces the same error — that's expected order, not a bug.
+4. **Never copy `.dev.vars` from a sibling app.** `APP_OWNER_JWT` is minted against that app's wrangler name; borrowing causes silent auth mismatches. Let `dev` regenerate it.
 
-The scaffold's home page, theme, and UI primitive choices are placeholders — shipping them as-is produces a generic-looking app. This section is the canonical list of when to load `references/uiux.md`; the Step 5 and Step 9 pointers above reference back here.
+### Test (`npx deepspace test`)
 
-**Load `references/uiux.md` when any of these apply:**
-- **Initial build — theme (§2).** Before writing features, retheme the `@theme` block in `src/styles.css` and update `<title>` / favicon.
-- **Initial build — home page and first pages.** Replace the scaffold home, pick UI primitives, wire mutations to `useToast`.
-- **Initial build — pre-deploy checklist (§5).** Home replaced, theme updated, no browser-default primitives, mutations fire toasts.
-- **Reaching for a UI pattern not yet built in this session** — confirmations, empty states, skeletons, dialogs, dropdowns, tooltips, etc. (§3 is the primitives table.)
-- **About to write `<select>`, `window.confirm`, `window.alert`, or `window.prompt`** — stop and read §3 first; the scaffold ships a shadcn/ui primitive for every one of those.
-- **The user says the app "feels generic"**, "boring", "default", "plain", or "needs polish".
+Tests are the primary way to verify code changes. Scaffolded specs (`smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts`) are **starting points** — extend them, don't replace them.
 
-Skip it for maintenance work against UI that already follows the primitives conventions and doesn't need a new pattern.
+**Run tests only after a runtime-affecting code change** (`src/`, `worker.ts`, etc.). Skip them for conversation, planning, reading, or pure documentation edits — don't run as a ritual.
 
-## Landing Page Design
+**Extension checklist — each row is a hard requirement:**
 
-Marketing pages are a separate surface from the authenticated app UI and a separate design problem. The `landing` feature ships a pre-built shell (typewriter hero, features grid, testimonials, FAQ, CTA, footer) — using it unmodified produces a generic AI-template look regardless of theme tweaks. Breaking out of that requires a Direction-first workflow, not more primitives.
+| Trigger | Required test |
+|---|---|
+| Added a schema | `smoke.spec.ts` — CRUD happy path (create → read → edit → delete for a signed-in user) |
+| Added/edited a route, page, nav item, or top-level UI (landing, gallery, dashboard, settings) | `smoke.spec.ts` — page-load with **real-content** assertion (not just "no crash"). For `(protected)/` routes: also assert two-state (signed-out → `[data-testid="auth-overlay"]` visible **and** content not in DOM; signed-in → content visible, no overlay). For public routes: `[data-testid="auth-overlay"]` count is `0`. |
+| Schema with `visibilityField` or `'public'`/`'shared'`/`'team'`/`'own'` permissions | `collab.spec.ts` — two-user assertion (A acts, B sees) |
+| Used `useYjs*` / `useMessages` / `useReactions` / `usePresence` / `useCanvas` | `collab.spec.ts` — two-user assertion |
+| Added/edited worker route, server action, `/api/ai/chat`, cron handler, `integration.post(...)`, or auth-gated UI calling `/api/actions/<name>` | `api.spec.ts` — status codes + response shape + auth gating (incl. 401/403 negative path). For integrations: POST and assert `success: true` with the shape the UI consumes — locks the contract, catches wrong endpoint names. |
+| Fixing a bug | Write a failing test that reproduces it **first**, then fix until it passes. Leave the test in place. |
 
-**Load `references/landing-design.md` when:**
-- The user asks for a landing page, marketing page, splash page, hero section, or "front page" for signed-out visitors.
-- The user installs the `landing` feature and wants it customized to their product (the scaffolded content is not the finished page).
-- The user says the landing page "feels generic", "looks AI-generated", "needs more personality", or names a specific marketing tone they want ("editorial", "dev-tool minimalism", "playful", etc.).
-- You're about to generate atmospheric images for a hero or background — `landing-design.md` rule #9 has the required negative-prompt clause so the images don't come back with hallucinated text.
+**Workflow rules:**
 
-Skip it for the authenticated home page of a working app (that's `uiux.md` §1), small maintenance tweaks to an already-themed landing page, or apps without a marketing surface (signed-in-only productivity tools).
+- **Debug from failures, not console logs.** Read the assertion + selector, fix the code. Don't add `console.log` to diagnose — write a more specific assertion. Don't weaken or delete tests to make them green.
+- **Re-run after each follow-up change.** Re-apply the checklist; tests are a living contract.
 
-`references/landing-design.md` is the entry point — it has the 5-step workflow, 14 hard rules, and a short grep gate. It fans out to on-demand sub-references for the detailed material — load each one only when you reach the step that needs it:
+Skipping the checklist when its conditions fire is the most common cause of "I built it but it crashes on page load" handoffs and "looks fine for me, broken for the second user" regressions.
 
-- `landing-design/design-direction.md` — how to write the Direction brief.
-- `landing-design/style-tile.md` — menus for the 6 Style Tile commits.
-- `landing-design/inspiration-gallery.md` — pick ONE of 5 archetypes closest to your Direction.
-- `landing-design/examples/0N-*.tsx` — five worked example landing pages (read-only; do not import from). Read exactly ONE — the one matching the archetype you picked.
-- `landing-design/pattern-library.md` + `landing-design/pattern-library/{nav,hero,features,social-proof,cta,footer,scroll-motion}.md` — small index pointing at 7 section-specific snippet files. Load the index, then only the section files you need.
-- `landing-design/anti-ai-checklist.md` — expanded hard rules + the full grep gate commands.
+For the deeper testing surface — `'deepspace/testing'` fixture, the test-account pool rules, route coverage, multi-user patterns, self-diagnosis — load `references/testing.md`.
 
-## Testing
+### Deploy (`npx deepspace deploy`)
 
-Playwright-based. Step 8 above covers the in-build workflow (when to run, which file to extend, debug-from-failures rule). For anything beyond that, load `references/testing.md` — it covers:
+On an **initial build**, run the pre-deploy checklist in `references/uiux.md` §5 first. On follow-up deploys with those already verified, just run the command:
 
-- Full `tests/helpers/` API (`signInAs`, `createTestUsers`, `signOut`, error tracking) and `global-setup.ts`.
-- `npx deepspace test-accounts` CLI + the `@deepspace.test` email convention, and the exact commands `createTestUsers` prints when accounts are missing.
-- Test data cleanup convention (`__test-${Date.now()}__` prefix + per-test `created[]` + `afterEach` delete).
-- Route-coverage rule: every reachable route — static or dynamic — needs a test that asserts real content, not just "no crash."
-- Writing multi-user patterns with `createTestUsers(browser, N)`.
-- Self-diagnosis workflow: write a failing test before adding `console.log`.
+```bash
+npx deepspace deploy   # → <app-name>.app.space
+```
 
-Skip it when Step 8's inline summary already covers the change you're making.
+Re-run `npx deepspace login` if the session has expired.
+
+## References
+
+Each reference declares its own "Load when …" trigger at the top. Index:
+
+| Reference | Load when |
+|---|---|
+| `references/sdk-reference.md` | Looking up any hook, type, or export — the canonical index of every public surface (frontend, worker, testing). |
+| `references/schemas.md` | Defining a collection, picking a permission rule, debugging "why can't this user see/edit X," wiring `visibilityField` / `collaboratorsField`. |
+| `references/auth.md` | Choosing the auth model (public / gated / mixed), adding `<AuthGate>`, customizing the sign-in fallback. |
+| `references/architecture.md` | Editing `worker.ts`, adding cross-app shared scopes (`workspace:*` / `dir:*` / `conv:*`), wiring `platformWorkerFetch`. |
+| `references/server-actions.md` | Adding privileged writes that bypass the caller's RBAC. |
+| `references/ai-chat.md` | Adding a streamed chat UI with tool use over the app's records. |
+| `references/cron.md` | Adding scheduled tasks, building the admin cron monitor, testing cron via `trigger`. |
+| `references/integrations.md` | Calling external APIs (LLMs, search, media, social, finance, etc.). |
+| `references/integrations/livekit.md` | Adding audio/video rooms — token mint, billing model, room lifecycle. |
+| `references/integrations/google-oauth.md` | Calling Gmail / Calendar / Drive — per-user billing, scope step-up, `requiresOAuth` retry, test mocks. |
+| `references/uiux.md` | Working on theme, home page, primitives, interaction polish, or "feels generic" feedback. Trigger especially when about to use `<select>` / `window.confirm` / `window.alert` / `window.prompt`. |
+| `references/testing.md` | Writing or extending specs, building multi-user flows, applying route coverage, debugging flaky tests. |
+| `references/landing-design.md` | Building marketing / landing / splash pages, addressing "feels AI-generated" feedback, customizing the scaffolded `landing` feature. |
 
 ## Gotchas
 
-These are concrete issues discovered in real dev sessions. Read before building.
+Read before building — concrete biases that will trip you up otherwise, grouped by domain.
 
-- **Page files MUST go in `src/pages/`** — generouted only scans this directory. Putting pages in `src/features/<name>/` or elsewhere results in 404s even if nav links exist.
-- **`useAuth().isSignedIn` for auth gating, not `useUser()`** — `isSignedIn` is session-based and updates immediately after sign-in. `useUser()` loads async and causes a flash of "not signed in" state.
-- **Safari + localhost cookies** — `__Secure-` cookies require HTTPS. Safari enforces this; Chrome doesn't on localhost. Auth will appear broken on Safari in local dev. Works fine once deployed.
-- **Integration response format** — api-worker returns `{ success: true, data: [...] }` where `data` may be a flat array. Don't look for `result.data.forecast` or `result.data.list` — check `Array.isArray(result.data)`.
-- **Cross-app workspace isolation** — Each app worker has its own DO namespace, and the scaffolded `/ws/:roomId` handler routes everything to that local DO. `workspace:default` in app A is a different DO instance than `workspace:default` in app B until you add the `PLATFORM_WORKER` proxy edit shown in "Architecture → Cross-app shared scopes".
-- **`createChannel()` defaults to `Visibility: 'public'`** — This means all users see all conversations. Override with `Visibility: 'private'` and set `ParticipantIds` for user-scoped data.
-- **Schemas are columns only** — no `fields` property, no document-mode storage.
+### Auth & state
+
+- **`useAuth().isSignedIn`, not `useUser()`** — `isSignedIn` is session-based and updates immediately. `useUser()` loads async and causes a flash of "not signed in" state.
+- **Safari + localhost cookies** — `__Secure-` cookies require HTTPS; Safari enforces this on localhost, Chrome doesn't. Auth appears broken on Safari in local dev. Works fine once deployed.
 - **JWT provides user profile** — no separate `/api/users/me` call needed.
+
+### Data layer
+
+- **Integration response format** — api-worker returns `{ success: true, data: ... }` where `data` may be a flat array. Don't reach for `result.data.forecast` or `result.data.list` — check `Array.isArray(result.data)` first.
+- **`createChannel()` defaults to `Visibility: 'public'`** — every user sees every conversation. Override with `Visibility: 'private'` and set `ParticipantIds` for user-scoped data.
+- **Schemas are columns only** — no `fields` property, no document-mode storage.
+
+### Build & runtime
+
+- **Page files belong in `src/pages/`** — generouted scans only this directory. Putting pages in `src/features/<name>/` results in 404s even if nav links exist.
+- **Cross-app workspace isolation** — each app worker has its own DO namespace; the scaffolded `/ws/:roomId` handler routes everything to the local DO. `workspace:default` in app A is a different DO instance than `workspace:default` in app B until you add the `PLATFORM_WORKER` proxy edit (see `references/architecture.md`).
+- **Scaffold's local UI primitives shadow the SDK** — `_app.tsx` wraps the tree in `ToastProvider` from `src/components/ui/`, not from `deepspace`. Importing `useToast` (or any locally-shadowed primitive) from `deepspace` throws `useToast must be used within ToastProvider` at runtime — the React contexts don't match. **Import from `../components/ui`, not from `deepspace`.** Full explanation in `references/uiux.md` § "Critical import rule."
+
+### Tests
+
 - **All tests use real services** — never mock internal hooks.
-- **Port 5173 may be held by a parallel session** — Playwright's scaffolded config has `reuseExistingServer: true`, so a parallel session's Vite on 5173 will be picked up and your tests will run against **that** session's app, not yours. **Do not kill** the other session's process. If you need your own dev server, start it on a different port (`VITE_PORT=5174 npx deepspace dev`) **and** edit `tests/playwright.config.ts` so `webServer.port` and `use.baseURL` both point at 5174 (5175, 5176, …) before running tests.
-- **Scaffold's local UI primitives shadow the SDK** — `_app.tsx` wraps the tree in `ToastProvider` from `src/components/ui/`, not from `deepspace`. Importing `useToast` (or any primitive the scaffold has locally) from `deepspace` throws `useToast must be used within ToastProvider` at runtime because the React contexts don't match. **Import UI primitives from `../components/ui`, not from `deepspace`**; check `_app.tsx` if unsure. Full explanation (React context module-instance identity) lives in `references/uiux.md` § "Critical import rule."
+- **Port 5173 may be held by a parallel session** — `tests/playwright.config.ts` ships with `reuseExistingServer: true`, so a sibling session's Vite on 5173 is picked up and your tests run against **its** app. **Do not kill** the other session's process. If you need your own dev server, use `--port 5174` (or 5175, 5176, …) and edit `tests/playwright.config.ts` so `webServer.port` and `use.baseURL` both match before running tests.
 
-## Key Rules
+## Key rules
 
-- Schemas baked in at deploy time — no runtime schema loading
-- Direct WebSocket per scope — no mux/gateway
-- No user-scope DOs — user-scoped data lives in app DOs with RBAC filtering
-- `pnpm dev` or `npx deepspace dev` for local dev — never run `wrangler dev` + `vite dev` separately
+- **Schemas baked in at deploy time** — no runtime schema loading.
+- **Direct WebSocket per scope** — no mux/gateway.
+- **No user-scope DOs** — user-scoped data lives in app DOs with RBAC filtering.
+- **Use `npx deepspace dev`** for local dev — never run `wrangler dev` + `vite dev` separately.

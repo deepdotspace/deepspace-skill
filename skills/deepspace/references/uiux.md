@@ -95,7 +95,7 @@ Everywhere else, use an `lucide-react` icon (already a scaffold dep) or a text-o
 
 The scaffold ships a full shadcn/ui-based kit in `src/components/ui/` (index at `src/components/ui/index.ts`). Use it. Browser-default controls ignore the theme tokens, render as native widgets on macOS/iOS, and break visual consistency.
 
-| Use case | Use this | Do NOT use |
+| Use case | Use this | Don't use |
 |---|---|---|
 | Select one of N options | `Select` + `SelectTrigger`/`SelectContent`/`SelectItem` | `<select>` / `<option>` |
 | Menu / overflow / "…" actions | `DropdownMenu` + `DropdownMenuTrigger`/`Content`/`Item` (+ `CheckboxItem`, `RadioItem`, `Separator`, `Sub`/`SubTrigger`/`SubContent`) | hacked `<select>`, raw `<ul>` dropdown |

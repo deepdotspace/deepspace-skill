@@ -95,7 +95,7 @@ export function MetricTrio() {
 
 ## S4 — Marquee carousel
 
-When to use: you have a lot of real logos or testimonials and want to show breadth. **Use only if your direction tolerates continuous motion.** Horizontal infinite scroll is the #1 offender for reduced-motion regressions — the pattern below gates on `useReducedMotion` and freezes for those users.
+When to use: you have a lot of real logos or testimonials and want to show breadth. **Use only if your direction tolerates continuous motion.** Horizontal infinite scroll is the most-common offender for reduced-motion regressions — the pattern below gates on `useReducedMotion` and freezes for those users.
 
 ```tsx
 import { motion, useReducedMotion } from 'framer-motion'

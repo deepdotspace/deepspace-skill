@@ -19,9 +19,9 @@ Two paths:
 
 Either path, the rest of this workflow is the same.
 
-#### Hide the global Navigation on the landing route — REQUIRED
+#### Hide the global Navigation on the landing route — required
 
-The scaffolded `_app.tsx` always renders the app's `<Navigation />` (the top bar with Home / Settings / Sign In) above the route's `<Outlet />`. That means stacking your landing's own nav (or your no-nav decision) **on top of** the global app chrome — landing chrome on top of app chrome reads less polished and is the #1 telltale that a landing was bolted on without thought.
+The scaffolded `_app.tsx` always renders the app's `<Navigation />` (the top bar with Home / Settings / Sign In) above the route's `<Outlet />`. That means stacking your landing's own nav (or your no-nav decision) **on top of** the global app chrome — landing chrome on top of app chrome reads less polished, and is the clearest telltale that a landing was bolted on without thought.
 
 Patch `src/pages/_app.tsx` with a route-aware conditional. This is the **one acceptable edit** to `_app.tsx` (see SKILL.md Step 3):
 
@@ -125,10 +125,10 @@ These are grep-checkable. Ship violations = broken landing page.
 1. **Hero headline**: 3–8 words. No exceptions.
 2. **Body copy**: under ~150 words total across the whole page. If you're writing a paragraph, build a visual instead.
 3. **No 3-identical-cards pattern** for features. If the features section renders three of the same thing with the same structure, redesign it (tabs, alternating rows, bento grid, single showcase, etc.).
-4. **No purple→indigo, violet, or blue→purple gradients.** This is the #1 AI color tell. Use your accent color in `primary` shades only.
+4. **No purple→indigo, violet, or blue→purple gradients.** This is the most-common AI color tell. Use your accent color in `primary` shades only.
 5. **No hardcoded colors in JSX.** No hex, no `violet-400`, no `indigo-500`, no `rgb()` or `rgba()`. Semantic tokens only: `bg-background`, `text-foreground`, `bg-primary`, `bg-muted`, `border-border`, `text-muted-foreground`, etc.
 6. **No fractional-opacity on foreground.** Patterns like `bg-foreground/[0.06]` or `border-foreground/[0.08]` are old-template tells. Use `bg-muted`, `border-border`, `bg-card`.
-7. **Pick a font that's clear, elegant, and fits the product — never gimmicky.** Reason about the product's tone first, then pick a font that serves it. Inter, Montserrat, DM Sans, Manrope, Fraunces, Playfair Display, Cormorant, JetBrains Mono are all valid headline picks when they fit. **Avoid display fonts that read as costume:** Syne, Bebas Neue, Anton, Fjalla One, Oswald, Impact, Josefin Sans, Pacifico, Lobster. The test: would a thoughtful designer ship this font for THIS product? See `landing-design/style-tile.md`.
+7. **Pick a font that's clear, elegant, and fits the product — never gimmicky.** Reason about the product's tone first, then pick a font that serves it. Inter, Montserrat, DM Sans, Manrope, Fraunces, Playfair Display, Cormorant, JetBrains Mono are all valid headline picks when they fit. **Avoid display fonts that read as costume:** Syne, Bebas Neue, Anton, Fjalla One, Oswald, Impact, Josefin Sans, Pacifico, Lobster. The test: would a thoughtful designer ship this font for *this* product? See `landing-design/style-tile.md`.
 8. **Product mockups must be React components**, not AI-generated images.
 9. **Every AI-generated image prompt must include** `no text, no words, no letters, no writing, no logos`.
 10. **Dramatic type scale.** Headlines should be at least 3× the size of body text. If they look similar, the page looks flat.
@@ -168,7 +168,7 @@ Also verify by eye:
 - Design Direction block at the top of `landing.tsx` is filled with prose (no empty prompt lines)
 - Hero headline is 3–8 words
 - Hero has a commanding visual, not just centered text
-- Features section is NOT 3 identical cards
+- Features section is not 3 identical cards
 - Every image slot is filled (either a real integration-generated URL or a code-based React visual)
 - The scaffolded landing feature sections have been replaced or heavily customized — not shipped as-is
 
@@ -178,8 +178,8 @@ Also verify by eye:
 
 - **`landing-design/design-direction.md`** — how to write a good Design Direction brief. Read this the first time you fill the block, or when the sentence test keeps rejecting what you write.
 - **`landing-design/style-tile.md`** — menus for the 6 Style Tile commits (color, type pair, theme, art direction, motion, voice). Open while filling the Style Tile — scan the relevant table, pick, move on.
-- **`landing-design/inspiration-gallery.md`** — the 4 archetypes. Read this to pick which one row is closest to your direction. Do NOT read all four.
-- **`landing-design/examples/0N-*.tsx`** — five worked example landing pages, one per archetype. Read exactly ONE after you've picked your archetype. Read-only reference — the grep gate flags imports from this folder. (See `inspiration-gallery.md` for the picking guide and which example also covers the floating-pill / FAQ / bento patterns.)
+- **`landing-design/inspiration-gallery.md`** — the 4 archetypes. Read this to pick which one row is closest to your direction. **Don't read all four.**
+- **`landing-design/examples/0N-*.tsx`** — five worked example landing pages, one per archetype. Read **exactly one** after you've picked your archetype. Read-only reference — the grep gate flags imports from this folder. (See `inspiration-gallery.md` for the picking guide and which example also covers the floating-pill / FAQ / bento patterns.)
 - **`landing-design/pattern-library.md`** — small index (~50 lines) of the section-specific pattern files. Read this first to know which sub-files to load.
 - **`landing-design/pattern-library/{nav,hero,features,social-proof,cta,footer,scroll-motion}.md`** — copy-pasteable TSX snippets, one file per page section. Load only the sub-files you need (typically 4–5 of 7).
 - **`landing-design/anti-ai-checklist.md`** — expanded hard rules + the full grep gate commands. Read this before finishing.

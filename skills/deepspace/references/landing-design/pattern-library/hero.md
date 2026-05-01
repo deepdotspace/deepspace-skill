@@ -90,7 +90,7 @@ export function SplitHero() {
 
 When to use: consumer brands, lifestyle/editorial products, products whose value is mood more than feature. A generated atmospheric image fills the viewport; the headline floats over a gradient.
 
-**Generate the image with** `integration.post('freepik/generate-image-flux-dev', ...)` (or `gemini/generate-image`, `openai/generate-image`). **Your prompt MUST include `no text, no words, no letters, no writing, no logos`** — AI models hallucinate gibberish text otherwise. Persist the URL with `useR2Files` if you want it stable across renders.
+**Generate the image with** `integration.post('freepik/generate-image-flux-dev', ...)` (or `gemini/generate-image`, `openai/generate-image`). **Your prompt must include `no text, no words, no letters, no writing, no logos`** — AI models hallucinate gibberish text otherwise. Persist the URL with `useR2Files` if you want it stable across renders.
 
 ```tsx
 import { useNavigate } from 'react-router-dom'

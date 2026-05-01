@@ -2,7 +2,7 @@
 
 5 patterns. Pick 1 — sometimes 2 if your Direction calls for both a showcase and a list. See `pattern-library.md` for the shared rules + import conventions.
 
-Three identical cards with Icon + Title + Description is the #1 AI-generated layout tell. Every pattern below is designed to break that shape.
+Three identical cards with Icon + Title + Description is the most-common AI-generated layout tell. Every pattern below is designed to break that shape.
 
 ---
 

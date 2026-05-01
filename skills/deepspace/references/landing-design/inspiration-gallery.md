@@ -4,10 +4,10 @@ Five archetypal landing-page directions across radically different product domai
 
 ## Rules
 
-1. **Read only ONE row below** AND **only ONE example file.** Pick based on emotional adjacency, not product category. A cooking app might learn more from the dev-tool row if its tone is technical; a game might learn more from the cooking row if its tone is nostalgic. Don't absorb all five — you'll end up with a mashup.
+1. **Read exactly one row below** and **exactly one example file.** Pick based on emotional adjacency, not product category. A cooking app might learn more from the dev-tool row if its tone is technical; a game might learn more from the cooking row if its tone is nostalgic. Don't absorb all five — you'll end up with a mashup.
 2. **Focus on how the direction becomes code**, not on copying layouts. Open the example file for your chosen archetype and read the Design Direction block at the top. The lesson is that every design choice downstream traces back to what's written there.
-3. **Do NOT clone the layout.** Adapt the underlying idea. If the cooking example uses torn-paper dividers, your cooking app might use pressed-flower dividers — same *mechanism* (a signature SVG element that repeats), different *execution* (specific to your direction).
-4. **Do NOT import from the examples folder.** Each example file opens with a do-not-import comment. The grep gate in `anti-ai-checklist.md` flags `from.*landing-design/examples` — a hit is a bug. Copy concepts, not files.
+3. **Don't clone the layout.** Adapt the underlying idea. If the cooking example uses torn-paper dividers, your cooking app might use pressed-flower dividers — same *mechanism* (a signature SVG element that repeats), different *execution* (specific to your direction).
+4. **Don't import from the examples folder.** Each example file opens with a do-not-import comment. The grep gate in `anti-ai-checklist.md` flags `from.*landing-design/examples` — a hit is a bug. Copy concepts, not files.
 
 ## The five archetypes
 
@@ -68,7 +68,7 @@ Five is enough to prove the range. More is a bigger menu, and bigger menus cause
 
 If none of the five matches your direction and you need a different reference, the right move isn't to wait for a sixth archetype — it's to find your own reference outside this repo (a real landing page, a magazine spread, a product photograph) that shares your emotion, and build from that.
 
-## What reference code NOT to rely on
+## What reference code not to rely on
 
 Two failure modes, same root cause (skipping the Direction-first workflow):
 

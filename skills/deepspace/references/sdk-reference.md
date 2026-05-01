@@ -162,7 +162,7 @@ function Gallery() {
 
 - `integration` — `{ get / post / put / delete (endpoint, data?, options?) }`. Returns `Promise<IntegrationResponse<T>>` where the envelope is `{ success: true, data } | { success: false, error }`. See `references/integrations.md` for endpoint list and the `requiresOAuth` retry shape.
 
-**Cross-app platform context (opt-in, NOT in the scaffold by default).** The platform exports below let an app subscribe to its cross-app inbox (DMs / notifications routed through the platform-worker). They require `<PlatformProvider>` to be mounted somewhere above the consumers — the scaffolded `_app.tsx` does **not** include it, so wrap the tree manually if you need this surface:
+**Cross-app platform context (opt-in, not in the scaffold by default).** The platform exports below let an app subscribe to its cross-app inbox (DMs / notifications routed through the platform-worker). They require `<PlatformProvider>` to be mounted somewhere above the consumers — the scaffolded `_app.tsx` does **not** include it, so wrap the tree manually if you need this surface:
 
 ```tsx
 import { PlatformProvider, usePlatform, useInbox } from 'deepspace'
@@ -234,7 +234,7 @@ The scaffold declares five DO classes in `__DO_MANIFEST__` and extends these bas
 - `YjsRoom` — per-doc collaborative text (Y.Text) and rich fields.
 - `CanvasRoom` — collaborative canvas state (shapes, strokes).
 - `PresenceRoom` — cursors, typing indicators, "who's online".
-- `CronRoom` — scheduled-task DO. Construct with `{ tasks: CronTask[] }` and override `onTask(name)`. See `references/server-extensions.md` § Cron for the scaffold pattern.
+- `CronRoom` — scheduled-task DO. Construct with `{ tasks: CronTask[] }` and override `onTask(name)`. See `references/cron.md` for the scaffold pattern.
 
 Each has its own WebSocket route wired in `worker.ts` (`/ws/yjs/:docId`, `/ws/canvas/:docId`, `/ws/presence/:scopeId`, `/ws/cron/:roomId`).
 
@@ -252,7 +252,7 @@ Omit the override to keep the legacy behavior (load the stored blob as-is).
 
 ### Auth
 - `verifyJwt(request, env)` — validates the session JWT, returns `{ userId, ... }` or throws.
-- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` — HMAC sign / verify for internal platform → app calls. (Cron no longer uses these — see `references/server-extensions.md` § Cron.)
+- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` — HMAC sign / verify for internal platform → app calls. (Cron no longer uses these — see `references/cron.md`.)
 
 ### AI provider helper
 - `createDeepSpaceAI(env, provider, options?)` — returns a Vercel-AI-SDK-compatible provider routed through the DeepSpace API worker. `provider` is `'anthropic' | 'openai' | 'cerebras'`. Pass `{ authToken }` for user-billed calls (inside a request handler); omit for server-side autonomous calls (falls back to `env.APP_OWNER_JWT`, billed to the app owner).

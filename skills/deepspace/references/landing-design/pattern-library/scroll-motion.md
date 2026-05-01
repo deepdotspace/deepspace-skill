@@ -8,7 +8,7 @@ Every pattern here uses `useTransform` from `useScroll` or a continuous animatio
 
 ## SM1 — Parallax background layer
 
-When to use: editorial or atmospheric directions where a slow layer shift behind content adds depth. `useTransform` from `useScroll` bypasses `MotionConfig` — you MUST gate it on `useReducedMotion`.
+When to use: editorial or atmospheric directions where a slow layer shift behind content adds depth. `useTransform` from `useScroll` bypasses `MotionConfig` — you **must** gate it on `useReducedMotion`.
 
 ```tsx
 import { useRef } from 'react'

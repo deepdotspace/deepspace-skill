@@ -14,21 +14,21 @@ If you're writing a paragraph to explain a feature, you're telling when you shou
 
 ### 3. No 3-identical-cards pattern for features
 
-Three `<Card>` components in a row with `Icon + Title + Description` is the #1 AI-generated layout tell. It's the default because it's safe and because templates ship with it. Break out of it: tabbed showcase, alternating rows, bento grid, single scrolling showcase, typographic list.
+Three `<Card>` components in a row with `Icon + Title + Description` is the most-common AI-generated layout tell. It's the default because it's safe and because templates ship with it. Break out of it: tabbed showcase, alternating rows, bento grid, single scrolling showcase, typographic list.
 
 ### 4. No purple→indigo, violet, or blue→purple gradients
 
-This is the #1 AI color tell. Every generic SaaS AI product picks a purple-indigo gradient because it's the safest choice. Don't. Use your accent color in `primary` shades only. If your app's `primary` is purple, that's fine — but use only `primary`, not `violet-500` hardcoded. The gradient should be primary-to-primary/70, not primary-to-indigo.
+This is the most-common AI color tell. Every generic SaaS AI product picks a purple-indigo gradient because it's the safest choice. Don't. Use your accent color in `primary` shades only. If your app's `primary` is purple, that's fine — but use only `primary`, not `violet-500` hardcoded. The gradient should be primary-to-primary/70, not primary-to-indigo.
 
 ### 5. No hardcoded colors in JSX
 
-No hex (`#8b5cf6`), no Tailwind color names (`violet-400`, `indigo-500`, `amber-300`), no `rgb()` or `rgba()` literals. Semantic tokens only: `bg-background`, `text-foreground`, `bg-primary`, `text-primary`, `bg-muted`, `text-muted-foreground`, `bg-card`, `border-border`, `bg-accent`, `text-accent-foreground`. Radical visual differences between landing pages come from layout, typography, motion, and composition — NOT from hardcoded colors.
+No hex (`#8b5cf6`), no Tailwind color names (`violet-400`, `indigo-500`, `amber-300`), no `rgb()` or `rgba()` literals. Semantic tokens only: `bg-background`, `text-foreground`, `bg-primary`, `text-primary`, `bg-muted`, `text-muted-foreground`, `bg-card`, `border-border`, `bg-accent`, `text-accent-foreground`. Radical visual differences between landing pages come from layout, typography, motion, and composition — not from hardcoded colors.
 
 ### 6. No fractional-opacity on foreground
 
 Patterns like `bg-foreground/[0.06]`, `text-foreground/[0.4]`, `border-foreground/[0.08]` are old-template tells. They come from trying to make muted variants by taking the foreground and reducing its opacity. Don't — the theme already has semantic tokens for this: `bg-muted`, `text-muted-foreground`, `border-border`, `bg-card`. Use them.
 
-> **Scaffold audit for rules #5 + #6.** The scaffolded `.deepspace/features/landing/src/LandingPage.tsx` and `primitives.tsx` ship with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, hardcoded `bg-emerald-400`, and a `rgba(139, 92, 246, 0.5)` conic gradient inside `GlassCard`, `PlaceholderImage`, `BrowserMockup`, `SectionHeading`, and the page shell. If you install the `landing` feature and reuse its primitives/sections, the grep gate WILL flag hits *inside the scaffold*. They're bugs to fix in your app's scaffolded copy, not false positives — every flagged line has a semantic-token replacement. The patterns in `pattern-library.md` and the files in `landing-design/examples/` are grep-clean; they primarily use the scaffold's clean primitives (`ScrollReveal`, `StaggerContainer`, `AnimatedStat`, `Typewriter`) and build card/image surfaces inline with semantic tokens.
+> **Scaffold audit for rules #5 + #6.** The scaffolded `.deepspace/features/landing/src/LandingPage.tsx` and `primitives.tsx` ship with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, hardcoded `bg-emerald-400`, and a `rgba(139, 92, 246, 0.5)` conic gradient inside `GlassCard`, `PlaceholderImage`, `BrowserMockup`, `SectionHeading`, and the page shell. If you install the `landing` feature and reuse its primitives/sections, the grep gate **will** flag hits *inside the scaffold*. They're bugs to fix in your app's scaffolded copy, not false positives — every flagged line has a semantic-token replacement. The patterns in `pattern-library.md` and the files in `landing-design/examples/` are grep-clean; they primarily use the scaffold's clean primitives (`ScrollReveal`, `StaggerContainer`, `AnimatedStat`, `Typewriter`) and build card/image surfaces inline with semantic tokens.
 
 ### 7. Pick a font that's clear, elegant, and fits the product — never gimmicky
 
@@ -36,11 +36,11 @@ Reason about the product's tone first, then pick a font that serves it. **Clarit
 
 **Avoid display fonts that read as costume:** Syne, Bebas Neue, Anton, Fjalla One, Oswald, Impact, Josefin Sans, Pacifico, Lobster. They feel theatrical, not designed.
 
-The test: would a thoughtful designer ship this font for THIS product? If the answer requires a paragraph of justification, pick something simpler. See `style-tile.md` for the full reasoning workflow and pairings table.
+The test: would a thoughtful designer ship this font for *this* product? If the answer requires a paragraph of justification, pick something simpler. See `style-tile.md` for the full reasoning workflow and pairings table.
 
 ### 8. Product mockups must be React components, not AI images
 
-AI image models render UI as garbled gibberish — fake buttons, broken text, non-existent charts. Any product screenshot you "generate" will look obviously fake. Build product mockups as React components: inline SVG for icons, styled divs for cards, Framer Motion for transitions. This is the #1 lever for making a landing page look real.
+AI image models render UI as garbled gibberish — fake buttons, broken text, non-existent charts. Any product screenshot you "generate" will look obviously fake. Build product mockups as React components: inline SVG for icons, styled divs for cards, Framer Motion for transitions. This is the highest-leverage move for making a landing page look real.
 
 ### 9. Every AI-generated image prompt must include `no text, no words, no letters, no writing, no logos`
 
@@ -75,7 +75,7 @@ If you wrap the landing tree in `<MotionConfig reducedMotion="user">`, framer-mo
 
 ### 14. No pictograph emojis in JSX
 
-Emojis render inconsistently across platforms (Apple is rounded and colorful, Google is flat, Microsoft is angular), can't inherit your theme color, look chunky next to clean typography, and are the #1 reflex AI agents reach for as "decoration." Every AI landing page has 🚀 next to "Get started" and ✨ next to "Now with AI" — stop using them and your page reads as human-crafted.
+Emojis render inconsistently across platforms (Apple is rounded and colorful, Google is flat, Microsoft is angular), can't inherit your theme color, look chunky next to clean typography, and are the most-common reflex AI agents reach for as "decoration." Every AI landing page has 🚀 next to "Get started" and ✨ next to "Now with AI" — stop using them and your page reads as human-crafted.
 
 **Use instead:**
 
