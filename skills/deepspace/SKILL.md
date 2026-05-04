@@ -17,7 +17,7 @@ description: >
 
 Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn/ui primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
 
-This skill targets **`deepspace` and `create-deepspace` v0.2.4** (latest published on npm at 04/29/2026; verify with `npm view deepspace version` if drift is suspected).
+This skill targets **`deepspace` and `create-deepspace` v0.2.5** (verify with `npm view deepspace version` if drift is suspected).
 
 ## Quickstart — the development lifecycle
 
@@ -62,8 +62,20 @@ npx deepspace add --list           # discover available features (18 ship out of
 npx deepspace add --info <name>    # see what a feature installs
 npx deepspace add <feature>        # install into current app
 
-# 7. Deploy (subdomain comes from wrangler.toml's `name` field — rename there, not at deploy time)
+# 7. Discover & test platform integrations from the CLI (billed to logged-in user)
+npx deepspace invoke --list                                # list all 215 endpoints across 31 integrations
+npx deepspace invoke <integration>/<endpoint> --info       # schema + example body for one endpoint
+npx deepspace invoke openai/chat-completion --body '{...}' # actually call it
+npx deepspace invoke openai/chat-completion --body-file -  # body via stdin (cat req.json | …)
+
+# 8. Deploy (subdomain comes from wrangler.toml's `name` field — rename there, not at deploy time)
 npx deepspace deploy               # → <wrangler.name>.app.space
+
+# 9. (Optional) Buy & attach a custom domain to the deployed app
+npx deepspace domain search <query>          # find available domains and prices
+npx deepspace domain buy <domain>            # buy via Stripe Checkout (browser opens)
+npx deepspace domain list                    # list domains you own
+npx deepspace domain attach <domain> --app <name>   # re-point a domain at a different app
 ```
 
 **Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Re-login only when `~/.deepspace/session` is wiped or the session expires. See "Login, test, deploy" below for non-obvious rules.
@@ -159,7 +171,16 @@ const result = await integration.post('openweathermap/geocoding', { q: city })
 // Returns: { success: true, data: {...} } or { success: false, error: "..." }
 ```
 
-**Endpoint names are two segments: `<integration>/<endpoint>`.** Don't guess — names like `geocode-city` or `weather-forecast` aren't real and return 404 at runtime. Verify in `assets/integrations/index.yaml` before calling.
+**Endpoint names are two segments: `<integration>/<endpoint>`.** Don't guess — names like `geocode-city` or `weather-forecast` aren't real and return 404 at runtime. Verify with `npx deepspace invoke --list` (full catalog) or look up in `assets/integrations/index.yaml`.
+
+**To discover the body shape for an endpoint** (the most common stumble for integration-heavy apps), run:
+
+```bash
+npx deepspace invoke <integration>/<endpoint> --info        # prints input schema + example body
+npx deepspace invoke <integration>/<endpoint> --body '{...}' # actually call it, see real response
+```
+
+This is the agent-friendly path — both commands print machine-readable JSON with `--json`, and the schema returned by `--info` is the same Zod schema the api-worker validates against. Prefer it over guessing the body shape from endpoint names.
 
 **Auth-gate any UI that calls `integration.post(...)`.** Default billing is owner-pays. The api-worker accepts anonymous callers, so a public endpoint silently bills the owner for every visitor (or bot) hit. Wrap calling components in `useAuth().isSignedIn`.
 
@@ -207,6 +228,7 @@ Each reference declares its own "Load when …" trigger at the top. Index:
 | `references/ai-chat.md` | Adding a streamed chat UI with tool use over the app's records. |
 | `references/cron.md` | Adding scheduled tasks, building the admin cron monitor, testing cron via `trigger`. |
 | `references/integrations.md` | Calling external APIs (LLMs, search, media, social, finance, etc.). |
+| `references/domain.md` | Buying / attaching / managing a custom domain (`deepspace domain` CLI). Skip for apps that are happy on `<name>.app.space`. |
 | `references/integrations/livekit.md` | Adding audio/video rooms — token mint, billing model, room lifecycle. |
 | `references/integrations/google-oauth.md` | Calling Gmail / Calendar / Drive — per-user billing, scope step-up, `requiresOAuth` retry, test mocks. |
 | `references/uiux.md` | Working on theme, home page, primitives, interaction polish, or "feels generic" feedback. Trigger especially when about to use `<select>` / `window.confirm` / `window.alert` / `window.prompt`. |

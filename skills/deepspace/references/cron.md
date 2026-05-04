@@ -18,21 +18,35 @@ export const tasks: CronTask[] = [
 ]
 
 export async function runTask(name: string, env: Env): Promise<void> {
+  // buildCronContext(env, ownerUserId, roomId?) — roomId defaults to 'default'.
+  // Pass `app:${env.APP_NAME}` for the per-app RecordRoom (matches scaffold convention).
   const ctx = buildCronContext(env, env.OWNER_USER_ID, `app:${env.APP_NAME}`)
   if (name === 'heartbeat') {
-    // ctx.tools.{create,update,remove,get,query} — same shape as server actions, runs as app owner
-    // ctx.integration(endpoint, data) — proxied through api-worker, billed to the owner JWT
+    // Records — runs as app owner (bypasses caller RBAC):
+    //   ctx.records.query(collection, { where?, limit? })  → Promise<any[]>
+    //   ctx.records.create(collection, data)               → Promise<record>
+    //   ctx.records.update(collection, recordId, data)     → Promise<record>
+    //   ctx.records.delete(collection, recordId)           → Promise<void>
+    //
+    // Integrations — proxied through api-worker via signed internal HMAC,
+    // billed to the app owner (uses INTERNAL_STORAGE_HMAC_SECRET):
+    //   ctx.integrations.call(endpoint, params)            → Promise<response>
+    //
+    // Owner user ID:
+    //   ctx.ownerUserId
   } else if (name === 'daily-digest') {
     // ...
   }
 }
 ```
 
+> **API-shape gotcha** — properties are **plural** (`records`, `integrations`) and the integrations method is `call`, not direct invocation. The names match the typed shape returned by `buildCronContext` — `{ records, integrations, ownerUserId }`. There is no `ctx.tools` and no `ctx.integration` (singular).
+
 ## Task declaration rules
 
 - Each task declares **either** `intervalMinutes` (every N minutes) **or** `schedule` + `timezone` (5-field cron expression evaluated against an IANA timezone). Declaring both, or neither, throws at DO construction time.
 - Cron mode is DST-aware — the wall-clock comparison happens after the timezone shift.
-- Optional `paused: true` starts the task disabled; toggle it later via the `useCronMonitor` UI.
+- Optional `paused: true` starts the task disabled. Toggle it at runtime by calling `pause(name)` / `resume(name)` from `useCronMonitor` — the scaffolded `/cron-log` page is read-only and doesn't expose those, so build the controls into your own admin page (and gate them; see "Monitoring UI" below).
 
 ## DO wiring (already in scaffold)
 
@@ -58,25 +72,34 @@ Don't edit those bindings — add tasks in `src/cron.ts` and the DO picks them u
 
 ## Monitoring UI — `useCronMonitor`
 
-Render task status, history, and `trigger` / `pause` / `resume` controls with `useCronMonitor('app:<APP_NAME>')` from `deepspace`. The hook returns `{ tasks, history, connected, trigger(name), pause(name), resume(name) }`. Auth-gate the page (admin role) — the DO does not enforce who can call `trigger` / `pause` / `resume`, so without a client-side role check any signed-in user can fire owner-billed tasks.
+Render task status, history, and (optionally) `trigger` / `pause` / `resume` controls with `useCronMonitor(roomId)` from `deepspace`. Pass `SCOPE_ID` from `src/constants.ts` (default `app:${APP_NAME}`) to hit the app's `AppCronRoom` DO. The hook returns `{ tasks, history, connected, trigger(name), pause(name), resume(name) }`. Each task is a `CronTaskState` (`{ name, intervalMinutes, schedule, timezone, paused, lastRunAt, nextRunAt }`); each history entry is a `CronHistoryEntry` (`{ taskName, startedAt, completedAt, success, durationMs, error? }`).
+
+**Auth-gate any page that exposes `trigger` / `pause` / `resume`** — the CronRoom DO does **not** enforce a role on these messages, so without a client-side role check any signed-in user can fire owner-billed tasks. Gate by `useUser().user?.role === 'admin'` before rendering the buttons (and ideally also wrap the route in `(protected)/`). Pure read-only monitoring (`tasks` + `history` + `connected`) is fine to leave open — the scaffolded page does this.
 
 ## Reference implementation
 
-`npx deepspace add cron` installs a working cron feature: a 1-minute `heartbeat` task in `src/cron.ts`, an admin `/cron-log` page that uses `useCronMonitor`, and a `tests/feature-tests/tests/cron.spec.ts` you can read for selectors. Read that scaffold before writing your own — it covers the structural pieces.
+`npx deepspace add cron` installs:
+
+- a 1-minute `heartbeat` task in `src/cron.ts` (no-op `runTask` — extend it),
+- a public, read-only `/cron-log` viewer page (`src/pages/cron-log.tsx`) that subscribes via `useCronMonitor(SCOPE_ID)` and renders `tasks` + `history` + connection status. It does **not** expose `trigger` / `pause` / `resume` — add those yourself with the admin-gating rule above if you need them.
+
+The cron feature does **not** ship a Playwright spec into the scaffolded app — it adds the runtime surfaces only. The SDK monorepo's own `tests/feature-tests/tests/cron.spec.ts` (130s heartbeat-fires-and-renders test) is what `npx deepspace test` would invoke if the SDK's feature-tests harness is present, but a fresh scaffolded app has no `tests/feature-tests/` directory unless you add one. Write your own cron spec in `tests/api.spec.ts` (use `trigger` to fire `onTask` synchronously, then assert against `cron_history`) instead of waiting for `intervalMinutes: 1` to tick.
 
 ## Testing without waiting for the schedule
 
-`trigger(taskName)` runs `onTask` immediately on the DO via the same code path as the alarm. For app-level cron logic, that's the right test surface — a Playwright spec calls `trigger` and asserts the resulting `cron_history` row, all in seconds:
+`trigger(taskName)` runs `onTask` immediately on the DO via the same code path as the alarm. That's the right test surface for app-level cron logic — a Playwright spec calls `trigger` from a page that exposes the admin controls, then asserts the resulting `cron_history` row arrives via the WS subscription. **Build a small admin page (or test-only page) that wires up `useCronMonitor`'s `trigger`** — the scaffolded `/cron-log` is read-only and won't suffice. The SDK monorepo's `tests/feature-tests/tests/cron.spec.ts` shows the alternative pattern (waiting for the alarm to actually fire) and budgets 130 seconds for it; prefer `trigger` if you can.
 
 ```typescript
-test('daily-digest writes a daily-context record', async ({ page }) => {
+// Assumes you've added an admin page at /cron with a "Run now" button per task
+// that calls trigger(name) from useCronMonitor.
+test('daily-digest produces a cron_history row when triggered', async ({ page }) => {
   await page.goto('/cron')
-  await page.getByRole('button', { name: /run now/i }).click()
+  await page.getByRole('button', { name: /run now: daily-digest/i }).click()
   // The new row arrives via the WebSocket the page already has open.
   await expect(
     page.locator('[data-testid="cron-log-row"][data-task="daily-digest"]'),
   ).toBeVisible({ timeout: 5_000 })
-  // Optional: assert the record this task is supposed to produce.
+  // Optional: assert the side effect the task is supposed to produce.
   await page.goto('/')
   await expect(page.getByTestId('daily-context-banner')).toBeVisible()
 })
@@ -86,4 +109,4 @@ Don't write tests that wait for `0 9 * * 1-5` to fire. Don't change schedules to
 
 ## Migration note
 
-If you find a stale `cron.json`, `handleCron`, `/internal/cron`, `verifyInternalSignature`, or `buildInternalPayload` in an existing app, those are the pre-`CronRoom` pattern. Delete them and rewrite to the shape above; `verifyInternalSignature` / `buildInternalPayload` still exist in `deepspace/worker` for other internal HMAC use, but cron does not need them.
+If you find a stale `cron.json`, `handleCron`, or `/internal/cron` route in an existing app, those are the pre-`CronRoom` pattern. Delete them and rewrite to the shape above. **Don't delete `verifyInternalSignature` / `buildInternalPayload` / `signInternalPayload` / `computeHmacHex` / `timingSafeEqualHex` / `DEFAULT_MAX_SKEW_MS`** — `buildCronContext` itself uses `signInternalPayload` + `buildInternalPayload` to authenticate `ctx.integrations.call(...)` HMAC calls to the api-worker. These primitives stay in `deepspace/worker`.

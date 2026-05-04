@@ -41,7 +41,34 @@ For Google's OAuth surface specifically (mocking connected / `requiresOAuth` / D
 
 ## Endpoint catalog
 
-Full endpoint specs — input schemas, descriptions, output schemas — live in YAML under `assets/integrations/` (data files, not prose; sibling to `references/`):
+Two ways to discover the catalog and per-endpoint contracts. Prefer the CLI — it returns the same data without burning context window.
+
+### Preferred: `deepspace invoke` CLI (real-time, machine-readable)
+
+The CLI is the agent-friendly source of truth — schemas come straight from the api-worker's Zod definitions and never go stale.
+
+```bash
+# List all 215 endpoints across 31 integrations
+npx deepspace invoke --list                              # human table
+npx deepspace invoke --list --json                       # machine-readable
+
+# Schema + example body for a single endpoint
+npx deepspace invoke <integration>/<endpoint> --info     # human
+npx deepspace invoke <integration>/<endpoint> --info --json
+
+# Call the endpoint as the logged-in user (billed to that user, NOT the app owner)
+npx deepspace invoke openai/chat-completion --body '{"model":"claude-sonnet-4-5","messages":[...]}'
+npx deepspace invoke openai/chat-completion --body-file req.json
+cat req.json | npx deepspace invoke openai/chat-completion --body-file -
+```
+
+`deepspace integrations {list, info, invoke}` is the namespaced equivalent — same implementation, slightly more verbose. Both work.
+
+**This closes the body-shape discovery gap** — instead of guessing `{ ticker }` vs `{ symbol }` vs `{ q }` and round-tripping through the live endpoint, run `--info` and get the exact required keys + an example.
+
+### Fallback: YAML files in `assets/integrations/`
+
+When the CLI isn't reachable (offline, sandbox without network), the same data is bundled as YAML:
 
 - Index: [`assets/integrations/index.yaml`](../../assets/integrations/index.yaml) — all 215 endpoints grouped by integration, with one-line descriptions.
 - Per-integration specs: [`assets/integrations/<name>.yaml`](../../assets/integrations/) — one file per integration (31 total), with full input/output schemas.

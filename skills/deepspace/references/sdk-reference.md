@@ -1,11 +1,12 @@
 # DeepSpace SDK Reference
 
-Complete surface of what the `deepspace` npm package exports. For exact type signatures, read `node_modules/deepspace/dist/index.d.ts` (frontend) and `node_modules/deepspace/dist/worker.d.ts` (worker). This file is a navigable index — use it to discover what exists, then consult `.d.ts` for signatures.
+Complete surface of what the `deepspace` npm package exports. For exact type signatures, read `node_modules/deepspace/dist/index.d.ts` (frontend), `node_modules/deepspace/dist/worker.d.ts` (worker), and `node_modules/deepspace/dist/testing.d.ts` (Playwright fixture). This file is a navigable index — use it to discover what exists, then consult `.d.ts` for signatures.
 
 **Import paths:**
 ```typescript
 import { ... } from 'deepspace'          // frontend / React
 import { ... } from 'deepspace/worker'   // Cloudflare Worker
+import { ... } from 'deepspace/testing'  // Playwright multi-user fixture (test files only)
 ```
 
 ---
@@ -24,8 +25,8 @@ import { ... } from 'deepspace/worker'   // Cloudflare Worker
 - `GuestBanner` — inline banner prompting sign-in.
 
 **Hooks**
-- `useAuth()` — `{ isSignedIn, ... }`. Primary auth check. Session-based, updates immediately.
-- `useAuthUser()` — auth-layer user (Better Auth session).
+- `useAuth()` — `{ isLoaded, isSignedIn, userId, sessionId }`. Primary auth check. Session-based; `isLoaded` flips true once Better Auth resolves; `isSignedIn` updates immediately on sign-in / sign-out.
+- `useAuthUser()` — `{ isLoaded, isSignedIn, user }` where `user` is the auth-layer user (Better Auth session: `{ id, fullName, firstName, primaryEmailAddress, ... } | null`). Different from `useUser()`, which returns the storage-layer user with karma/credits/role merged in.
 - `useUser()` — `{ user, isLoading, refetch }`. The `user` object is the storage-layer user (`{ id, name, email, role, karma, credits, ... } | null`); destructure as `const { user } = useUser(); user?.id`, **not** `const { id } = useUser()`. Loads async.
 - `useDisplayName()` — resolved display name or null.
 
@@ -44,8 +45,8 @@ import { ... } from 'deepspace/worker'   // Cloudflare Worker
 **Hooks**
 - `useQuery<T>(collection, options?)` — `{ records, status, error }` where `status: 'loading' | 'ready' | 'error'`. Options: `where`, `orderBy`, `orderDir`, `limit`. **Each record is an envelope** — `{ recordId, data: T, createdBy, createdAt, updatedAt }`. User fields live under `.data`: write `r.data.title`, never `r.title`. Use `r.recordId` for keys and to pass into `put` / `remove`. Common bug: `records.map(r => r.title)` returns `undefined` for every row (TS catches it; runtime renders empty list).
 - `useMutations<T>(collection)` — `{ create, put, remove, createConfirmed, putConfirmed, removeConfirmed }`. **`create` returns `Promise<string>`** (the new recordId — capture it for navigation: `const id = await create({...}); navigate(\`/items/${id}\`)`). `put` and `remove` return `Promise<void>`. The `*Confirmed` variants resolve only after the server has acknowledged the write; the plain ones return immediately after the optimistic local apply.
-- `useUsers()` — all users in the room.
-- `useUserLookup()` — `{ getUser(id), getEmail(id), getName(id), getRole(id), getImageUrl(id), usersLoaded }`. O(1) wrapper around `useUsers()` for resolving a userId from the wire (e.g., a `MessageRecord.AuthorId`) to display fields without scanning the full users array each render.
+- `useUsers()` — `{ users, usersLoaded, setRole(userId, role), refresh() }`. `setRole` is the admin-only mutation for role changes; `refresh()` re-requests the user list from the room.
+- `useUserLookup()` — `{ users, usersLoaded, userMap, getUser(id), getEmail(id), getName(id) }`. O(1) wrapper around `useUsers()` for resolving a userId from the wire (e.g., a `MessageRecord.AuthorId`) to display fields without scanning the full users array each render. **Only `getUser` / `getEmail` / `getName` exist** — there is no `getRole` or `getImageUrl`. For role: `getUser(id)?.role`. For avatar: `getUser(id)?.imageUrl` (or whatever your users-collection field is named).
 - `useRecordContext()` — low-level store access.
 
 **Classes**
@@ -53,14 +54,16 @@ import { ... } from 'deepspace/worker'   // Cloudflare Worker
 
 ### Messaging (channel-based)
 
-Requires channels + messages schemas in the room.
+Requires channels + messages schemas in the room. Every hook returns its records array (`channels` / `messages` / `reactions` / `members` / `receipts`) plus `status: 'loading' | 'ready' | 'error'` and `error?: string` — gate skeleton states on `status`.
 
-- `useChannels()` — `{ channels, create, ... }`.
-- `useMessages(channelId, options?)` — `{ messages, send, edit, remove }`.
-- `useReactions(channelId)` — `{ getReactionsForMessage, toggle }`.
-- `useChannelMembers(channelId)` — `{ isMember, join, leave }`.
-- `useReadReceipts()` — `{ markAsRead, getUnreadCount }`.
-- `useConversation(options?)` — for **DM/conversation DOs** (scope `conv:<id>`) backed by the `conv_messages` / `conv_reactions` / `conv_members` collections. Returns a single `ConversationObject` with `{ messages, reactions, members, send, edit, remove, toggleReaction }`. **Different from `useMessages` / `useReactions` / `useChannelMembers`**, which target the channel-style collections (`messages` / `reactions` / `channel_members`). Use `useConversation` only when mounted inside a `RecordScope` for a `conv:<id>` DO; use the channel hooks for `app:<APP_NAME>` channels.
+- `useChannels()` — `{ channels, status, error, create, archive, update, remove }`. `create(name, opts?)` makes a new channel; `archive(channelId)` hides without deleting; `update(channelId, patch)` edits metadata; `remove(channelId)` deletes.
+- `useMessages(channelId, options?)` — `{ messages, status, error, send, edit, remove, softDelete }`. `softDelete` flips a tombstone flag instead of hard-deleting (preferred for chat history continuity); `remove` is the hard delete.
+- `useReactions(channelId)` — `{ reactions, status, error, getReactionsForMessage, toggle }`. `getReactionsForMessage(messageId)` is an O(1) lookup; `toggle(messageId, emoji)` adds or removes the caller's reaction.
+- `useChannelMembers(channelId)` — `{ members, status, error, join, leave, isMember }`.
+- `useReadReceipts()` — `{ receipts, status, error, markAsRead, getUnreadCount }`.
+
+**Record types**: `Channel`, `Message`, `Reaction`, `ChannelMember`, `ChannelInvitation`, `ReadReceipt`. Use `ChannelInvitation` together with `CHANNEL_INVITATIONS_SCHEMA` (under "Schema constants" below) when adding invite-only channel flows.
+- `useConversation(options?)` — for **DM/conversation DOs** (scope `conv:<id>`) backed by the `conv_messages` / `conv_reactions` / `conv_members` collections. Returns a single `ConversationObject` with `{ messages, reactions, members, status, send, edit, remove, toggleReaction }`. `status` is `'connecting' | 'connected'`. **Different from `useMessages` / `useReactions` / `useChannelMembers`**, which target the channel-style collections (`messages` / `reactions` / `channel_members`). Use `useConversation` only when mounted inside a `RecordScope` for a `conv:<id>` DO; use the channel hooks for `app:<APP_NAME>` channels.
 
 **Helpers**
 - `groupReactionsForMessage(reactions, messageId, currentUserId)`
@@ -73,18 +76,20 @@ Requires channels + messages schemas in the room.
 
 ### Directory (cross-app, shared scope)
 
-- `useConversations()` — `{ conversations, createChannel, createDM }`.
-- `useCommunities()` — `{ communities, createCommunity, joinCommunity }`.
-- `usePosts(options?)` — `{ posts, createPost }`.
+Backed by the `dir:<appId>` global DO. Each hook returns its records array plus `ready: boolean`.
+
+- `useConversations()` — `{ conversations, ready, createChannel, createDM, createGroupDM, lookupByName, updateLastMessage, readStateMap, readMessageCountMap, starredSet, archivedSet, getConversationState, upsertState, markRead, toggleStar, setArchived, setTrashed, setLabels, setFolder }`. The full inbox surface — channel/DM creation, per-user read state, star/archive/trash/label/folder mutations.
+- `useCommunities()` — `{ communities, memberships, ready, myMemberships, createCommunity, updateCommunity, joinCommunity, leaveCommunity, getMembersOf, lookupByName }`. `myMemberships` is the caller's joined-communities subset.
+- `usePosts(opts?: { communityId? })` — `{ posts, ready, createPost, updatePost, deletePost, setConversationId }`. `setConversationId(postId, conversationId)` links a post to a conversation thread (e.g., for comments).
 
 ### Real-time collab (Yjs-based)
 
 - `useYjsField(collection, recordId, fieldName)` — collaborative rich data in a field.
 - `useYjsText(collection, recordId, fieldName)` — collaborative text input (for textareas / contenteditable).
 - `useYjsRoom(docId, fieldName)` — standalone collab doc, not tied to a record.
-- `useCanvas(roomId)` — collaborative canvas state.
-- `usePresence(options?)` — cursor/user presence inside the current `RecordScope`. Convenience wrapper that picks the active scope's presence channel; use this for app-default presence.
-- `usePresenceRoom(scopeId)` — presence on an **explicit** PresenceRoom scope (its own DO at `/ws/presence/:scopeId`). Pass any string (`canvas:${id}`, `thread:${channelId}`, `doc:${docId}`). Returns `{ peers, connected, updateState(state) }`. `updateState` merges, so you can call it for cursor (`{ cursor: { x, y } }`), typing (`{ typing: true }`), viewport, etc. Each peer is `{ userId, userName, userEmail, userImageUrl?, joinedAt, state }`. Self is excluded from `peers`.
+- `useCanvas(roomId)` — connects to a `CanvasRoom` DO. Returns `{ shapes, viewports, connected, addShape, moveShape, resizeShape, deleteShape, updateShape, setViewport, undo, redo }`. Shape and viewport types are `CanvasShapeClient` and `ViewportClient`.
+- `usePresence(options?)` — **online/offline derivation, NOT cursor presence.** Reads `lastSeenAt` from the users collection in the current `RecordScope`, sends a heartbeat every 60s so the server refreshes the caller's `lastSeenAt`, and returns `{ isOnline, getLastSeen, users }`. `isOnline(userId)` is `true` if the user heartbeated within `options.timeoutMs` (default 5 minutes). For cursor / typing / viewport state, use `usePresenceRoom` instead.
+- `usePresenceRoom(scopeId)` — **the cursor / typing / viewport hook.** Connects to a dedicated `PresenceRoom` DO at `/ws/presence/:scopeId`. Pass any string (`canvas:${id}`, `thread:${channelId}`, `doc:${docId}`). Returns `{ peers, connected, updateState(state) }`. `updateState` merges, so you can call it for cursor (`{ cursor: { x, y } }`), typing (`{ typing: true }`), viewport, etc. Each peer is `PresencePeerClient` (`{ userId, userName, userEmail, userImageUrl?, joinedAt, state }`). Self is excluded from `peers`.
 - `useGameRoom(roomId)` — connects to a `GameRoom` DO at `/ws/game/:roomId`. Returns `{ state, tick, players, running, connected, sendInput(action, data?), setReady(), startGame(), endGame() }`. Each player is `{ userId, userName, ready, connectedAt, data }`. State migration on schema bumps lives in the worker — override `onHydrateState(stored)` on the DO subclass.
 - `useCronMonitor(roomId)` — admin/monitor stream for the `AppCronRoom` DO. Pass `app:<APP_NAME>` for the app's default cron room. Returns `{ tasks, history, connected, trigger(name), pause(name), resume(name) }`. Each task is `{ name, intervalMinutes, schedule, timezone, paused, lastRunAt, nextRunAt }`. `trigger(name)` fires `onTask(name)` immediately on the DO — same path as the alarm scheduler — so a "Run now" button is the right way to E2E-test cron without waiting for the schedule. **The DO does not enforce a role on `trigger`/`pause`/`resume`** — gate the admin UI client-side by `useUser().user?.role === 'admin'` (note `user?.role`, not `role` — `useUser()` returns `{ user, isLoading, refetch }`, fields are nested). Anyone signed in can otherwise fire tasks, which matters if a task spends owner credits via integrations.
 
@@ -102,20 +107,40 @@ function DocEditor({ docId }: { docId: string }) {
 }
 ```
 
-**Presence** — show who else is in the room and where their cursors are:
+**Online / offline** — derived from `lastSeenAt` heartbeats:
 
 ```tsx
 import { usePresence } from 'deepspace'
 
-function CursorOverlay() {
-  const { peers, setCursor } = usePresence()
+function OnlineList() {
+  const { users, isOnline, getLastSeen } = usePresence()
+  return users.map(u => (
+    <div key={u.id}>
+      <span>{u.name}</span>
+      <span>{isOnline(u.id) ? '🟢 online' : `⚪ last seen ${getLastSeen(u.id)}`}</span>
+    </div>
+  ))
+}
+```
+
+**Cursors / typing / viewport** — use `usePresenceRoom`, scoped to the surface you care about:
+
+```tsx
+import { usePresenceRoom } from 'deepspace'
+
+function CursorOverlay({ canvasId }: { canvasId: string }) {
+  const { peers, updateState } = usePresenceRoom(`canvas:${canvasId}`)
   return (
-    <div onMouseMove={e => setCursor({ x: e.clientX, y: e.clientY })}>
-      {peers.map(p => (
-        <div key={p.userId} style={{ position: 'absolute', left: p.cursor?.x, top: p.cursor?.y }}>
-          {p.name}
-        </div>
-      ))}
+    <div onMouseMove={e => updateState({ cursor: { x: e.clientX, y: e.clientY } })}>
+      {peers.map(p => {
+        const cursor = p.state.cursor as { x: number; y: number } | undefined
+        if (!cursor) return null
+        return (
+          <div key={p.userId} style={{ position: 'absolute', left: cursor.x, top: cursor.y }}>
+            {p.userName}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -130,6 +155,16 @@ Exact return shapes vary — check `node_modules/deepspace/dist/index.d.ts` for 
 - `Awareness`, `encodeAwarenessMessage`, `handleAwarenessMessage`
 - `getMessageType`
 - Message type constants: `MSG_SYNC`, `MSG_AWARENESS`, `MSG_SYNC_STEP1`, `MSG_SYNC_STEP2`, `MSG_SYNC_UPDATE`.
+
+### Wire protocol (custom hooks against DeepSpace DOs)
+
+Re-exported from both `deepspace` and `deepspace/worker` so a custom client hook and a custom DO server-side handler speak the same typed vocabulary. Reach for these only when building something the built-in hooks (`useQuery`, `useMutations`, `useMessages`, etc.) don't cover — most apps never touch this surface.
+
+- `MSG` — frozen object of message-type constants for the WebSocket protocol.
+- `ClientMessage` / `ServerMessage` — discriminated unions of every legal message in either direction.
+- `clientBuild(...)` — typed builders for outbound messages.
+- `dispatch(msg, handlers)` — exhaustive switch on `ServerMessage` for client-side reducers.
+- `encode(msg)` — serialize for `WebSocket.send`.
 
 ### Files (R2)
 
@@ -172,7 +207,8 @@ function Gallery() {
 
 ### Platform / Integrations
 
-- `integration` — `{ get / post / put / delete (endpoint, data?, options?) }`. Returns `Promise<IntegrationResponse<T>>` where the envelope is `{ success: true, data } | { success: false, error }`. See `references/integrations.md` for endpoint list and the `requiresOAuth` retry shape.
+- `integration` — `{ get / post / put / delete (endpoint, data?, options?) }`. `options` is `{ headers?, timeoutMs? }` (default 120s). Returns `Promise<IntegrationResponse<T>>` — the envelope is `{ success: true, data } | { success: false, error, issues? }`. `issues` (when present) is an array of `{ path?, message, code? }` returned by the api-worker's Zod validator on a body-shape mismatch — read it instead of guessing field names. See `references/integrations.md` for endpoint list and the `requiresOAuth` retry shape.
+- Re-exported types: `IntegrationResponse`, `RequestOptions`.
 
 **Cross-app platform context (opt-in, not in the scaffold by default).** The platform exports below let an app subscribe to its cross-app inbox (DMs / notifications routed through the platform-worker). They require `<PlatformProvider>` to be mounted somewhere above the consumers — the scaffolded `_app.tsx` does **not** include it, so wrap the tree manually if you need this surface:
 
@@ -225,7 +261,9 @@ For the `requiresOAuth` response shape and client retry pattern, see `references
 
 ### RBAC
 
-- `ROLES` / `ROLE_CONFIG` — role constants and their read/write defaults.
+- `ROLES` — `{ VIEWER: 'viewer', MEMBER: 'member', ADMIN: 'admin' }`. The three role identifiers used in collection `permissions` blocks.
+- `ROLE_CONFIG` — display metadata for each role (`{ title, badgeVariant, description }`), used by the scaffold's role-badge UI. **Not RBAC defaults** — actual permissions live in each `CollectionSchema['permissions']`.
+- `Role` — the union type `'viewer' | 'member' | 'admin'`.
 
 ---
 
@@ -235,7 +273,8 @@ For the `requiresOAuth` response shape and client retry pattern, see `references
 
 The scaffold declares five DO classes in `__DO_MANIFEST__` and extends these bases in `worker.ts` — do not add a new DO class without updating the manifest and wrangler migrations.
 
-- `RecordRoom` — primary app data DO. Extend with your `schemas`:
+- `BaseRoom` — abstract parent of all DOs below. Subclass when none of the specialized rooms fit (rare). Provides the WebSocket plumbing, JWT verification, and connection lifecycle. Type: `UserAttachment` for authenticated socket attachments.
+- `RecordRoom` — primary app data DO. Extend with your `schemas`. Configurable via `RecordRoomConfig` (the second-arg shape in the constructor below):
   ```typescript
   export class AppRecordRoom extends RecordRoom {
     constructor(state: DurableObjectState, env: Env) {
@@ -244,13 +283,20 @@ The scaffold declares five DO classes in `__DO_MANIFEST__` and extends these bas
   }
   ```
 - `YjsRoom` — per-doc collaborative text (Y.Text) and rich fields.
-- `CanvasRoom` — collaborative canvas state (shapes, strokes).
-- `PresenceRoom` — cursors, typing indicators, "who's online".
-- `CronRoom` — scheduled-task DO. Construct with `{ tasks: CronTask[] }` and override `onTask(name)`. See `references/cron.md` for the scaffold pattern.
+- `CanvasRoom` — collaborative canvas state (shapes, strokes). Types: `CanvasShape`, `Viewport`.
+- `PresenceRoom` — cursors, typing indicators, "who's online". Type: `PresencePeer`.
+- `CronRoom` — scheduled-task DO. Construct with `CronRoomConfig` (`{ tasks: CronTask[] }`) and override `onTask(name)`. Types: `CronTask`, `CronExecution`. See `references/cron.md` for the scaffold pattern.
+- `GameRoom` — turn-tick / sim-tick game-loop DO. Configurable via `GameRoomConfig`. Types: `Player`, `GameInput`. State migration via `onHydrateState(stored)` — see "Game rooms (state migration)" below.
 
-Each has its own WebSocket route wired in `worker.ts` (`/ws/yjs/:docId`, `/ws/canvas/:docId`, `/ws/presence/:scopeId`, `/ws/cron/:roomId`).
+Each has its own WebSocket route wired in `worker.ts` (`/ws/yjs/:docId`, `/ws/canvas/:docId`, `/ws/presence/:scopeId`, `/ws/cron/:roomId`, `/ws/game/:roomId`).
 
 > No `MediaRoom` — LiveKit replaces it. Use `livekit/*` integration endpoints (see `references/integrations.md`).
+
+### DO manifest
+
+- `DOManifest` / `DOManifestEntry` — typed shape of `__DO_MANIFEST__` (the `as const satisfies DOManifest` literal in scaffolded `worker.ts`).
+- `DOBindings<typeof __DO_MANIFEST__>` — derives the `Env` interface's DO bindings from the manifest at compile time. The scaffold's `Env extends DOBindings<typeof __DO_MANIFEST__>` is what makes `env.RECORD_ROOMS`, `env.YJS_ROOMS`, etc. typed correctly.
+- `DEFAULT_DO_MANIFEST` — the same five entries the scaffold ships. Useful when programmatically building a manifest.
 
 ### Game rooms (state migration)
 
@@ -264,14 +310,17 @@ Omit the override to keep the legacy behavior (load the stored blob as-is).
 
 ### Auth
 - `verifyJwt(config, token)` — `config: JwtVerifierConfig` (`{ publicKey, issuer, audience, authorizedParties?, clockSkewMs? }`), `token: string | null | undefined`. Returns `Promise<VerifyOutcome>` — a `{ result: VerifyResult | null, error? }` envelope; **does not throw** on invalid tokens. Extract the JWT from the request yourself (e.g., `Authorization: Bearer <token>` or session cookie) before calling.
-- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` — HMAC sign / verify for internal platform → app calls. (Cron no longer uses these — see `references/cron.md`.)
+- `decodeJwtPayload(token)` — base64url-decode the JWT payload **without verification**. Useful for inspecting `sub` / `email` / `name` for logging or routing where verification has already happened upstream. Never use as a substitute for `verifyJwt` on the trust boundary.
+- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` / `signInternalPayload(...)` / `computeHmacHex(...)` / `timingSafeEqualHex(...)` — HMAC sign / verify primitives for internal platform → app calls and for cron's `ctx.integrations.call(...)` (which signs requests with `INTERNAL_STORAGE_HMAC_SECRET`). `DEFAULT_MAX_SKEW_MS` is the matching tolerance constant.
+- `createDeepSpaceAuth(config)` — constructs a Better Auth instance pre-wired for DeepSpace conventions (cookie names, JWT issuance). Types: `DeepSpaceAuth`, `DeepSpaceAuthConfig`. The scaffold doesn't build its own auth surface — it proxies to the platform auth-worker — so you only reach for this when standing up a custom auth-worker variant.
 
 ### AI provider helper
 - `createDeepSpaceAI(env, provider, options?)` — returns a Vercel-AI-SDK-compatible provider routed through the DeepSpace API worker. `provider` is `'anthropic' | 'openai' | 'cerebras'`. Pass `{ authToken }` for user-billed calls (inside a request handler); omit for server-side autonomous calls (falls back to `env.APP_OWNER_JWT`, billed to the app owner).
 
 ### Server action types
-- `ActionHandler` — `(ctx: ActionContext) => Promise<ActionResult>`.
-- `ActionContext` — `{ userId, params, tools }`. `tools` exposes `create / update / remove / get / query` (bypass user RBAC) and `integration(endpoint, data)`.
+- `ActionHandler<TEnv = Record<string, unknown>>` — `(ctx: ActionContext<TEnv>) => Promise<ActionResult>`. The `TEnv` generic lets you type the worker's `env` bindings (e.g., `ActionHandler<MyAppEnv>`); defaults to a loose record so unparameterized handlers compile.
+- `ActionContext<TEnv>` — `{ userId, params, tools, env }`. `userId` is the caller (verified JWT subject). `params` is the JSON body. `env` is the worker bindings (use it for owner-only gates: `ctx.userId === ctx.env.OWNER_USER_ID`). `tools` is `ActionTools`.
+- `ActionTools` — `{ create, update, remove, get, query, integration }`. All return `Promise<ActionResult>`. Bypasses user RBAC (the `X-App-Action` header marks the call as the app itself, not the caller).
 - `ActionResult` — `{ success: boolean, data?: unknown, error?: string }`.
 
 ### AI tool helpers (from `deepspace/worker`)
@@ -295,18 +344,50 @@ The scaffolded `worker.ts` already uses these for every cross-worker call (auth 
 Production note: cross-worker calls over plain `*.workers.dev` URLs return Cloudflare error 1042 in production. The service binding is the only working transport for deployed apps; the URL fallback is a dev-only convenience the CLI writes into `.dev.vars`. If a deployed app needs `apiWorkerFetch` / `platformWorkerFetch`, the corresponding `[[services]]` binding must be in `wrangler.toml`.
 
 ### Schema constants (drop-in collections)
+
+**Users / messaging**
 - `USERS_COLUMNS` — standard users columns.
-- `CHANNELS_SCHEMA` — channels collection.
-- `MESSAGES_SCHEMA` — messages collection.
-- `WORKSPACE_SCHEMAS` — shared-scope collections (email handles, etc.) — pass as `schemas` to a `workspace:default` shared scope to let apps read cross-app user identity (e.g., a user's claimed `@app.space` email handle). Handles are managed by the mail app; other apps query via `useQuery('email_handles', { where: { UserId: user?.id } })` to resolve a user's address for outbound email.
-- Others for reactions, channel_members, read_receipts, posts, communities, conversations, etc. — check `deepspace/worker` types for the full list.
+- `BASE_USERS_SCHEMA` — the canonical `users` collection assembled from `USERS_COLUMNS`; the scaffold's `usersSchema` extends this. Don't replace; extend.
+- `CHANNELS_SCHEMA` / `MESSAGES_SCHEMA` / `REACTIONS_SCHEMA` / `CHANNEL_MEMBERS_SCHEMA` / `CHANNEL_INVITATIONS_SCHEMA` / `READ_RECEIPTS_SCHEMA` — the channel-style messaging collections. Drop into your app's `schemas` array to enable `useChannels` / `useMessages` / `useReactions` / `useChannelMembers` / `useReadReceipts`.
+- `SYSTEM_COLLECTIONS` — set of reserved collection names used internally by the SDK (Yjs state, system metadata). Avoid naming user collections that collide.
+
+**Conversation / DM scopes** (`conv:<id>` DOs)
+- `CONVERSATION_SCHEMAS` — array of the `conv_messages` / `conv_reactions` / `conv_members` / `conv_read_cursors` collections. Pass as the `schemas` of a conversation-scope `RecordRoom` to enable `useConversation`.
+
+**Directory** (`dir:<appId>` shared DO — cross-app)
+- `DIRECTORY_SCHEMAS` — array of `conversations` / `communities` / `community_members` / `posts` / `comments` / etc. Passed by the platform's directory DO; rarely instantiated by an app directly.
+- `VOTING_SCHEMAS` — voting / poll collections used by directory features.
+
+**Workspace** (cross-app shared scope)
+- `WORKSPACE_SCHEMAS` — shared-scope collections (email handles, teams, etc.) — pass as `schemas` to a `workspace:default` shared scope to let apps read cross-app user identity (e.g., a user's claimed `@app.space` email handle). Handles are managed by the mail app; other apps query via `useQuery('email_handles', { where: { UserId: user?.id } })` to resolve a user's address for outbound email.
+- `workspaceTeamsSchema` — the `teams` collection inside `WORKSPACE_SCHEMAS`. Exported separately so an app can reference its column names without pulling the whole array.
+
+**Global DO type registry**
+- `GLOBAL_DO_TYPES` / `GLOBAL_DO_TYPE_NAMES` — array of registered global DO types (workspace, dir, conv, …) and their reserved schema names.
+- `getGlobalDOType(name)` / `getGlobalDOSchemas(typeName)` — runtime lookups for what schemas a given global DO scope expects.
+- `RESERVED_COLLECTION_NAMES` — set of collection names you cannot use in app-defined schemas because they're owned by global DOs.
+
+---
+
+## Testing (`deepspace/testing`)
+
+Imported only inside Playwright spec files. See `references/testing.md` for the full workflow.
+
+- `test`, `expect` — Playwright re-exports with the `users` fixture pre-installed.
+- `users(N | string[])` — fixture that returns N signed-in `MultiplayerUser`s `{ context, page, email, name, userId? }` from `~/.deepspace/test-accounts.json`. Auto-closes contexts at end of test.
+- `loadAllTestAccounts()` / `pickTestAccounts(n, opts?)` / `findTestAccountByName(name)` — escape hatches when the fixture is too high-level.
+- `ensureStorageState(browser, account, baseURL)` — sign in once, return cached `storageState` path. Reuse via `browser.newContext({ storageState: path })`.
+- `newSignedInContext(email, browser)` — one-liner for a signed-in `BrowserContext`.
+- `getStatePathForEmail(email)` / `readCachedState(path)` — direct cache access.
+- Types: `MultiplayerUser`, `UsersFixture`, `TestAccount`, `EnsureStorageStateOptions`.
 
 ---
 
 ## Not listed here?
 
-Two places to look:
+Three places to look:
 1. `node_modules/deepspace/dist/index.d.ts` — authoritative type surface for frontend.
 2. `node_modules/deepspace/dist/worker.d.ts` — authoritative type surface for worker.
+3. `node_modules/deepspace/dist/testing.d.ts` — authoritative type surface for the Playwright fixture.
 
 If a hook or type isn't in this reference, it probably exists in `.d.ts`. Read the declaration to get the exact signature. Do not guess.

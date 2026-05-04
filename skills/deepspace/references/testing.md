@@ -68,9 +68,7 @@ The SDK now ships two layers — pick based on the test you're writing:
 
 ### `deepspace/testing` — the published Playwright fixture (preferred for new multi-user tests)
 
-> **Note:** `'deepspace/testing'` is not yet in the published `deepspace@0.2.4` tarball — it ships in the next release. If `import from 'deepspace/testing'` fails with `ERR_PACKAGE_PATH_NOT_EXPORTED`, fall back to `createTestUsers` (covered below) until a newer version is installed.
-
-The SDK publishes a `users` fixture and account helpers from `'deepspace/testing'` — built on top of cached `storageState` so each test account signs in **once** per machine, not once per test. This sidesteps Better Auth's per-IP rate limit on `/api/auth/sign-in/email` and is materially faster than `createTestUsers` for suites that grow.
+The SDK publishes a `users` fixture and account helpers from `'deepspace/testing'` (shipped in `deepspace@0.2.5`+) — built on top of cached `storageState` so each test account signs in **once** per machine, not once per test. This sidesteps Better Auth's per-IP rate limit on `/api/auth/sign-in/email` and is materially faster than `createTestUsers` for suites that grow.
 
 ```typescript
 import { test, expect } from 'deepspace/testing'
