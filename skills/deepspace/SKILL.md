@@ -27,6 +27,16 @@ CLI commands, in order. Each step is rerunnable. `dev` and `test` both regenerat
 # 1. Scaffold (no auth required — npm fetches create-deepspace via npx on demand)
 npm create deepspace@latest <app-name>
 cd <app-name>
+# Three invocation forms work — the scaffolder is permissive about target state:
+#   a) From a parent dir, target does not exist:     creates <app-name>/ fresh.
+#   b) From a parent dir, target is near-empty:      scaffolds in-place into <app-name>/.
+#   c) From inside the target dir (any near-empty):  scaffolds in-place into cwd; pass `.`
+#                                                    to inherit the dir's name (lowercased).
+# "Near-empty" = only boilerplate is allowed: .git, .gitignore, .gitattributes,
+# .github/, LICENSE*, README*, any *.md, .vite, .wrangler, .dev.vars, .DS_Store.
+# Anything else triggers `Directory <name> already exists` and the scaffolder bails.
+# `.git` is allowed but not required — empty / unversioned dirs scaffold fine,
+# and a trailing `git init` runs only when no `.git` exists yet.
 
 # 2. One-time login — opens browser, polls up to 10 minutes
 npx deepspace login
