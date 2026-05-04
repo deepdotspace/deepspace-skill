@@ -43,35 +43,43 @@ For Google's OAuth surface specifically (mocking connected / `requiresOAuth` / D
 
 Two ways to discover the catalog and per-endpoint contracts. Prefer the CLI — it returns the same data without burning context window.
 
-### Preferred: `deepspace invoke` CLI (real-time, machine-readable)
+### Preferred: `deepspace integrations` CLI (real-time, machine-readable)
 
 The CLI is the agent-friendly source of truth — schemas come straight from the api-worker's Zod definitions and never go stale.
 
+**Auth posture, by subcommand:**
+
+| Command | Login required? | Network? | Notes |
+|---|---|---|---|
+| `deepspace integrations list` (= `invoke --list`) | **No** | Yes (catalog fetch) | Public catalog. Works on a fresh machine with no `~/.deepspace/session`. |
+| `deepspace integrations info <ep>` (= `invoke <ep> --info`) | **No** | Yes (catalog fetch) | Same — schemas + example body without login. |
+| `deepspace invoke <ep> --body` / `--body-file` | **Yes** (calls `ensureToken()`) | Yes | Actually calls the endpoint. Billed to the logged-in user. |
+
 ```bash
-# List all 215 endpoints across 31 integrations
-npx deepspace invoke --list                              # human table
-npx deepspace invoke --list --json                       # machine-readable
+# Discovery — no login needed. Run these first when scoping integration work.
+npx deepspace integrations list                          # human table
+npx deepspace integrations list --json                   # machine-readable
+npx deepspace integrations info <integration>/<endpoint> # schema + example body
+npx deepspace integrations info <integration>/<endpoint> --json
 
-# Schema + example body for a single endpoint
-npx deepspace invoke <integration>/<endpoint> --info     # human
-npx deepspace invoke <integration>/<endpoint> --info --json
-
-# Call the endpoint as the logged-in user (billed to that user, NOT the app owner)
+# Actual calls — login required, billed to caller.
 npx deepspace invoke openai/chat-completion --body '{"model":"claude-sonnet-4-5","messages":[...]}'
 npx deepspace invoke openai/chat-completion --body-file req.json
 cat req.json | npx deepspace invoke openai/chat-completion --body-file -
 ```
 
-`deepspace integrations {list, info, invoke}` is the namespaced equivalent — same implementation, slightly more verbose. Both work.
+`deepspace invoke {--list, --info, <target> --body}` and `deepspace integrations {list, info, invoke}` are the same implementation under two parent names — pick whichever reads better in context.
 
-**This closes the body-shape discovery gap** — instead of guessing `{ ticker }` vs `{ symbol }` vs `{ q }` and round-tripping through the live endpoint, run `--info` and get the exact required keys + an example.
+**This closes the body-shape discovery gap** — instead of guessing `{ ticker }` vs `{ symbol }` vs `{ q }` and round-tripping through the live endpoint, run `info` and get the exact required keys + an example. **And because `list` / `info` skip auth, an agent on a fresh box (no `~/.deepspace/session`, no app dir, no dev server) can probe the catalog before deciding whether to ask the user to log in.**
 
 ### Fallback: YAML files in `assets/integrations/`
 
-When the CLI isn't reachable (offline, sandbox without network), the same data is bundled as YAML:
+When the CLI isn't reachable (offline, sandboxed without network egress), the same data is bundled as YAML inside the skill itself. The skill is typically symlinked at `~/.claude/skills/deepspace/`, so the absolute path is `~/.claude/skills/deepspace/assets/integrations/`:
 
 - Index: [`assets/integrations/index.yaml`](../../assets/integrations/index.yaml) — all 215 endpoints grouped by integration, with one-line descriptions.
 - Per-integration specs: [`assets/integrations/<name>.yaml`](../../assets/integrations/) — one file per integration (31 total), with full input/output schemas.
+
+**Freshness caveat.** The bundle is hand-maintained — when the SDK adds a new integration, both the index and a new `<name>.yaml` need a manual regen. The skill aims to keep the bundle in sync with the live catalog (`integrations list`) at every release, but if you see a mismatch between what `integrations list` returns and what's on disk, the live CLI is the source of truth and you should `integrations info <ep>` (still no auth) to get the schema.
 
 Call pattern is always POST: `integration.post('<integration>/<endpoint>', body)`.
 

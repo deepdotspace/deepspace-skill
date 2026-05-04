@@ -9,7 +9,7 @@ sdk_import: import { integration } from 'deepspace'
 call_pattern: await integration.post('<integration>/<endpoint>', body)
 response_envelope: "{ success: true, data: <endpoint-specific> } | { success:
   false, error: string }"
-integration_count: 38
+integration_count: 31
 endpoint_count: 215
 oauth_required_integrations:
   - google

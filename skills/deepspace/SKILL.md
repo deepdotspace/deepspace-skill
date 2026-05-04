@@ -66,11 +66,15 @@ npx deepspace add --list           # discover available features (18 ship out of
 npx deepspace add --info <name>    # see what a feature installs
 npx deepspace add <feature>        # install into current app
 
-# 7. Discover & test platform integrations from the CLI (billed to logged-in user)
-npx deepspace invoke --list                                # list all 215 endpoints across 38 integrations
-npx deepspace invoke <integration>/<endpoint> --info       # schema + example body for one endpoint
-npx deepspace invoke openai/chat-completion --body '{...}' # actually call it
-npx deepspace invoke openai/chat-completion --body-file -  # body via stdin (cat req.json | …)
+# 7. Discover & test platform integrations from the CLI
+# Discovery is free (no login, no app dir, no dev server) — agents can probe the
+# catalog cold. Only `invoke <ep> --body` actually calls the endpoint and is
+# billed to the logged-in user.
+npx deepspace integrations list                            # NO AUTH — full catalog (31 integrations, 215 endpoints)
+npx deepspace integrations info openai/chat-completion     # NO AUTH — schema + example body for one endpoint
+npx deepspace invoke openai/chat-completion --body '{...}' # AUTH REQUIRED — actually call it (billed to caller)
+npx deepspace invoke openai/chat-completion --body-file -  # AUTH REQUIRED — body via stdin (cat req.json | …)
+# `npx deepspace invoke --list` and `--info` are aliases for the no-auth forms above.
 
 # 8. Deploy (subdomain comes from wrangler.toml's `name` field — rename there, not at deploy time)
 npx deepspace deploy               # → <wrangler.name>.app.space
@@ -82,7 +86,7 @@ npx deepspace domain list                    # list domains you own
 npx deepspace domain attach <domain> --app <name>   # re-point a domain at a different app
 ```
 
-**Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Re-login only when `~/.deepspace/session` is wiped or the session expires. See "Login, test, deploy" below for non-obvious rules.
+**Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. To check login state, run `npx deepspace whoami` (or `--json` for agents) — that's the canonical probe; `~/.deepspace/session` is an implementation detail the CLI owns and stat'ing it isn't a reliable signal. Re-login only when `whoami` reports not-signed-in or the session has expired. See "Login, test, deploy" below for non-obvious rules.
 
 ### Scaffolding from a local SDK checkout (DeepSpace team only)
 
@@ -195,12 +199,14 @@ This is the agent-friendly path — both commands print machine-readable JSON wi
 
 ### Login (`npx deepspace login`)
 
-The first run of `dev`/`test`/`deploy` requires a stored session at `~/.deepspace/session`. If absent, the command exits with `Not logged in. Run \`deepspace login\` first.` Five hard rules:
+**`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path that `dev` / `test` / `deploy` use, so a successful `whoami` is a near-certain "next commands will work." On failure: stderr `Not logged in. Run \`deepspace login\`.`, exit 1.
+
+`dev` / `test` / `deploy` themselves require a valid session at `~/.deepspace/session`; if absent, they exit with `Not logged in. Run \`deepspace login\` first.` Five hard rules:
 
 1. **Pause and tell the user.** Login opens a browser tab (GitHub/Google OAuth) on their machine and polls up to 10 minutes. They need to be at the keyboard.
 2. **For CI / headless agent runs**, use `npx deepspace login --email <e> --password <p>` instead — the non-interactive path bypasses OAuth polling entirely. Only valid when test-account credentials already exist; do not invent credentials or ask the user to share their personal password.
 3. **Run interactive login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. (`timeout` isn't installed on macOS by default; don't reach for it.) Run in foreground or a true background process.
-4. **Wait for `~/.deepspace/session` to exist** before retrying `dev` / `test` / `deploy`. Re-running while login is still polling produces the same error — that's expected order, not a bug.
+4. **After login completes, verify with `npx deepspace whoami`** before retrying `dev` / `test` / `deploy`. Re-running them while login is still polling produces the same error — that's expected order, not a bug.
 5. **Never copy `.dev.vars` from a sibling app.** `APP_OWNER_JWT` is minted against that app's wrangler name; borrowing causes silent auth mismatches. `dev` and `test` regenerate the file on every run — let the CLI own it.
 
 ### Test (`npx deepspace test`)
