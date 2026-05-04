@@ -178,7 +178,7 @@ Also verify by eye:
 
 - **`landing-design/design-direction.md`** — how to write a good Design Direction brief. Read this the first time you fill the block, or when the sentence test keeps rejecting what you write.
 - **`landing-design/style-tile.md`** — menus for the 6 Style Tile commits (color, type pair, theme, art direction, motion, voice). Open while filling the Style Tile — scan the relevant table, pick, move on.
-- **`landing-design/inspiration-gallery.md`** — the 4 archetypes. Read this to pick which one row is closest to your direction. **Don't read all four.**
+- **`landing-design/inspiration-gallery.md`** — the 5 archetypes. Read this to pick which one row is closest to your direction. **Don't read all five.**
 - **`landing-design/examples/0N-*.tsx`** — five worked example landing pages, one per archetype. Read **exactly one** after you've picked your archetype. Read-only reference — the grep gate flags imports from this folder. (See `inspiration-gallery.md` for the picking guide and which example also covers the floating-pill / FAQ / bento patterns.)
 - **`landing-design/pattern-library.md`** — small index (~50 lines) of the section-specific pattern files. Read this first to know which sub-files to load.
 - **`landing-design/pattern-library/{nav,hero,features,social-proof,cta,footer,scroll-motion}.md`** — copy-pasteable TSX snippets, one file per page section. Load only the sub-files you need (typically 4–5 of 7).
