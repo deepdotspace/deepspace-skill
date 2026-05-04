@@ -17,7 +17,7 @@ description: >
 
 Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn/ui primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
 
-This skill targets **`deepspace` and `create-deepspace` v0.2.5** (latest published on npm at 05/04/2026; verify with `npm view deepspace version` if drift is suspected).
+This skill targets **`deepspace` and `create-deepspace` v0.2.5** (verify with `npm view deepspace version` if drift is suspected).
 
 ## Quickstart — the development lifecycle
 
