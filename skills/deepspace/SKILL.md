@@ -108,7 +108,7 @@ The scaffold generates a Vite + Cloudflare-Worker app. Files you'll touch most o
 
 | Path | Purpose |
 |---|---|
-| `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 5 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). Edit when adding new DO classes / WebSocket routes, customizing `AppRecordRoom` options, switching the AI chat model or tools, adding custom HTTP routes, or wiring cross-app proxies. |
+| `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 5 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). AI chat routes live in `src/ai/chat-routes.ts` (registered via `registerAiChatRoutes(app, resolveAuth)`) — edit there, not here. Edit `worker.ts` itself when adding new DO classes / WebSocket routes, customizing `AppRecordRoom` options, adding custom HTTP routes, or wiring cross-app proxies. |
 | `src/pages/_app.tsx` | Provider stack: `ToastProvider → DeepSpaceAuthProvider → AuthBoot → RecordProvider → RecordScope`. **Extend, don't replace.** |
 | `src/pages/` | File-based routes via generouted. `(protected)/` is the gated route group. |
 | `src/schemas.ts` + `src/schemas/` | Collection schemas. Ships `usersSchema` + `settingsSchema`. |
@@ -119,7 +119,8 @@ The scaffold generates a Vite + Cloudflare-Worker app. Files you'll touch most o
 | `src/actions/index.ts` | Server-action handlers. |
 | `src/cron.ts` | Scheduled tasks for `AppCronRoom`. |
 | `src/integrations.ts` | Per-integration billing config (`developer` vs `user`). |
-| `src/ai/tools.ts` | System prompt + read-only tools for `/api/ai/chat`. |
+| `src/ai/tools.ts` | System prompt + tool allowlist for `/api/ai/chat`. Tools are **not read-only** by default — the scaffold ships `records.create` / `records.update` / `records.delete` alongside reads. Per-collection RBAC at the DO is the actual security boundary; trim the allowlist if you want a stricter assistant. |
+| `src/ai/chat-routes.ts` | Hono handlers for the 4 AI chat endpoints (`POST /api/ai/chats`, `PATCH /api/ai/chats/:id`, `DELETE /api/ai/chats/:id`, `POST /api/ai/chat` — the streaming turn). Edit to switch model/provider, change context-window compaction, or extend the tool surface. |
 | `tests/` | Playwright `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` + `playwright.config.ts`. |
 
 ## Build a new app
@@ -156,7 +157,7 @@ For exact type signatures, read `node_modules/deepspace/dist/index.d.ts` (fronte
 Three independent surfaces. Load only what you need:
 
 - **Server actions** (privileged writes that bypass caller RBAC) → `references/server-actions.md`
-- **AI chat** (streamed Claude / OpenAI / Cerebras with read-only tool use) → `references/ai-chat.md`
+- **AI chat** (streamed Claude / OpenAI / Cerebras with multi-turn tool use, persistent chat history, context-window compaction) → `references/ai-chat.md`
 - **Cron** (scheduled tasks via `AppCronRoom` + `useCronMonitor`) → `references/cron.md`
 
 Skip all three for apps that only need client hooks and `integration.post(...)`.

@@ -46,12 +46,12 @@ Adding a new gated page is a one-file change: drop it inside `(protected)/`. The
 
 ## `<AuthGate>` props
 
-- `fallback` — UI shown to signed-out users (default: SDK's frosted-glass `<AuthOverlay/>`). Pass any React node — e.g., `fallback={<TeaserPage />}` for a custom signed-out UI.
+- `fallback` — UI shown to signed-out users. **Default: `<AuthOverlay />` rendered with no `onClose` prop, which makes it non-closeable** (the user has only one path forward — sign in). That's the right default for a fully-gated app where nothing exists outside the gate, but it traps users on a public marketing page if you mount `<AuthGate>` higher in the tree than intended. To allow dismissal or render anything other than the overlay, pass an explicit `fallback` (e.g., `fallback={<TeaserPage />}`).
 - `redirectOnSignOut` — where the user lands when they sign out from inside the gate (default `'/'`). Triggers a full page reload so cached state can't leak into the signed-out view.
 
 ## Rules either way
 
-- **Use `useAuth().isSignedIn` for auth-state checks in components** — session-based, updates immediately. `useUser()` loads async and causes a flash of "not signed in" state.
+- **Use `useAuth().isSignedIn` for auth-state checks in components** — session-based, updates immediately on sign-in / sign-out. `useUser()` returns `{ user, isLoading, refetch }` where `user` is the merged storage-layer profile + room role; `user` is `null` until the async profile load completes, which can produce a flash of "not signed in" state if you gate on `user` truthy without also checking `isLoading`. For the common "is the user signed in?" check, prefer `useAuth().isSignedIn`.
 - `<AuthGate>` controls the **UI layer** — children don't mount until signed in. `RecordProvider allowAnonymous` controls the **data layer** — server accepts unsigned client connections. Inside an `<AuthGate>` subtree the user is always signed in, so `allowAnonymous` is moot there.
 - Don't add a second sign-out — the avatar dropdown in `Navigation.tsx` already calls `signOut()`.
 - **If the app requires sign-in, a sign-out control is non-negotiable.** If you replace `Navigation.tsx`, ensure it still calls `signOut()` from `deepspace` somewhere reachable when signed in.

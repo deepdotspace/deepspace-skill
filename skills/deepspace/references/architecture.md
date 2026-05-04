@@ -23,10 +23,10 @@ The scaffolded `AppRecordRoom` already passes your `schemas` to `RecordRoom` —
 
 ## Scope conventions
 
-- `app:<APP_NAME>` — the app's primary RecordRoom. Default in the scaffold.
+- `app:<APP_NAME>` — the app's primary RecordRoom. Default in the scaffold (`SCOPE_ID` in `src/constants.ts`).
 - `conv:<id>` — DM/conversation DO. Use with `useConversation` and the `conv_messages` / `conv_reactions` / `conv_members` schemas.
-- `workspace:*` — shared scopes that sync across DeepSpace apps (e.g., the email-handle workspace).
-- `dir:*` — directory scopes for cross-app conversations / communities / posts.
+- `workspace:default` — the single shared workspace scope (email handles, teams, etc.) hosted on the platform-worker. There is currently only `default`; the `workspace:` namespace is reserved but not multi-instance.
+- `dir:<appHandle>` — per-DeepSpace-app directory DO (cross-app conversations / communities / posts). The `<appHandle>` is the published app's slug (e.g., `dir:deepspace-mail`), not your local `wrangler.toml` `name` — both apps proxy into the platform-worker's directory DO keyed by handle.
 
 ## Cross-app workspace isolation
 

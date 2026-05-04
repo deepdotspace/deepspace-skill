@@ -11,21 +11,38 @@ Actions are app-defined server functions called from the client with the user's 
 ```typescript
 import type { ActionHandler } from 'deepspace/worker'
 
+interface EventData {
+  attendeeIds?: string[]
+  // … other event fields
+}
+
 export const actions: Record<string, ActionHandler> = {
   // Add an attendee and stamp the event's attendeeIds in one privileged write.
-  inviteAttendee: async ({ userId, params, tools }) => {
+  inviteAttendee: async ({ params, tools }) => {
     const eventId = params.eventId as string
     const attendeeId = params.attendeeId as string
+
+    // tools.get returns { success, data: { record } } where `record` is the envelope
+    // { recordId, data: <your fields>, createdBy, createdAt, updatedAt }.
     const event = await tools.get('events', eventId)
     if (!event.success) return event
-    const data = (event.data as { attendeeIds?: string[] }).data ?? {}
-    const next = [...new Set([...(data.attendeeIds ?? []), attendeeId])]
+    const { record } = event.data as { record: { data: EventData } }
+    const current = record.data.attendeeIds ?? []
+
+    const next = [...new Set([...current, attendeeId])]
     return tools.update('events', eventId, { attendeeIds: next })
   },
 }
 ```
 
-`tools.{create, update, remove, get, query}` bypass user RBAC. `tools.integration(endpoint, data)` proxies to the api-worker, billed to the app owner.
+`tools.{create, update, remove, get, query}` bypass user RBAC and return `Promise<ActionResult>` envelopes. **Response shapes** (under `.data` of the envelope, when `success` is true):
+- `tools.get(coll, id)` → `{ record: { recordId, data, createdBy, createdAt, updatedAt } }`
+- `tools.query(coll, opts?)` → `{ records: Envelope[], count: number }`
+- `tools.create(coll, data)` → `{ recordId, record: Envelope }`
+- `tools.update(coll, id, patch)` → `{ recordId, record: Envelope }`
+- `tools.remove(coll, id)` → `{ deleted: true }`
+
+`tools.integration(endpoint, data)` proxies to the api-worker, billed to the app owner.
 
 ## Owner-only gate (when an action burns owner resources)
 

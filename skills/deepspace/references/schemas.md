@@ -34,7 +34,7 @@ import { itemsSchema } from './schemas/items-schema'
 export const schemas: CollectionSchema[] = [usersSchema, itemsSchema]
 ```
 
-For messaging, add `CHANNELS_SCHEMA`, `MESSAGES_SCHEMA`, `REACTIONS_SCHEMA` (and optionally `CHANNEL_MEMBERS_SCHEMA`, `READ_RECEIPTS_SCHEMA`) from `deepspace/worker` to the array.
+For messaging, add `CHANNELS_SCHEMA`, `MESSAGES_SCHEMA`, `REACTIONS_SCHEMA` (and optionally `CHANNEL_MEMBERS_SCHEMA`, `CHANNEL_INVITATIONS_SCHEMA`, `READ_RECEIPTS_SCHEMA`) from `deepspace/worker` to the array.
 
 Schemas are columns only — no `fields` property, no document-mode storage.
 
@@ -69,16 +69,16 @@ Per-role, per-collection. The five values that cover ~95% of apps:
 Advanced rules (supported by `PermissionRule` but rarely needed — check `packages/deepspace/src/shared/types/index.ts` `PermissionRule` before using):
 
 - `'unclaimed-or-own'` — record has no owner OR the caller owns it
-- `'collaborator'` — caller is in `collaboratorsField`
-- `'access'` — caller passes a per-collection access check
+- `'collaborator'` — caller is the **owner** OR is in `collaboratorsField`. Despite the name, owners always pass.
+- `'access'` — caller passes a per-collection access check (currently behaves identically to `'team'`; prefer `'team'` for clarity).
 
 ## Data visibility
 
 When creating records scoped to specific users (e.g., conversations, private data):
 
-- Set `Visibility: 'private'` — not `'public'`.
-- Populate `ParticipantIds` (or the relevant `collaboratorsField`) with all participant user IDs.
-- The SDK filters server-side in the DO — `canRead()` checks `ownerField`, `collaboratorsField`, and `visibilityField` before sending data over WebSocket.
-- **Never rely on client-side filtering alone** — data still syncs over WebSocket and is visible in dev tools.
+- For **app-scoped messaging** (`CHANNELS_SCHEMA` + `MESSAGES_SCHEMA` in your app's `RecordRoom`): the channel record's `type` field (`'public' | 'private' | 'dm'`) gates access at the schema level. Use `'private'` or `'dm'` for user-scoped channels.
+- For **directory-scoped conversations** (the `dir:<appId>` shared DO, accessed via `useConversations` / `createChannel` / `createDM`): set `Visibility: 'private'` (not `'public'`) and populate `ParticipantIds` with all participant user IDs. This is a different schema (`DIRECTORY_SCHEMAS`'s `conversations` collection) than the simple `CHANNELS_SCHEMA`, with its own permission shape.
+- The SDK filters **server-side** in the DO — `canRead()` checks `ownerField`, `collaboratorsField`, and `visibilityField` before sending data over WebSocket.
+- **Never rely on client-side filtering alone** — data still syncs over WebSocket and is visible in dev tools, and a determined attacker reading the WS frames bypasses any client filter you add.
 
-`createChannel()` defaults to `Visibility: 'public'`, which means all users see all conversations. Override with `Visibility: 'private'` and set `ParticipantIds` for user-scoped data.
+`useConversations().createChannel(name)` defaults the underlying conversation record to `Visibility: 'public'` and `Type: 'public'`, which means all users in the directory see the conversation. Override the visibility by either (a) using `createDM` / `createGroupDM` instead (which set `Visibility: 'private'` and populate `ParticipantIds`), or (b) calling `useMutations<Conversation>('conversations').create({ ..., Visibility: 'private', ParticipantIds: [...] })` directly. The simple `useChannels().create(name)` from `'deepspace'` (against `CHANNELS_SCHEMA`) is a different surface and uses `type` instead of `Visibility`.

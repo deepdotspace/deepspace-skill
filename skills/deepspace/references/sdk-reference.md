@@ -315,7 +315,42 @@ Omit the override to keep the legacy behavior (load the stored blob as-is).
 - `createDeepSpaceAuth(config)` — constructs a Better Auth instance pre-wired for DeepSpace conventions (cookie names, JWT issuance). Types: `DeepSpaceAuth`, `DeepSpaceAuthConfig`. The scaffold doesn't build its own auth surface — it proxies to the platform auth-worker — so you only reach for this when standing up a custom auth-worker variant.
 
 ### AI provider helper
-- `createDeepSpaceAI(env, provider, options?)` — returns a Vercel-AI-SDK-compatible provider routed through the DeepSpace API worker. `provider` is `'anthropic' | 'openai' | 'cerebras'`. Pass `{ authToken }` for user-billed calls (inside a request handler); omit for server-side autonomous calls (falls back to `env.APP_OWNER_JWT`, billed to the app owner).
+- `createDeepSpaceAI(env, provider, options?)` — returns a Vercel-AI-SDK-compatible provider routed through the DeepSpace API worker. `provider` is `'anthropic' | 'openai' | 'cerebras'`. Pass `{ authToken }` for user-billed calls (inside a request handler); omit for server-side autonomous calls (falls back to `env.APP_OWNER_JWT`, billed to the app owner). Types: `DeepSpaceAIEnv`, `DeepSpaceAIOptions`.
+
+### AI chat — context compaction & history
+- `prepareMessagesWithCompaction(messages, config, { summarizer, cachedSummary? })` — pre-stream pipeline. Truncates old tool results, applies cached summary if given, summarizes the older half if still over budget, falls back to sliding window on summarizer error. Returns `{ messages, newSummary? }`.
+- `truncateOldToolResults(messages, keepRecent)` — replace old tool-result payloads with a small marker; preserves errors (`success: false`) and the `keepRecent` most recent assistant turns intact.
+- `applySlidingWindow(messages, charCap, minKept)` — drop oldest messages until under `charCap`, never below `minKept`. System messages are pinned.
+- `capToolResultSize(result, byteCap)` — cap individual tool-result payloads with a structured "result too large; narrow your query" error (preserves a 2KB preview).
+- `totalChars(messages)` — sum of `content` + `JSON.stringify(parts)` lengths.
+- `turnsToCoreMessages(turns: ChatTurn[]) → ModelMessage[]` — convert persisted UI-shape ChatTurns into Vercel AI SDK v5 ModelMessages, splitting assistant rows at each tool-call boundary so Anthropic's `tool_use → tool_result` pairing is satisfied.
+- `buildUiParts(responseMessages: ModelMessage[]) → unknown[]` — inverse of `turnsToCoreMessages`. Convert the AI SDK's `onFinish` response into the flat UI-shape `parts` array we persist on `ai-messages` rows.
+- `unwrapToolOutput(output)` — unwrap v5's tagged `output` (`{ type: 'json' | 'text' | 'error-text' | 'error-json', value }`) into the flat shape we persist; errors get remapped to `{ success: false, error }`.
+- `makeDefaultSummarizer(env, { authToken? })` — Claude-Haiku-backed `Summarizer`. Omit `authToken` to bill the owner; pass the caller's JWT to bill the user.
+- `DEFAULT_CONTEXT_CONFIG` — `{ contextBudget: 240_000, toolResultCap: 30_000, keepRecentToolResults: 5, minKept: 10 }`. Sized for 200K+ context models.
+- Types: `ChatContextConfig`, `ChatTurn`, `Summarizer`.
+
+### AI chat — history persistence (`'deepspace/worker'`)
+Wrappers around the DO tools API that read/write the `ai-chats` and `ai-messages` collections with `X-App-Action: 'true'` (bypass user RBAC). The worker is the trust boundary — callers MUST verify chat ownership before invoking write helpers (`updateChat`, `appendMessage`, `deleteChatCascade`); the scaffold's chat routes do this via a `getChat` precheck.
+
+- `getChat(stub, chatId, userId) → Promise<ChatRow | null>` — load one chat row (returns `null` on missing or cross-user).
+- `createChat(stub, userId, { title?, model? })` → `Promise<ChatRow>`.
+- `updateChat(stub, chatId, userId, patch)` — patch `{ title?, model?, compactedSummary?, compactedThroughId? }`.
+- `deleteChatCascade(stub, chatId, userId)` — delete all `ai-messages` rows where `chatId` matches, then the `ai-chats` row. Best-effort: throws aggregated error if any delete fails.
+- `loadMessages(stub, chatId, userId) → Promise<ChatMessageRow[]>` — chronologically ordered messages for one chat, filtered by `userId` (defense in depth).
+- `appendMessage(stub, { id, chatId, userId, role, content, parts? })` — write one row.
+- Types: `ChatRow` (`{ id, userId, title, model?, compactedSummary?, compactedThroughId?, createdAt, updatedAt }`), `ChatMessageRow` (`{ id, chatId, userId, role, content, parts?, createdAt }`).
+
+### AI chat — schemas
+- `AI_CHATS_SCHEMA` — pre-built schema for the `ai-chats` collection. RBAC: members `read/update/delete: 'own'`, `create: false` (writes only via the worker). Drop into `src/schemas.ts` to enable AI chat persistence.
+- `AI_MESSAGES_SCHEMA` — pre-built schema for the `ai-messages` collection. Same RBAC posture. The `parts` column is JSON-typed (UI-shape tool invocations).
+
+### AI chat — frontend wire helpers (`'deepspace'`)
+Pure decoders for the Vercel AI SDK v5 `toUIMessageStreamResponse` SSE body. Use these to build a custom chat surface without taking the React `ChatPanel` from the `ai-chat` feature.
+
+- `parseSseLine(line: string) → AiStreamChunk | null` — strip SSE framing on one line. Returns the parsed JSON payload, or `null` for blank lines / comments / `[DONE]`.
+- `decodeAiStreamChunk(chunk: AiStreamChunk) → AiStreamAction | null` — decode one v5 UIMessage stream chunk into a small action vocabulary (`append-text`, `upsert-tool-call`, `finalize-tool-call`, `fail-tool-input`, `fail-tool-output`, `stream-error`, `abort`). Lifecycle markers and unsupported chunks return `null`.
+- Types: `AiStreamAction`, `AiStreamChunk`.
 
 ### Server action types
 - `ActionHandler<TEnv = Record<string, unknown>>` — `(ctx: ActionContext<TEnv>) => Promise<ActionResult>`. The `TEnv` generic lets you type the worker's `env` bindings (e.g., `ActionHandler<MyAppEnv>`); defaults to a loose record so unparameterized handlers compile.
