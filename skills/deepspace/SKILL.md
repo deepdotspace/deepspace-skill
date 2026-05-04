@@ -58,6 +58,16 @@ npx deepspace deploy               # → <wrangler.name>.app.space
 
 **Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Re-login only when `~/.deepspace/session` is wiped or the session expires. See "Login, test, deploy" below for non-obvious rules.
 
+### Scaffolding from a local SDK checkout (DeepSpace team only)
+
+For testing unreleased SDK changes. End users should always use `npm create deepspace@latest`.
+
+```bash
+# Local SDK (for development — replace path with your local SDK root).
+# Requires a built dist/ — run `pnpm build` in <local-sdk-path>/packages/deepspace first.
+<local-sdk-path>/packages/create-deepspace/dist/index.js <app-name> --local <local-sdk-path>
+```
+
 ## Two imports
 
 ```typescript
