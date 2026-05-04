@@ -38,6 +38,16 @@ For messaging, add `CHANNELS_SCHEMA`, `MESSAGES_SCHEMA`, `REACTIONS_SCHEMA` (and
 
 Schemas are columns only — no `fields` property, no document-mode storage.
 
+### JSON columns
+
+Use `interpretation: { kind: 'json' }` for columns holding structured data (objects, arrays). The SDK handles serialization at the worker boundary: **pass the value directly on write (no `JSON.stringify`) and it comes back already parsed on read (no `JSON.parse`)** — this applies to `useRecord` / `useRecords` / `useMutations` on the client and to `tools.get` / `tools.query` inside server actions. Calling `JSON.parse` on the read side will throw because you're parsing an already-parsed object.
+
+```typescript
+{ name: 'tags', storage: 'text', interpretation: { kind: 'json' } },
+// write:  mutations.create({ tags: ['a', 'b'] })       ← pass array directly
+// read:   record.data.tags  // → ['a', 'b']            ← already an array
+```
+
 ## Roles
 
 - Built-in roles: `viewer | member | admin` (see `ROLES`).
