@@ -17,7 +17,7 @@ description: >
 
 Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn/ui primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
 
-This skill targets **`deepspace` and `create-deepspace` v0.2.6** (verify with `npm view deepspace version` if drift is suspected).
+This skill targets **`deepspace` and `create-deepspace` v0.2.7** (verify with `npm view deepspace version` if drift is suspected).
 
 ## Quickstart — the development lifecycle
 
@@ -27,6 +27,10 @@ CLI commands, in order. Each step is rerunnable. `dev` and `test` both regenerat
 # 1. Scaffold (no auth required — npm fetches create-deepspace via npx on demand)
 npm create deepspace@latest <app-name>
 cd <app-name>
+# CLI is non-interactive by default (agent-friendly): omitting <app-name> prints
+# usage and exits 1 instead of prompting on stdin. Pass `--interactive` / `-i`
+# for the prompt-driven wizard. Probe with `--help` / `-h` (plain stdout, no
+# ANSI) or `--version` / `-v` before invoking when scripting.
 # Three invocation forms work — the scaffolder is permissive about target state:
 #   a) From a parent dir, target does not exist:     creates <app-name>/ fresh.
 #   b) From a parent dir, target is near-empty:      scaffolds in-place into <app-name>/.
