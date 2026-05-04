@@ -67,7 +67,7 @@ npx deepspace add --info <name>    # see what a feature installs
 npx deepspace add <feature>        # install into current app
 
 # 7. Discover & test platform integrations from the CLI (billed to logged-in user)
-npx deepspace invoke --list                                # list all 215 endpoints across 31 integrations
+npx deepspace invoke --list                                # list all 215 endpoints across 38 integrations
 npx deepspace invoke <integration>/<endpoint> --info       # schema + example body for one endpoint
 npx deepspace invoke openai/chat-completion --body '{...}' # actually call it
 npx deepspace invoke openai/chat-completion --body-file -  # body via stdin (cat req.json | …)
