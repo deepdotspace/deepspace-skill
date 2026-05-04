@@ -26,7 +26,7 @@ import { ... } from 'deepspace/worker'   // Cloudflare Worker
 **Hooks**
 - `useAuth()` — `{ isSignedIn, ... }`. Primary auth check. Session-based, updates immediately.
 - `useAuthUser()` — auth-layer user (Better Auth session).
-- `useUser()` — storage-layer user `{ id, name, email, role }`. Loads async.
+- `useUser()` — `{ user, isLoading, refetch }`. The `user` object is the storage-layer user (`{ id, name, email, role, karma, credits, ... } | null`); destructure as `const { user } = useUser(); user?.id`, **not** `const { id } = useUser()`. Loads async.
 - `useDisplayName()` — resolved display name or null.
 
 **Utilities**
@@ -133,28 +133,40 @@ Exact return shapes vary — check `node_modules/deepspace/dist/index.d.ts` for 
 
 ### Files (R2)
 
-- `useR2Files(options?)` — `{ files, upload, remove, getUrl, ... }`. Options: `R2Scope` to scope by room/user.
+- `useR2Files(options?)` — `{ upload, uploadBase64, deleteFile, downloadFile, readFile, list, getUrl, isUploading }`. `list` is an async function that returns the current files; call it (and store the result in state) rather than reading a `files` array directly. Options: `R2Scope` to scope by room/user.
 - `isImageFile(mimeType)` / `formatFileSize(bytes)` — display helpers.
 
 ```tsx
-import { useR2Files, isImageFile, formatFileSize } from 'deepspace'
+import { useEffect, useState } from 'react'
+import { useR2Files, formatFileSize } from 'deepspace'
+import type { R2FileInfo } from 'deepspace'
 
 function Gallery() {
-  const { files, upload, remove, getUrl } = useR2Files()
+  const { upload, deleteFile, list, getUrl } = useR2Files()
+  const [files, setFiles] = useState<R2FileInfo[]>([])
+
+  async function refresh() {
+    setFiles(await list())
+  }
+
+  useEffect(() => { refresh() }, [])
 
   async function onDrop(file: File) {
-    await upload(file) // returns the stored file record; triggers a re-render
+    await upload(file)
+    await refresh()
   }
 
   return files.map(f => (
-    <div key={f.id}>
-      {isImageFile(f.mimeType) && <img src={getUrl(f)} referrerPolicy="no-referrer" />}
-      <span>{f.name} ({formatFileSize(f.size)})</span>
-      <button onClick={() => remove(f.id)}>Delete</button>
+    <div key={f.key}>
+      <img src={getUrl(f.key)} referrerPolicy="no-referrer" />
+      <span>{f.originalName ?? f.key} ({formatFileSize(f.size)})</span>
+      <button onClick={async () => { await deleteFile(f.key); await refresh() }}>Delete</button>
     </div>
   ))
 }
 ```
+
+> `R2FileInfo` exposes `{ key, size, uploaded, url, originalName?, uploadedBy? }` — there is no `mimeType` / `contentType` field, so `isImageFile(f.mimeType)` won't work directly off a listed file. Either branch on extension (`f.key.endsWith('.png')`), capture the mime type at upload time and store it alongside the key in your own collection, or use `getUrl(f.key)` and let the browser handle non-images. Confirm fields in `node_modules/deepspace/dist/index.d.ts` before relying on additional ones.
 
 > ⚠️ **Local-dev limitation**: R2 upload round-trips require `APP_IDENTITY_TOKEN`, a secret minted by the deploy worker. The CLI does not currently provision it locally, so uploads will return 401 from the platform worker. In local dev, assert that `upload()` is dispatched (not the full round-trip); full flow works after `npx deepspace deploy`.
 
@@ -251,7 +263,7 @@ Subclasses of `GameRoom` can override `onHydrateState(stored)` to migrate persis
 Omit the override to keep the legacy behavior (load the stored blob as-is).
 
 ### Auth
-- `verifyJwt(request, env)` — validates the session JWT, returns `{ userId, ... }` or throws.
+- `verifyJwt(config, token)` — `config: JwtVerifierConfig` (`{ publicKey, issuer, audience, authorizedParties?, clockSkewMs? }`), `token: string | null | undefined`. Returns `Promise<VerifyOutcome>` — a `{ result: VerifyResult | null, error? }` envelope; **does not throw** on invalid tokens. Extract the JWT from the request yourself (e.g., `Authorization: Bearer <token>` or session cookie) before calling.
 - `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` — HMAC sign / verify for internal platform → app calls. (Cron no longer uses these — see `references/cron.md`.)
 
 ### AI provider helper
