@@ -1,5 +1,6 @@
 ---
 name: deepspace
+version: 0.1.0
 description: >
   Use when building or maintaining real-time collaborative apps with the
   DeepSpace SDK on Cloudflare Workers — scaffolding new apps, adding
@@ -213,7 +214,7 @@ This is the agent-friendly path — both commands print machine-readable JSON wi
 `dev` / `test` / `deploy` themselves require a valid session at `~/.deepspace/session`; if absent, they exit with `Not logged in. Run \`deepspace login\` first.` Five hard rules:
 
 1. **Pause and tell the user.** Login opens a browser tab (GitHub/Google OAuth) on their machine and polls up to 10 minutes. They need to be at the keyboard.
-2. **For CI / headless agent runs**, use `npx deepspace login --email <e> --password <p>` instead — the non-interactive path bypasses OAuth polling entirely. Only valid when test-account credentials already exist; do not invent credentials or ask the user to share their personal password.
+2. **For CI / headless agent runs**, use `npx deepspace login --email <e> --password <p>` instead — the non-interactive path bypasses OAuth polling entirely. **Test-account fixtures only.** This flag is *not* a credential-handling path for real user accounts — real users always use the interactive `deepspace login` (browser OAuth, never sees a password). The `--password` path exists specifically so headless agents can sign in as a shared test-account fixture provisioned via `npx deepspace test-accounts create`. Those test accounts are scoped to the dev-tier pool (cap 10 per machine), have no production data or real billing attached, and a leaked test-account password only lets an attacker use a test account. Do not invent credentials or ask the user to share their personal password.
 3. **Run interactive login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. (`timeout` isn't installed on macOS by default; don't reach for it.) Run in foreground or a true background process.
 4. **After login completes, verify with `npx deepspace whoami`** before retrying `dev` / `test` / `deploy`. Re-running them while login is still polling produces the same error — that's expected order, not a bug.
 5. **Never copy `.dev.vars` from a sibling app.** `APP_OWNER_JWT` is minted against that app's wrangler name; borrowing causes silent auth mismatches.
