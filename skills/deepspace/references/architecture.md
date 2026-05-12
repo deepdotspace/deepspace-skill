@@ -65,6 +65,27 @@ app.get('/ws/:roomId', async (c) => {
 
 Without both edits, `sharedScopes: [{ roomId: 'workspace:default', ... }]` on `<RecordScope>` writes to the app's own DO instead of the platform's shared DO, and cross-app data (e.g., other users' `@app.space` handles) won't appear.
 
+**Cross-app scopes require auth.** The platform worker requires a valid JWT on every WebSocket and `/api/*` upgrade to a cross-app scope — there is no anonymous flow on `workspace:*` / `dir:*` / `conv:*`. Anonymous attempts return 401. (Per-app DOs on the starter `wsRoute` still allow a no-token anonymous connection — see Security model below.)
+
+## Security model — WebSocket and `/api/*` identity
+
+The Durable Object reads caller identity (`userId`, `userName`, `userEmail`, `userImageUrl`, `role`) off the URL it receives and trusts it implicitly. The worker is the only place that can scrub spoofed values, so the starter `wsRoute` and the platform worker both:
+
+1. Delete `userId` / `userName` / `userEmail` / `userImageUrl` / `role` (and the `token`) from the URL on every upgrade.
+2. Re-apply identity **only** from the verified JWT (`sub` → `userId`, `name` → `userName`, `email` → `userEmail`, `image` → `userImageUrl`).
+3. For `/api/*` passthrough: overwrite `X-User-Id` with the JWT subject and strip `X-App-Action` (only the worker itself sets that header internally for server-action calls).
+
+Three valid states on app-worker WebSockets:
+- **No token** → anonymous (DO assigns `anon-<uuid>`). The starter allows this on `/ws/:roomId` and the Yjs / Canvas / Presence / Cron routes.
+- **Invalid token** → 401.
+- **Valid token** → identity derived from the JWT claims.
+
+The client SDK no longer sends identity params over WS URLs — the worker would strip them anyway. **Do not roll your own WebSocket URL with `userId=…`**, and do not set `X-User-Id` or `X-App-Action` from client code. The api-worker also ignores `X-Billing-User-Id` from end-user JWTs — billing always falls on the JWT subject. (See `references/integrations.md`.)
+
+## App-name rules
+
+The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. The CLI warns and sanitizes silently-invalid names; the deploy worker no longer rewrites them. Pick the final name before first deploy.
+
 ## Upstream proxy helpers
 
 The scaffolded `worker.ts` already uses these for every cross-worker call. **Do not** replace them with raw `c.env.X.fetch(...)` — `wrangler dev` doesn't surface service bindings cross-process for SDK apps, so the binding is `undefined` locally and the fetch silently fails.

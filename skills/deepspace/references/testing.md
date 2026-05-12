@@ -54,6 +54,18 @@ npx playwright test --ui              # Playwright's interactive UI
 
 No separate dev server required either way — the scaffolded `tests/playwright.config.ts` has a `webServer` block that starts Vite on port 5173 and reuses an existing one if present (`reuseExistingServer: true`).
 
+### Screenshots (for visual debugging)
+
+`npx deepspace screenshot <url> <output>` takes a Playwright Chromium screenshot of any URL. Shares the same Playwright + chromium install as `npx deepspace test` — installs on first use if missing. Useful for "render the home page and show me what it looks like" workflows, and for capturing failure states without writing a one-off spec.
+
+```bash
+npx deepspace screenshot http://localhost:5173/ out.png
+npx deepspace screenshot http://localhost:5173/dashboard out.png --full-page
+npx deepspace screenshot http://localhost:5173/ out.png --wait-for-timeout 500
+```
+
+This is a visual-inspection helper, not a substitute for Playwright assertions. Don't add it to the test checklist; do reach for it when an agent wants to confirm "what does this page actually render right now."
+
 ## Scaffolded Test Files
 
 - `smoke.spec.ts` — app loads, navigation renders, sign-in button present, page title correct

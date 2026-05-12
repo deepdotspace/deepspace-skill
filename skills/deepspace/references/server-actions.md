@@ -16,7 +16,7 @@ interface EventData {
   // … other event fields
 }
 
-export const actions: Record<string, ActionHandler> = {
+export const actions: Record<string, ActionHandler<Env>> = {
   // Add an attendee and stamp the event's attendeeIds in one privileged write.
   inviteAttendee: async ({ params, tools }) => {
     const eventId = params.eventId as string
@@ -35,14 +35,17 @@ export const actions: Record<string, ActionHandler> = {
 }
 ```
 
-`tools.{create, update, remove, get, query}` bypass user RBAC and return `Promise<ActionResult>` envelopes. **Response shapes** (under `.data` of the envelope, when `success` is true):
+`tools.{create, update, remove, get, query}` **all** bypass user RBAC — including `tools.query`. Earlier SDKs (≤ 0.3.3) silently filtered `tools.query` results by the caller's role; v0.3.4+ matches the other ops so an action that calls `tools.query('events')` always sees every event in the collection, not just the caller's. If you need caller-scoped reads, do them client-side via `useQuery` (which the DO RBAC governs) or pass a `where` clause in the action.
+
+`ActionResult<T>` is a discriminated union — narrow with `if (result.success)` before reading `result.data`. **Response shapes** (under `.data` when `success` is true):
 - `tools.get(coll, id)` → `{ record: { recordId, data, createdBy, createdAt, updatedAt } }`
 - `tools.query(coll, opts?)` → `{ records: Envelope[], count: number }`
 - `tools.create(coll, data)` → `{ recordId, record: Envelope }`
 - `tools.update(coll, id, patch)` → `{ recordId, record: Envelope }`
 - `tools.remove(coll, id)` → `{ deleted: true }`
+- `tools.integration(endpoint, data)` → `{ response, status? }` — proxies to the api-worker, billed to the app owner.
 
-`tools.integration(endpoint, data)` proxies to the api-worker, billed to the app owner.
+The typed surface is generic per op (`tools.query<T>`, `tools.get<T>`, etc.), so passing a row type narrows `record.data` / `records[].data` to `T` instead of `Record<string, unknown>`.
 
 ## Owner-only gate (when an action burns owner resources)
 

@@ -29,6 +29,8 @@ export const integrations: Record<string, { billing: 'developer' | 'user' }> = {
 
 The api-worker then 401s anonymous callers and bills the signed-in user's DeepSpace credits. This is enforced server-side, so it holds even if the UI gate is bypassed — but it does require every end-user to have a DeepSpace account with credits, which is usually only appropriate when each user has an obvious one-to-one relationship with their own costs (and you've told them so up front).
 
+**The billing user is always the JWT subject.** End-user JWTs cannot redirect billing via headers — `/api/integrations/*` ignores `X-Billing-User-Id`, so the field cannot be used to charge a different DeepSpace account. The `developer` vs `user` flip in `src/integrations.ts` is the only billing knob.
+
 For Google OAuth specifics (per-user billing, scope step-up, `requiresOAuth` retry), load `references/integrations/google-oauth.md` instead of fighting through the generic patterns here. For LiveKit audio/video rooms, load `references/integrations/livekit.md`.
 
 ## Testing — integration calls cost real money

@@ -76,7 +76,9 @@ If a preset is close but the accent or background needs tuning:
 2. Open `src/themes.css`, find the matching `[data-theme="<id>"] { ... }` block, override the tokens you want changed (`--color-primary`, `--color-background`, `--color-card`, `--color-accent`, `--color-ring`, etc.). Light themes also include `color-scheme: light` — keep it.
 3. Optional: if you're tuning the **default** (`slate`), edit the `@theme { ... }` block in `src/styles.css` instead — that block holds slate's values and is the inherited baseline.
 
-A single token swap is not enough; if the result still looks like the preset, swap at least: background, foreground, card, primary, secondary, accent, ring, plus the `--shadow-card*` tokens for cohesion.
+A single token swap is not enough; if the result still looks like the preset, swap at least: background, foreground, card, primary, secondary, accent, ring.
+
+**Don't reach for `--shadow-card*` to retheme shadows.** The CSS variables still exist for opt-in use, but the starter components (`Card`, `Dialog`, `CardGrid`, `Navigation` dropdown, `Toast`) deliberately use literal `shadow-[…]` arbitrary classes — not the token — because Tailwind v4's `@theme` directive bakes the baseline shadow values into the compiled utility classes, so runtime `[data-theme]` overrides can't fully cancel them. If you want a custom shadow per theme on your own components, set it inline (`className="shadow-[0_2px_8px_0_rgba(0,0,0,0.08)]"`) or scope a small `shadow-*` utility under your `[data-theme]` block. Verify in the browser that the shadow actually changes when you switch themes before shipping. The SDK repo's `docs/platform/theming-shadows.md` has the full rationale and migration notes for older apps.
 
 ### The build-from-scratch path (rare)
 

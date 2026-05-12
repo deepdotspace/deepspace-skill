@@ -44,7 +44,7 @@ import { ... } from 'deepspace/testing'  // Playwright multi-user fixture (test 
 
 **Hooks**
 - `useQuery<T>(collection, options?)` — `{ records, status, error }` where `status: 'loading' | 'ready' | 'error'`. Options: `where`, `orderBy`, `orderDir`, `limit`. **Each record is an envelope** — `{ recordId, data: T, createdBy, createdAt, updatedAt }`. User fields live under `.data`: write `r.data.title`, never `r.title`. Use `r.recordId` for keys and to pass into `put` / `remove`. Common bug: `records.map(r => r.title)` returns `undefined` for every row (TS catches it; runtime renders empty list).
-- `useMutations<T>(collection)` — `{ create, put, remove, createConfirmed, putConfirmed, removeConfirmed }`. **`create` returns `Promise<string>`** (the new recordId — capture it for navigation: `const id = await create({...}); navigate(\`/items/${id}\`)`). `put` and `remove` return `Promise<void>`. The `*Confirmed` variants resolve only after the server has acknowledged the write; the plain ones return immediately after the optimistic local apply.
+- `useMutations<T>(collection)` — `{ create, put, remove, createConfirmed, putConfirmed, removeConfirmed }`. **`create(data: T)` takes the full record shape** (no existing row to merge into) and returns `Promise<string>` (the new recordId — capture it for navigation: `const id = await create({...}); navigate(\`/items/${id}\`)`). **`put(recordId, patch: Partial<T>)`** is merge-semantics — the server does `{...existing, ...patch}`, so send only the fields you're changing (`put(id, { completed: true })`). `remove` and `put` return `Promise<void>`. The `*Confirmed` variants resolve only after the server has acknowledged the write; the plain ones return immediately after the optimistic local apply.
 - `useUsers()` — `{ users, usersLoaded, setRole(userId, role), refresh() }`. `setRole` is the admin-only mutation for role changes; `refresh()` re-requests the user list from the room.
 - `useUserLookup()` — `{ users, usersLoaded, userMap, getUser(id), getEmail(id), getName(id) }`. O(1) wrapper around `useUsers()` for resolving a userId from the wire (e.g., a `MessageRecord.AuthorId`) to display fields without scanning the full users array each render. **Only `getUser` / `getEmail` / `getName` exist** — there is no `getRole` or `getImageUrl`. For role: `getUser(id)?.role`. For avatar: `getUser(id)?.imageUrl` (or whatever your users-collection field is named).
 - `useRecordContext()` — low-level store access.
@@ -276,12 +276,13 @@ The scaffold declares five DO classes in `__DO_MANIFEST__` and extends these bas
 - `BaseRoom` — abstract parent of all DOs below. Subclass when none of the specialized rooms fit (rare). Provides the WebSocket plumbing, JWT verification, and connection lifecycle. Type: `UserAttachment` for authenticated socket attachments.
 - `RecordRoom` — primary app data DO. Extend with your `schemas`. Configurable via `RecordRoomConfig` (the second-arg shape in the constructor below):
   ```typescript
-  export class AppRecordRoom extends RecordRoom {
+  export class AppRecordRoom extends RecordRoom<Env> {
     constructor(state: DurableObjectState, env: Env) {
       super(state, env, schemas, { ownerUserId: env.OWNER_USER_ID })
     }
   }
   ```
+  All room base classes accept a `<E = Record<string, unknown>>` generic for env typing — the scaffold uses `RecordRoom<Env>` / `YjsRoom<Env>` / `CanvasRoom<Env>` / `PresenceRoom<Env>` / `CronRoom<Env>` so `this.env.<binding>` is typed inside overrides. The unparameterized form still works (defaults to loose record) — useful for SDK-shipped DOs.
 - `YjsRoom` — per-doc collaborative text (Y.Text) and rich fields.
 - `CanvasRoom` — collaborative canvas state (shapes, strokes). Types: `CanvasShape`, `Viewport`.
 - `PresenceRoom` — cursors, typing indicators, "who's online". Type: `PresencePeer`.
@@ -353,10 +354,10 @@ Pure decoders for the Vercel AI SDK v5 `toUIMessageStreamResponse` SSE body. Use
 - Types: `AiStreamAction`, `AiStreamChunk`.
 
 ### Server action types
-- `ActionHandler<TEnv = Record<string, unknown>>` — `(ctx: ActionContext<TEnv>) => Promise<ActionResult>`. The `TEnv` generic lets you type the worker's `env` bindings (e.g., `ActionHandler<MyAppEnv>`); defaults to a loose record so unparameterized handlers compile.
+- `ActionHandler<TEnv = Record<string, unknown>>` — `(ctx: ActionContext<TEnv>) => Promise<ActionResult>`. The `TEnv` generic lets you type the worker's `env` bindings — the scaffold uses `ActionHandler<Env>` so `ctx.env.<binding>` is typed inside handlers. Defaults to a loose record so unparameterized handlers compile.
 - `ActionContext<TEnv>` — `{ userId, params, tools, env }`. `userId` is the caller (verified JWT subject). `params` is the JSON body. `env` is the worker bindings (use it for owner-only gates: `ctx.userId === ctx.env.OWNER_USER_ID`). `tools` is `ActionTools`.
-- `ActionTools` — `{ create, update, remove, get, query, integration }`. All return `Promise<ActionResult>`. Bypasses user RBAC (the `X-App-Action` header marks the call as the app itself, not the caller).
-- `ActionResult` — `{ success: boolean, data?: unknown, error?: string }`.
+- `ActionTools` — `{ create<T>, update<T>, remove, get<T>, query<T>, integration<T> }`. Each method is generic over its row shape; results are typed per op (`MutateActionData` / `GetActionData<T>` / `QueryActionData<T>` / `IntegrationActionData<T>`). All bypass caller RBAC — the `X-App-Action` header marks the call as the app itself. All five `tools.*` ops are RBAC-bypassing, including `tools.query` (parity fixed in 0.3.x; earlier SDKs filtered query results by caller permissions).
+- `ActionResult<TData = unknown>` — discriminated union: `{ success: true; data: TData; error?: never } | { success: false; data?: never; error: string }`. Narrow with `if (result.success) { result.data … }` — TS narrows `data` to the per-op shape (`{ records, count }` for query, `{ record }` for get, `{ recordId }` for mutations, `{ response, status? }` for integration).
 
 ### AI tool helpers (from `deepspace/worker`)
 - `BUILT_IN_TOOLS` — catalog of read-only tool definitions.
@@ -365,6 +366,23 @@ Pure decoders for the Vercel AI SDK v5 `toUIMessageStreamResponse` SSE body. Use
 
 ### R2 helpers
 - `createScopedR2Handler(...)` — route handler for scoped R2 reads/writes.
+
+### Custom bindings & metering (from `deepspace/worker`)
+
+Load `references/bindings.md` for the full picture; signature reference below.
+
+- `runMigrations(db: D1Database, migrations: readonly string[]) → Promise<{ fromVersion, toVersion, applied }>` — bootstrap auto-provisioned D1. Each migration string can hold multiple `;`-separated statements; **no `;` inside string literals** (the split is naive). Tracks state in a `_dpc_migrations(idx INTEGER PRIMARY KEY, applied_at TEXT)` meta-table. Idempotent — safe at worker startup. Append new migrations to the end of the array; never reorder or delete.
+- `meterAi(env, model: string, fields: { inputChars?, outputChars?, calls? }) → boolean` — emits `op='input'` and `op='output'` events to `USAGE_EVENTS`; both 0 → emits `op='call'` so the model invocation is still recorded. Returns `false` when `USAGE_EVENTS` is missing or AnalyticsEngine throws (never breaks the calling path).
+- `meterVectorize(env, indexName: string, op: 'query' | 'upsert' | 'delete' | 'getByIds', fields: { vectors?, dims?, storedCount? }) → boolean` — units = `(vectors + storedCount) * dims` for query, `vectors * dims` for the rest (matches CF's `(stored + queries) * dims` formula). Pass `storedCount` on queries against non-empty indexes or you'll significantly undercount.
+- `meterUsage(env, kind: string, fields: { id?, op?, units?, count? }) → boolean` — generic fallback for any other binding (Browser Rendering, Hyperdrive, etc.). Writes to `USAGE_EVENTS` keyed by `OWNER_USER_ID`, blob `[APP_NAME, kind, id, op]`, doubles `[units, count]`.
+- `COST_RATES` — per-`units` USD multipliers for dashboard rollup (input/output AI tokens, vectorize queried/stored dims).
+
+Binding manifest exports (advanced):
+- `AUTO_PROVISION_SENTINEL` (`'auto'`), `AUTO_PROVISIONABLE_TYPES` (`d1`, `kv_namespace`, `vectorize`, `r2_bucket`, `queue`).
+- `ALLOWED_BINDING_TYPES` — the 9 declarable types (`vectorize`, `ai`, `r2_bucket`, `kv_namespace`, `d1`, `queue`, `browser_rendering`, `analytics_engine`, `hyperdrive`).
+- `RESERVED_BINDING_NAMES` — 12 SDK-owned names apps may not redeclare (`ASSETS`, `PLATFORM_WORKER`, `API_WORKER`, `APP_NAME`, `OWNER_USER_ID`, `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `APP_IDENTITY_TOKEN`, `APP_OWNER_JWT`, `INTERNAL_STORAGE_HMAC_SECRET`, `USAGE_EVENTS`).
+- `validateBindingManifest(manifest) → ValidationError[]`, `isAutoProvision(b)`, `bindingManifestFromOutputConfig(config)` — utilities used by the CLI and deploy worker.
+- `CustomBinding` type union — the wire shape over which the manifest is validated.
 
 ### Upstream worker proxy helpers
 
