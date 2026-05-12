@@ -43,7 +43,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
 - `tools.create(coll, data)` → `{ recordId, record: Envelope }`
 - `tools.update(coll, id, patch)` → `{ recordId, record: Envelope }`
 - `tools.remove(coll, id)` → `{ deleted: true }`
-- `tools.integration(endpoint, data)` → `{ response, status? }` — proxies to the api-worker, billed to the app owner.
+- `tools.integration(endpoint, data)` → `{ response, status? }` — proxies to the api-worker. **Billing depends on `src/integrations.ts`**: an integration set to `{ billing: 'developer' }` calls with `APP_OWNER_JWT` (owner pays); any other value (default: `'user'`) forwards the caller's JWT (caller pays). The api-worker bills the JWT subject; there is no client-supplied override.
 
 The typed surface is generic per op (`tools.query<T>`, `tools.get<T>`, etc.), so passing a row type narrows `record.data` / `records[].data` to `T` instead of `Record<string, unknown>`.
 

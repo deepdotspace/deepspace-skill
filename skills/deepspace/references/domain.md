@@ -6,12 +6,12 @@ The `deepspace domain` CLI is **agent-friendly by design** — destructive comma
 
 ## Model
 
-- **Registrar:** hybrid Cloudflare Registrar (~27 TLDs at-cost) + NameSilo (`.ai`, `.io`, `.me`, `.co`, ccTLDs, etc.). The CLI hides the choice — `search` results show the price; `buy` picks the right registrar automatically. The `registrar` field on each result is `'cloudflare' | 'namesilo'`.
+- **Registrar:** hybrid Cloudflare Registrar (~27 TLDs at-cost) + Porkbun (`.ai`, `.io`, `.me`, `.co`, ccTLDs, etc.). The CLI hides the choice — `search` results show the price; `buy` picks the right registrar automatically. The `registrar` field on each result is `'cloudflare' | 'namesilo'` — the `'namesilo'` literal is the historical name for the non-CF path; the actual upstream registrar is Porkbun. Treat the type's `'namesilo'` value as "non-CF" rather than literally NameSilo.
 - **Routing:** Cloudflare Custom Hostnames against the platform's single SaaS zone (`app.space`). After purchase, the platform provisions DCV + ownership records on the new domain's zone, then activates a hostname route at the platform.
 - **Billing:** Stripe Checkout opens in a browser at the user's machine. Auto-renew is on by default; toggle off with `domain renew <d> --auto off`. Pricing fields on the API are `chargedCents` (per-year price shown in CLI output) plus separate `pricing.registrationCost` / `pricing.renewalCost` strings — they are usually equal but can differ for premium domains.
 - **Time to live — varies sharply by registrar:**
   - **Cloudflare Registrar TLDs** (`.com`, `.dev`, `.app`, `.xyz`, etc.): ~60–90 seconds. The registry publishes Cloudflare nameservers atomically with registration. The CLI's polling deadline is 5 minutes.
-  - **NameSilo TLDs** (`.ai`, `.io`, `.me`, `.co`, ccTLDs): 15–60 minutes — the wait is registry-side NS propagation, not platform-side. The CLI's polling deadline is 60 minutes.
+  - **Porkbun TLDs** (`.ai`, `.io`, `.me`, `.co`, ccTLDs): 15–60 minutes — the wait is registry-side NS propagation, not platform-side. The CLI's polling deadline is 60 minutes.
 
   Either way, you can Ctrl-C out of the polling loop without losing progress — provisioning continues server-side. Re-check with `domain status <domain>`.
 
@@ -55,7 +55,7 @@ npx deepspace domain renew <domain> --auto off
 `deepspace domain buy` opens a Stripe Checkout tab. The user must complete payment in the browser before the CLI's polling can succeed. Two rules:
 
 1. **Tell the user a payment is required before running `buy`** — the same way the skill treats interactive `login`. They need to be at the keyboard.
-2. **Don't wrap `buy` in `timeout N` or any cutoff.** The CLI polls for **5 minutes on Cloudflare-registered TLDs** and **60 minutes on NameSilo TLDs** — an artificial cutoff aborts before payment + provisioning finish. Use `--no-wait` if you genuinely want a fire-and-forget mode (you'll need to call `domain status` later). Even without `--no-wait`, Ctrl-C is safe — provisioning continues server-side regardless.
+2. **Don't wrap `buy` in `timeout N` or any cutoff.** The CLI polls for **5 minutes on Cloudflare-registered TLDs** and **60 minutes on Porkbun TLDs** — an artificial cutoff aborts before payment + provisioning finish. Use `--no-wait` if you genuinely want a fire-and-forget mode (you'll need to call `domain status` later). Even without `--no-wait`, Ctrl-C is safe — provisioning continues server-side regardless.
 
 For non-interactive CI, prefer `domain attach` (re-pointing an already-bought domain) over `buy`. Buying inherently needs a human at a card form.
 

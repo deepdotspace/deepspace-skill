@@ -58,7 +58,7 @@ import { ... } from 'deepspace/testing'  // Playwright multi-user fixture (test 
 
 Requires channels + messages schemas in the room. Every hook returns its records array (`channels` / `messages` / `reactions` / `members` / `receipts`) plus `status: 'loading' | 'ready' | 'error'` and `error?: string` — gate skeleton states on `status`.
 
-- `useChannels()` — `{ channels, status, error, create, archive, update, remove }`. `create(name, opts?)` makes a new channel; `archive(channelId)` hides without deleting; `update(channelId, patch)` edits metadata; `remove(channelId)` deletes.
+- `useChannels()` — `{ channels, status, error, create, archive, update, remove }`. `create({ name, type, description? })` makes a new channel — **`type` is required** (`'public' | 'private' | 'dm'`); passing a bare string returns a channel with `name=undefined` / `type=undefined` and silently breaks downstream queries. `archive(channelId)` hides without deleting; `update(channelId, patch)` edits metadata; `remove(channelId)` deletes.
 - `useMessages(channelId, options?)` — `{ messages, status, error, send, edit, remove, softDelete }`. `softDelete` flips a tombstone flag instead of hard-deleting (preferred for chat history continuity); `remove` is the hard delete.
 - `useReactions(channelId)` — `{ reactions, status, error, getReactionsForMessage, toggle }`. `getReactionsForMessage(messageId)` is an O(1) lookup; `toggle(messageId, emoji)` adds or removes the caller's reaction.
 - `useChannelMembers(channelId)` — `{ members, status, error, join, leave, isMember }`.
@@ -105,11 +105,18 @@ Backed by the `dir:<appId>` global DO. Each hook returns its records array plus 
 import { useYjsText } from 'deepspace'
 
 function DocEditor({ docId }: { docId: string }) {
-  const { text, setText, loading } = useYjsText('docs', docId, 'body')
-  if (loading) return <div>Loading…</div>
-  return <textarea value={text} onChange={e => setText(e.target.value)} />
+  const { text, setText, synced, canWrite } = useYjsText('docs', docId, 'body')
+  return (
+    <textarea
+      value={text}
+      onChange={e => setText(e.target.value)}
+      disabled={!synced || !canWrite}
+    />
+  )
 }
 ```
+
+`useYjsText` returns `{ text, setText, synced, canWrite }` — there is no `loading`. Gate the input on `!synced || !canWrite` instead.
 
 **Online / offline** — derived from `lastSeenAt` heartbeats:
 
@@ -301,7 +308,7 @@ Each has its own WebSocket route wired in `worker.ts` (`/ws/yjs/:docId`, `/ws/ca
 
 - `DOManifest` / `DOManifestEntry` — typed shape of `__DO_MANIFEST__` (the `as const satisfies DOManifest` literal in scaffolded `worker.ts`).
 - `DOBindings<typeof __DO_MANIFEST__>` — derives the `Env` interface's DO bindings from the manifest at compile time. The scaffold's `Env extends DOBindings<typeof __DO_MANIFEST__>` is what makes `env.RECORD_ROOMS`, `env.YJS_ROOMS`, etc. typed correctly.
-- `DEFAULT_DO_MANIFEST` — the same five entries the scaffold ships. Useful when programmatically building a manifest.
+- `DEFAULT_DO_MANIFEST` — fallback manifest with **only two** entries (`RECORD_ROOMS` + `YJS_ROOMS`), used when an app doesn't export `__DO_MANIFEST__`. **Not** the scaffold's manifest — the scaffold's `worker.ts` declares its own 5-class set (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). Useful when programmatically building a manifest from scratch.
 
 ### Game rooms (state migration)
 
@@ -344,7 +351,7 @@ Wrappers around the DO tools API that read/write the `ai-chats` and `ai-messages
 - `deleteChatCascade(stub, chatId, userId)` — delete all `ai-messages` rows where `chatId` matches, then the `ai-chats` row. Best-effort: throws aggregated error if any delete fails.
 - `loadMessages(stub, chatId, userId) → Promise<ChatMessageRow[]>` — chronologically ordered messages for one chat, filtered by `userId` (defense in depth).
 - `appendMessage(stub, { id, chatId, userId, role, content, parts? })` — write one row.
-- Types: `ChatRow` (`{ id, userId, title, model?, compactedSummary?, compactedThroughId?, createdAt, updatedAt }`), `ChatMessageRow` (`{ id, chatId, userId, role, content, parts?, createdAt }`).
+- Types: `ChatRow` (`{ recordId, id (@deprecated alias for recordId), userId, title, model?, compactedSummary?, compactedThroughId?, createdAt, updatedAt }`), `ChatMessageRow` (`{ recordId, id (@deprecated alias for recordId), chatId, userId, role, content, parts?, createdAt }`). **Use `recordId`**, not `id` — `id` is kept only for backward compatibility and may be removed in a future version. Reading `chat.id` and sending `{ chatId: chat.id }` happens to work today, but `chat.recordId` is the canonical field across the rest of the SDK and won't silently `undefined` if `id` is dropped.
 
 ### AI chat — schemas
 - `AI_CHATS_SCHEMA` — pre-built schema for the `ai-chats` collection. RBAC: members `read/update/delete: 'own'`, `create: false` (writes only via the worker). Drop into `src/schemas.ts` to enable AI chat persistence.
@@ -412,7 +419,7 @@ Production note: cross-worker calls over plain `*.workers.dev` URLs return Cloud
 - `CONVERSATION_SCHEMAS` — array of the `conv_messages` / `conv_reactions` / `conv_members` / `conv_read_cursors` collections. Pass as the `schemas` of a conversation-scope `RecordRoom` to enable `useConversation`.
 
 **Directory** (`dir:<appId>` shared DO — cross-app)
-- `DIRECTORY_SCHEMAS` — array of `conversations` / `communities` / `community_members` / `posts` / `comments` / etc. Passed by the platform's directory DO; rarely instantiated by an app directly.
+- `DIRECTORY_SCHEMAS` — array of 5 collections: `conversations`, `conversation_state`, `communities`, `memberships`, `posts`. Passed by the platform's directory DO; rarely instantiated by an app directly. There is no `community_members` (use `memberships`) and no `comments` collection.
 - `VOTING_SCHEMAS` — voting / poll collections used by directory features.
 
 **Workspace** (cross-app shared scope)

@@ -69,11 +69,11 @@ Without both edits, `sharedScopes: [{ roomId: 'workspace:default', ... }]` on `<
 
 ## Security model — WebSocket and `/api/*` identity
 
-The Durable Object reads caller identity (`userId`, `userName`, `userEmail`, `userImageUrl`, `role`) off the URL it receives and trusts it implicitly. The worker is the only place that can scrub spoofed values, so the starter `wsRoute` and the platform worker both:
+The Durable Object reads caller identity (`userId`, `userName`, `userEmail`, `userImageUrl`, `role`) off the URL or headers it receives and trusts them implicitly. The worker is the only place that can scrub spoofed values. Two worker surfaces, two scopes of scrubbing:
 
-1. Delete `userId` / `userName` / `userEmail` / `userImageUrl` / `role` (and the `token`) from the URL on every upgrade.
-2. Re-apply identity **only** from the verified JWT (`sub` → `userId`, `name` → `userName`, `email` → `userEmail`, `image` → `userImageUrl`).
-3. For `/api/*` passthrough: overwrite `X-User-Id` with the JWT subject and strip `X-App-Action` (only the worker itself sets that header internally for server-action calls).
+**Starter `wsRoute` (per-app, WebSocket only)** — strips `userId` / `userName` / `userEmail` / `userImageUrl` / `role` (and the `token`) from the URL on every WebSocket upgrade, then re-applies identity only from the verified JWT (`sub` → `userId`, `name` → `userName`, `email` → `userEmail`, `image` → `userImageUrl`). The starter has no `/api/*` passthrough — `/api/auth/*` and `/api/integrations/*` are direct calls to the auth-worker / api-worker, which verify the JWT themselves.
+
+**Platform worker (cross-app, WebSocket AND `/api/*`)** — same WebSocket query-param scrub as above, plus on `/api/*` HTTP passthrough: overwrites `X-User-Id` with the JWT subject and strips `X-App-Action` (only the worker itself sets that header for internal server-action calls). Auth is required on every cross-app upgrade (no anonymous flow on `workspace:*` / `dir:*` / `conv:*`).
 
 Three valid states on app-worker WebSockets:
 - **No token** → anonymous (DO assigns `anon-<uuid>`). The starter allows this on `/ws/:roomId` and the Yjs / Canvas / Presence / Cron routes.

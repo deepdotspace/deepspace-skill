@@ -108,10 +108,10 @@ The `capToolResultSize(result, byteCap)` helper replaces oversized tool outputs 
 
 ### Swap the summarizer
 
-`makeDefaultSummarizer(env, { authToken? })` returns a Claude Haiku summarizer (`claude-haiku-4-5`). The scaffold passes the caller's JWT, so compaction is **user-billed** (treated as part of the chat experience, not infrastructure). Pass no `authToken` to bill the developer instead:
+`makeDefaultSummarizer(env, { authToken? })` returns a Claude Haiku summarizer (`claude-haiku-4-5`). **Default (no `authToken`) is owner-billed** — the function falls back to `APP_OWNER_JWT`, treating compaction as infrastructure. The scaffold's `chat-routes.ts` explicitly opts in to user-billing by passing `{ authToken: jwt }` (the caller's JWT) so compaction is part of the user's chat cost. To revert to owner-billed:
 
 ```typescript
-const summarizer = makeDefaultSummarizer(c.env)  // → APP_OWNER_JWT, owner pays
+const summarizer = makeDefaultSummarizer(c.env)  // → APP_OWNER_JWT, owner pays (function default)
 ```
 
 Roll your own by implementing `Summarizer = (messages: ChatTurn[]) => Promise<string>`. The default summary anchors on the last real message id in the older half (skipping prior-summary system rows so re-summarization doesn't loop) — preserve that anchoring if you replace it, or expect a billing leak.

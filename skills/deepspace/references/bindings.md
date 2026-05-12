@@ -94,7 +94,7 @@ APP_IDENTITY_TOKEN, APP_OWNER_JWT, INTERNAL_STORAGE_HMAC_SECRET,
 USAGE_EVENTS
 ```
 
-The validator also rejects any custom-binding `name` that collides with **a DO class declared in `__DO_MANIFEST__`** (e.g., `RECORD_ROOMS`) or with any **user secret** you put below the `.dev.vars` divider. Three-way validation — pick a name nothing else uses.
+`validateBindingManifest` rejects any custom-binding `name` in `RESERVED_BINDING_NAMES` and any intra-manifest duplicate. It does **not** check against DO class names (`__DO_MANIFEST__`) — those live in a separate manifest. If you accidentally name a custom binding `RECORD_ROOMS`, the deploy validator won't catch it; you'll find out at runtime when the DO binding shadows it (or the WfP upload errors). Pick a name that doesn't collide with either set yourself. (User secrets, in contrast, *are* validated against the union of `RESERVED_BINDING_NAMES`, custom-binding names, and DO class names at deploy time — see `.dev.vars` contract in SKILL.md.)
 
 ## D1 bootstrap — `runMigrations`
 
