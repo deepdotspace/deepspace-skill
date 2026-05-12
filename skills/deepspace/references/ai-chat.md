@@ -49,13 +49,13 @@ Edit `ALLOWED_MODELS` in `src/ai/chat-routes.ts`:
 
 ```typescript
 const ALLOWED_MODELS: Record<string, 'anthropic' | 'openai' | 'cerebras'> = {
-  'claude-sonnet-4-6': 'anthropic',
-  'claude-opus-4-7':   'anthropic',
-  'claude-haiku-4-5':  'anthropic',
-  'gpt-5.4':           'openai',
-  'gpt-5.4-mini':      'openai',
-  'gpt-5.4-nano':      'openai',
-  'gpt-oss-120b':      'cerebras',
+  'claude-opus-4-7':    'anthropic',
+  'claude-sonnet-4-6':  'anthropic',
+  'claude-haiku-4-5':   'anthropic',
+  'gpt-5.4':            'openai',
+  'gpt-5.4-mini':       'openai',
+  'gpt-5.4-nano':       'openai',
+  'gpt-oss-120b':       'cerebras',
 }
 const DEFAULT_MODEL = 'claude-sonnet-4-6'
 ```
@@ -195,7 +195,7 @@ test('POST /api/ai/chat streams + persists', async ({ request }) => {
 })
 ```
 
-Keep one such test per turn-shape (text-only, tool-using, multi-step, abort). Don't iterate the stream in a loop testing every chunk type — `decodeAiStreamChunk` already has unit-test coverage in the SDK at `packages/deepspace/src/client/__tests__/ai-stream.test.ts`.
+Keep one such test per turn-shape (text-only, tool-using, multi-step, abort). Don't iterate the stream in a loop testing every chunk type — the SDK already unit-tests `decodeAiStreamChunk` against the v5 chunk vocabulary, so app-level tests should assert behavior, not parser fidelity.
 
 For the auth-gating side, follow the standard pattern in `references/testing.md` — assert 401 for unauthenticated callers and 404 for cross-user `chatId`.
 
@@ -213,4 +213,3 @@ For the auth-gating side, follow the standard pattern in `references/testing.md`
 - `references/sdk-reference.md` § Server-side AI helpers — full export list (`createDeepSpaceAI`, `prepareMessagesWithCompaction`, `turnsToCoreMessages`, `buildUiParts`, `unwrapToolOutput`, `makeDefaultSummarizer`, `capToolResultSize`, `truncateOldToolResults`, `applySlidingWindow`, `totalChars`, `DEFAULT_CONTEXT_CONFIG`, `ChatContextConfig`, `ChatTurn`, `Summarizer`, plus `getChat` / `createChat` / `updateChat` / `deleteChatCascade` / `loadMessages` / `appendMessage` / `ChatRow` / `ChatMessageRow` from `chat-history`).
 - `references/sdk-reference.md` § Frontend wire helpers — `parseSseLine`, `decodeAiStreamChunk`, `AiStreamAction`, `AiStreamChunk`.
 - `references/integrations.md` for raw `integration.post('anthropic/...')` calls when you don't need streaming.
-- `packages/deepspace/src/server/utils/__tests__/chat-context.test.ts` and `packages/deepspace/src/client/__tests__/ai-stream.test.ts` in the SDK monorepo for canonical behavior contracts of the compaction pipeline and SSE decoder.

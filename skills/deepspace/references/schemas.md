@@ -76,7 +76,7 @@ Per-role, per-collection. The five values that cover ~95% of apps:
 
 `ownerField` is only required when you use `'own'`/`'shared'`/`'team'` **and** want ownership tied to a column other than the record's creator.
 
-Advanced rules (supported by `PermissionRule` but rarely needed — check `packages/deepspace/src/shared/types/index.ts` `PermissionRule` before using):
+Advanced rules (supported by `PermissionRule` but rarely needed — check the `PermissionRule` type in `node_modules/deepspace/dist/index.d.ts` or `dist/worker.d.ts` before using):
 
 - `'unclaimed-or-own'` — record has no owner OR the caller owns it
 - `'collaborator'` — caller is the **owner** OR is in `collaboratorsField`. Despite the name, owners always pass.

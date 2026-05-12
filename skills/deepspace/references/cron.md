@@ -22,11 +22,16 @@ export async function runTask(name: string, env: Env): Promise<void> {
   // Pass `app:${env.APP_NAME}` for the per-app RecordRoom (matches scaffold convention).
   const ctx = buildCronContext(env, env.OWNER_USER_ID, `app:${env.APP_NAME}`)
   if (name === 'heartbeat') {
-    // Records — runs as app owner (bypasses caller RBAC):
-    //   ctx.records.query(collection, { where?, limit? })  → Promise<any[]>
-    //   ctx.records.create(collection, data)               → Promise<record>
-    //   ctx.records.update(collection, recordId, data)     → Promise<record>
-    //   ctx.records.delete(collection, recordId)           → Promise<void>
+    // Records — runs as app owner (bypasses caller RBAC). Shapes differ from
+    // tools.* in server actions — ctx.records unwraps the ActionResult envelope
+    // and returns the data field directly:
+    //   ctx.records.query(collection, { where?, limit? })  → Promise<Envelope[]>     (already unwrapped — the records array)
+    //   ctx.records.create(collection, data)               → Promise<{ recordId, record: Envelope }>
+    //   ctx.records.update(collection, recordId, data)     → Promise<{ recordId, record: Envelope }>
+    //   ctx.records.delete(collection, recordId)           → Promise<{ deleted: true }>
+    // Each Envelope is { recordId, data, createdBy, createdAt, updatedAt }.
+    // Throws on any tool failure (rather than returning { success: false, error })
+    // — wrap in try/catch if you need to handle a denied write inline.
     //
     // Integrations — proxied through api-worker via signed internal HMAC,
     // billed to the app owner (uses INTERNAL_STORAGE_HMAC_SECRET):
@@ -83,11 +88,11 @@ Render task status, history, and (optionally) `trigger` / `pause` / `resume` con
 - a 1-minute `heartbeat` task in `src/cron.ts` (no-op `runTask` — extend it),
 - a public, read-only `/cron-log` viewer page (`src/pages/cron-log.tsx`) that subscribes via `useCronMonitor(SCOPE_ID)` and renders `tasks` + `history` + connection status. It does **not** expose `trigger` / `pause` / `resume` — add those yourself with the admin-gating rule above if you need them.
 
-The cron feature does **not** ship a Playwright spec into the scaffolded app — it adds the runtime surfaces only. The SDK monorepo's own `tests/feature-tests/tests/cron.spec.ts` (130s heartbeat-fires-and-renders test) is what `npx deepspace test` would invoke if the SDK's feature-tests harness is present, but a fresh scaffolded app has no `tests/feature-tests/` directory unless you add one. Write your own cron spec in `tests/api.spec.ts` (use `trigger` to fire `onTask` synchronously, then assert against `cron_history`) instead of waiting for `intervalMinutes: 1` to tick.
+The cron feature does **not** ship a Playwright spec into the scaffolded app — it adds the runtime surfaces only. Write your own cron spec in `tests/api.spec.ts` using `trigger` to fire `onTask` synchronously and asserting against `cron_history`. Don't wait for `intervalMinutes: 1` to tick.
 
 ## Testing without waiting for the schedule
 
-`trigger(taskName)` runs `onTask` immediately on the DO via the same code path as the alarm. That's the right test surface for app-level cron logic — a Playwright spec calls `trigger` from a page that exposes the admin controls, then asserts the resulting `cron_history` row arrives via the WS subscription. **Build a small admin page (or test-only page) that wires up `useCronMonitor`'s `trigger`** — the scaffolded `/cron-log` is read-only and won't suffice. The SDK monorepo's `tests/feature-tests/tests/cron.spec.ts` shows the alternative pattern (waiting for the alarm to actually fire) and budgets 130 seconds for it; prefer `trigger` if you can.
+`trigger(taskName)` runs `onTask` immediately on the DO via the same code path as the alarm. That's the right test surface for app-level cron logic — a Playwright spec calls `trigger` from a page that exposes the admin controls, then asserts the resulting `cron_history` row arrives via the WS subscription. **Build a small admin page (or test-only page) that wires up `useCronMonitor`'s `trigger`** — the scaffolded `/cron-log` is read-only and won't suffice.
 
 ```typescript
 // Assumes you've added an admin page at /cron with a "Run now" button per task
@@ -105,7 +110,7 @@ test('daily-digest produces a cron_history row when triggered', async ({ page })
 })
 ```
 
-Don't write tests that wait for `0 9 * * 1-5` to fire. Don't change schedules to `intervalMinutes: 1` just for testing — use `trigger` instead. (Use `intervalMinutes: 1` only to verify the alarm path itself, which `trigger` bypasses; the SDK's own `cron.spec.ts` does this with its `heartbeat` task and a 130-second wait.)
+Don't write tests that wait for `0 9 * * 1-5` to fire. Don't change schedules to `intervalMinutes: 1` just for testing — use `trigger` instead. Reach for `intervalMinutes: 1` only when you specifically need to verify the alarm path itself (`trigger` bypasses it) — budget ~130 seconds for the heartbeat to fire and the row to arrive.
 
 ## Migration note
 

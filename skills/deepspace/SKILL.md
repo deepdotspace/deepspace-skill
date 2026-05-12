@@ -13,8 +13,6 @@ description: >
   DeepSpace explicitly.
 ---
 
-# DeepSpace SDK
-
 Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn/ui primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
 
 This skill targets **`deepspace` and `create-deepspace` v0.3.7** (verify with `npm view deepspace version` if drift is suspected).
@@ -93,7 +91,7 @@ npx deepspace domain list                    # list domains you own
 npx deepspace domain attach <domain> --app <name>   # re-point a domain at a different app
 ```
 
-**Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. To check login state, run `npx deepspace whoami` (or `--json` for agents) — that's the canonical probe; `~/.deepspace/session` is an implementation detail the CLI owns and stat'ing it isn't a reliable signal. Re-login only when `whoami` reports not-signed-in or the session has expired. See "Login, test, deploy" below for non-obvious rules.
+**Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Probe login state with `npx deepspace whoami` (`--json` for agents); don't stat `~/.deepspace/session` — that's a CLI implementation detail. Re-login only when `whoami` reports not-signed-in or the session has expired. See "Login, test, deploy" below for the full contract.
 
 ### Scaffolding from a local SDK checkout (DeepSpace team only)
 
@@ -210,7 +208,7 @@ This is the agent-friendly path — both commands print machine-readable JSON wi
 
 ### Login (`npx deepspace login`)
 
-**`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path that `dev` / `test` / `deploy` use, so a successful `whoami` is a near-certain "next commands will work." On failure: stderr `Not logged in. Run \`deepspace login\`.`, exit 1.
+**`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path that `dev` / `test` / `deploy` use — if `whoami` succeeds, those will too. On failure: stderr `Not logged in. Run \`deepspace login\`.`, exit 1.
 
 `dev` / `test` / `deploy` themselves require a valid session at `~/.deepspace/session`; if absent, they exit with `Not logged in. Run \`deepspace login\` first.` Five hard rules:
 
@@ -219,21 +217,6 @@ This is the agent-friendly path — both commands print machine-readable JSON wi
 3. **Run interactive login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. (`timeout` isn't installed on macOS by default; don't reach for it.) Run in foreground or a true background process.
 4. **After login completes, verify with `npx deepspace whoami`** before retrying `dev` / `test` / `deploy`. Re-running them while login is still polling produces the same error — that's expected order, not a bug.
 5. **Never copy `.dev.vars` from a sibling app.** `APP_OWNER_JWT` is minted against that app's wrangler name; borrowing causes silent auth mismatches.
-
-### `.dev.vars` ownership and prod secret propagation
-
-`dev` / `test` rewrite **only the 9 SDK-managed keys**: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `INTERNAL_STORAGE_HMAC_SECRET`, `ALLOW_DEBUG_ROUTES`. They live above a `# --- not managed by the SDK; preserved across dev/test runs ---` divider the CLI writes itself.
-
-Anything you add **below** that divider — third-party API tokens, custom feature flags, your own service URLs — is preserved verbatim across `dev` / `test` runs, **and shipped to prod as `secret_text` bindings on `deploy`** (same `env.MY_KEY` access pattern in dev and prod; no `wrangler secret put` step).
-
-Limits enforced server-side at deploy:
-- Name must match `^[A-Za-z_][A-Za-z0-9_]*$`.
-- Per-value cap: **32 KB** (32 × 1024 bytes).
-- Total cap across all user secrets: **128 KB**.
-- Raw JSON payload cap: **1 MB** → 413.
-- Name must not collide with `RESERVED_BINDING_NAMES` (12 SDK-owned), any declared custom binding, or any DO class in `__DO_MANIFEST__`.
-
-Read `references/bindings.md` if any of those collisions trip you.
 
 ### Test (`npx deepspace test`)
 
@@ -250,6 +233,21 @@ npx deepspace deploy   # → <wrangler.name>.app.space
 ```
 
 The subdomain is the `name` field in `wrangler.toml`. Edit it there if you want a different deploy target — `deploy` does not accept a name override. Re-run `npx deepspace login` if the session has expired.
+
+## `.dev.vars` contract
+
+`dev` / `test` rewrite **only the 9 SDK-managed keys**: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `INTERNAL_STORAGE_HMAC_SECRET`, `ALLOW_DEBUG_ROUTES`. They live above a `# --- not managed by the SDK; preserved across dev/test runs ---` divider the CLI writes itself.
+
+Anything you add **below** that divider — third-party API tokens, custom feature flags, your own service URLs — is preserved verbatim across `dev` / `test` runs, **and shipped to prod as `secret_text` bindings on `deploy`** (same `env.MY_KEY` access pattern in dev and prod; no `wrangler secret put` step).
+
+Limits enforced server-side at deploy:
+- Name must match `^[A-Za-z_][A-Za-z0-9_]*$`.
+- Per-value cap: **32 KB** (32 × 1024 bytes).
+- Total cap across all user secrets: **128 KB**.
+- Raw JSON payload cap: **1 MB** → 413.
+- Name must not collide with `RESERVED_BINDING_NAMES` (12 SDK-owned), any declared custom binding, or any DO class in `__DO_MANIFEST__`.
+
+Read `references/bindings.md` if any of those collisions trip you.
 
 ## References
 
@@ -277,7 +275,7 @@ Each reference declares its own "Load when …" trigger at the top. Index:
 
 Cross-cutting traps that don't have a natural reference home. Domain-specific gotchas live in their topical reference (auth, schemas, integrations, architecture, testing, bindings).
 
-- **`useAuth().isSignedIn`, not `useUser()`** — `isSignedIn` is session-based and updates immediately. `useUser()` loads async and causes a flash of "not signed in" state. (More auth gotchas in `references/auth.md`.)
+- **`useAuth().isSignedIn` for auth checks** — `useUser()` loads async; gating on it produces a flash of "not signed in." Full rules and the rest of the auth gotchas live in `references/auth.md`.
 - **Scaffold's local UI primitives shadow the SDK** — `_app.tsx` wraps the tree in `ToastProvider` from `src/components/ui/`, not from `deepspace`. Importing `useToast` (or any locally-shadowed primitive) from `deepspace` throws `useToast must be used within ToastProvider` at runtime — the React contexts don't match. **Import from `../components/ui`, not from `deepspace`.** Full explanation in `references/uiux.md` § "Critical import rule."
 - **Page files belong in `src/pages/`** — generouted scans only this directory. Putting pages in `src/features/<name>/` results in 404s even if nav links exist.
 - **Never put identity in WebSocket URLs or `/api/*` headers.** The starter `wsRoute` strips `userId` / `userName` / `userEmail` / `userImageUrl` / `role` query params on every upgrade and re-applies them only from a verified JWT. The platform worker does the same on `/api/*` (overwrites `X-User-Id` from JWT, strips `X-App-Action`). Caller identity is **always** the JWT subject — there is no client-side override. Three valid WS states: no token → anonymous (DO assigns `anon-<uuid>`); invalid token → 401; valid token → JWT identity. (Cross-app scopes `workspace:*` / `dir:*` / `conv:*` have no anonymous path — auth is required.)

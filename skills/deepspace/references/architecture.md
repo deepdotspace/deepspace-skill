@@ -84,7 +84,7 @@ The client SDK no longer sends identity params over WS URLs — the worker would
 
 ## App-name rules
 
-The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. The CLI warns and sanitizes silently-invalid names; the deploy worker no longer rewrites them. Pick the final name before first deploy.
+The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. Names that don't conform are sanitized (lowercased, non-alphanumerics → `-`, consecutive dashes collapsed, leading / trailing dashes stripped) and a warning surfaces at the CLI. The earlier behavior was silent sanitization; the current behavior is the same sanitization but visible — the deployed subdomain still ends up at the sanitized form, so update `wrangler.toml` if you see the warning. Pick the final name before first deploy.
 
 ## Upstream proxy helpers
 

@@ -47,6 +47,8 @@ export const actions: Record<string, ActionHandler<Env>> = {
 
 The typed surface is generic per op (`tools.query<T>`, `tools.get<T>`, etc.), so passing a row type narrows `record.data` / `records[].data` to `T` instead of `Record<string, unknown>`.
 
+> Type vs wire: the published `MutateActionData` interface only declares `{ recordId }` — TypeScript will reject `result.data.record` even though the value exists at runtime. If you need the post-write envelope, either re-query (`tools.get(coll, result.data.recordId)`) or cast: `(result.data as { recordId: string; record: Envelope }).record`.
+
 ## Owner-only gate (when an action burns owner resources)
 
 If the action spends owner credits or touches owner-only state, gate it explicitly. The `OWNER_USER_ID` env binding is set at deploy time:

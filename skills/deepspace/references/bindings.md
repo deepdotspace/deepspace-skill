@@ -117,7 +117,7 @@ await runMigrations(env.MY_DB, [
 ```
 
 Contract:
-- Each array entry is one migration; the runner tracks applied indexes in a `_dpc_migrations(idx INTEGER PRIMARY KEY, applied_at TEXT)` meta-table.
+- Each array entry is one migration; the runner tracks applied indexes in a `_dpc_migrations(idx INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)` meta-table.
 - Each migration string can contain multiple `;`-separated statements. **Don't put `;` inside string literals** — the split is naive (`sql.split(';')`).
 - Statements run via `db.prepare(sql).run()`, not `exec()` — sidesteps D1's documented newline-terminated `exec` quirks.
 - Idempotent: re-running with the same array is a no-op. **Append new migrations to the end; never reorder or delete entries.**

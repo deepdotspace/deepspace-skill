@@ -1,5 +1,7 @@
 # DeepSpace SDK Reference
 
+Load this reference when you need to confirm an export exists, look up a hook signature, pick between two similar APIs (e.g., `useMessages` vs `useConversation`, `usePresence` vs `usePresenceRoom`), or audit the worker / testing surface. Skip it when the topic has its own reference — `auth.md`, `schemas.md`, `server-actions.md`, `ai-chat.md`, `cron.md`, `bindings.md`, `integrations.md`, `testing.md`, `domain.md`, `architecture.md`, `uiux.md`, and `landing-design.md` cover their surfaces in task-shaped depth that this index does not.
+
 Complete surface of what the `deepspace` npm package exports. For exact type signatures, read `node_modules/deepspace/dist/index.d.ts` (frontend), `node_modules/deepspace/dist/worker.d.ts` (worker), and `node_modules/deepspace/dist/testing.d.ts` (Playwright fixture). This file is a navigable index — use it to discover what exists, then consult `.d.ts` for signatures.
 
 **Import paths:**
@@ -94,6 +96,8 @@ Backed by the `dir:<appId>` global DO. Each hook returns its records array plus 
 - `useCronMonitor(roomId)` — admin/monitor stream for the `AppCronRoom` DO. Pass `app:<APP_NAME>` for the app's default cron room. Returns `{ tasks, history, connected, trigger(name), pause(name), resume(name) }`. Each task is `{ name, intervalMinutes, schedule, timezone, paused, lastRunAt, nextRunAt }`. `trigger(name)` fires `onTask(name)` immediately on the DO — same path as the alarm scheduler — so a "Run now" button is the right way to E2E-test cron without waiting for the schedule. **The DO does not enforce a role on `trigger`/`pause`/`resume`** — gate the admin UI client-side by `useUser().user?.role === 'admin'` (note `user?.role`, not `role` — `useUser()` returns `{ user, isLoading, refetch }`, fields are nested). Anyone signed in can otherwise fire tasks, which matters if a task spends owner credits via integrations.
 
 > Audio/video rooms have no SDK hook. Use the `livekit/*` endpoints (`create-room`, `generate-token`, `list-rooms`, `delete-room`) via `integration.post(...)` — see `references/integrations.md`.
+
+#### Worked examples
 
 **Collaborative text input** — bind a `<textarea>` to a Yjs text field and multiple users editing the same record see each other's keystrokes live:
 
@@ -371,7 +375,7 @@ Pure decoders for the Vercel AI SDK v5 `toUIMessageStreamResponse` SSE body. Use
 
 Load `references/bindings.md` for the full picture; signature reference below.
 
-- `runMigrations(db: D1Database, migrations: readonly string[]) → Promise<{ fromVersion, toVersion, applied }>` — bootstrap auto-provisioned D1. Each migration string can hold multiple `;`-separated statements; **no `;` inside string literals** (the split is naive). Tracks state in a `_dpc_migrations(idx INTEGER PRIMARY KEY, applied_at TEXT)` meta-table. Idempotent — safe at worker startup. Append new migrations to the end of the array; never reorder or delete.
+- `runMigrations(db: D1Database, migrations: readonly string[]) → Promise<{ fromVersion, toVersion, applied }>` — bootstrap auto-provisioned D1. Each migration string can hold multiple `;`-separated statements; **no `;` inside string literals** (the split is naive). Tracks state in a `_dpc_migrations(idx INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)` meta-table. Idempotent — safe at worker startup. Append new migrations to the end of the array; never reorder or delete.
 - `meterAi(env, model: string, fields: { inputChars?, outputChars?, calls? }) → boolean` — emits `op='input'` and `op='output'` events to `USAGE_EVENTS`; both 0 → emits `op='call'` so the model invocation is still recorded. Returns `false` when `USAGE_EVENTS` is missing or AnalyticsEngine throws (never breaks the calling path).
 - `meterVectorize(env, indexName: string, op: 'query' | 'upsert' | 'delete' | 'getByIds', fields: { vectors?, dims?, storedCount? }) → boolean` — units = `(vectors + storedCount) * dims` for query, `vectors * dims` for the rest (matches CF's `(stored + queries) * dims` formula). Pass `storedCount` on queries against non-empty indexes or you'll significantly undercount.
 - `meterUsage(env, kind: string, fields: { id?, op?, units?, count? }) → boolean` — generic fallback for any other binding (Browser Rendering, Hyperdrive, etc.). Writes to `USAGE_EVENTS` keyed by `OWNER_USER_ID`, blob `[APP_NAME, kind, id, op]`, doubles `[units, count]`.
