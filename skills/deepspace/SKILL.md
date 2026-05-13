@@ -148,7 +148,7 @@ Steps run in dependency order. Each links its deep-dive reference; load that ref
 4. **Auth model** — pick public, gated, or **mixed** (the default; gated routes drop into `src/pages/(protected)/`). → `references/auth.md`
 5. **Theme** — pick a preset on `<html data-theme="...">` in `index.html`, update `<title>`/favicon. **Don't ship the default `slate`.** → `references/uiux.md` §2
 6. **Pages and features** — pages in `src/pages/`. 18 ready features in `.deepspace/features/`; install with `npx deepspace add <feature>` (use `--list` to enumerate). → `references/uiux.md` for UI primitives.
-7. **Tests** — extend `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` per the Step 8 checklist in `references/testing.md`.
+7. **Tests** — read `references/testing.md` and apply the Step 8 checklist before extending `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts`. Multi-user features need a 2-user Playwright spec, not just `tsc` or unit tests.
 8. **Deploy** — `npx deepspace deploy`. Pre-deploy checklist: home replaced, theme picked, browser-default primitives removed, toasts wired to mutations. → `references/uiux.md` §5
 
 For maintenance work on an existing app, jump straight to the relevant reference.
@@ -167,15 +167,16 @@ const { isSignedIn, isLoaded } = useAuth()                    // primary auth ch
 
 **`put` accepts `Partial<T>`** — server merges into the existing row (`{...existing, ...patch}`), so send only the fields you're changing (`put(id, { completed: true })`, not the whole spread). `create` still requires the full `T`.
 
-For exact type signatures, read `node_modules/deepspace/dist/index.d.ts` (frontend) or `node_modules/deepspace/dist/worker.d.ts` (worker). Do not guess hook names or argument shapes.
+For anything beyond these three (messaging, presence, R2, Yjs, canvas, game rooms, cron, AI chat, integrations, theming, RBAC), read `references/sdk-reference.md` first; only then drop into `node_modules/deepspace/dist/index.d.ts` (frontend) or `node_modules/deepspace/dist/worker.d.ts` (worker) for exact type signatures. Do not guess hook names or argument shapes.
 
 ## Worker-side extensions
 
-Three independent surfaces. Load only what you need:
+Five independent surfaces. Load only what you need:
 
 - **Server actions** (privileged writes that bypass caller RBAC) → `references/server-actions.md`
 - **AI chat** (streamed Claude / OpenAI / Cerebras with multi-turn tool use, persistent chat history, context-window compaction) → `references/ai-chat.md`
 - **Cron** (scheduled tasks via `AppCronRoom` + `useCronMonitor`) → `references/cron.md`
+- **Game rooms** (turn/tick game loops, lobby, host-advanced phases, `useGameRoom` + `GameRoom` DO) → `references/sdk-reference.md` § Real-time collab + § Game rooms
 - **Custom bindings & metering** (Vectorize, AI, R2, KV, D1, Queues, Hyperdrive; `"auto"` autoprovisioning; `runMigrations` for D1; `meterAi` / `meterVectorize` per-tenant rollup via the auto-attached `USAGE_EVENTS` AE dataset) → `references/bindings.md`
 
 Skip all of these for apps that only need client hooks and `integration.post(...)`.
@@ -252,11 +253,11 @@ Read `references/bindings.md` if any of those collisions trip you.
 
 ## References
 
-Each reference declares its own "Load when …" trigger at the top. Index:
+Each reference declares its own "Load when …" trigger at the top. Read the matching reference before doing the work in the right column.
 
-| Reference | Load when |
+| Reference | Read before |
 |---|---|
-| `references/sdk-reference.md` | Looking up any hook, type, or export — the canonical index of every public surface (frontend, worker, testing). |
+| `references/sdk-reference.md` | Reaching for any hook, type, or export beyond `useQuery` / `useMutations` / `useAuth`. Especially required for multiplayer / game rooms, presence, Yjs, canvas, R2, messaging. Open this before `node_modules/deepspace/dist/*.d.ts`. |
 | `references/schemas.md` | Defining a collection, picking a permission rule, debugging "why can't this user see/edit X," wiring `visibilityField` / `collaboratorsField`. |
 | `references/auth.md` | Choosing the auth model (public / gated / mixed), adding `<AuthGate>`, customizing the sign-in fallback. |
 | `references/architecture.md` | Editing `worker.ts`, adding cross-app shared scopes (`workspace:*` / `dir:*` / `conv:*`), wiring `platformWorkerFetch`, understanding the WebSocket / `/api/*` identity-strip security model. |
