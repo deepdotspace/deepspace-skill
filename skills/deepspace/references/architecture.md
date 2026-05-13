@@ -84,7 +84,9 @@ The client SDK no longer sends identity params over WS URLs — the worker would
 
 ## App-name rules
 
-The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. Names that don't conform are sanitized (lowercased, non-alphanumerics → `-`, consecutive dashes collapsed, leading / trailing dashes stripped) and a warning surfaces at the CLI. The earlier behavior was silent sanitization; the current behavior is the same sanitization but visible — the deployed subdomain still ends up at the sanitized form, so update `wrangler.toml` if you see the warning. Pick the final name before first deploy.
+The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. Names that don't conform are sanitized (lowercased, non-alphanumerics → `-`, consecutive dashes collapsed, leading / trailing dashes stripped) and a warning surfaces at the CLI. The earlier behavior was silent sanitization; the current behavior is the same sanitization but visible — the deployed subdomain still ends up at the sanitized form, so update `wrangler.toml` if you see the warning.
+
+The `name` is seeded by the `<app-name>` argument at scaffold time but is fully editable afterward — `deploy` reads `wrangler.toml` fresh every run. The "final" name only needs to be committed before **first deploy**, not before scaffold. To pair an arbitrary directory with an arbitrary subdomain, scaffold into the directory you want, then edit `wrangler.toml`'s `name` to the subdomain you want. Don't regenerate or move the scaffold to align them.
 
 ## Upstream proxy helpers
 

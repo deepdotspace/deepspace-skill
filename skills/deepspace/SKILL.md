@@ -26,6 +26,10 @@ CLI commands, in order. Each step is rerunnable. `dev` and `test` rewrite only t
 # 1. Scaffold (no auth required — npm fetches create-deepspace via npx on demand)
 npm create deepspace@latest <app-name>
 cd <app-name>
+# <app-name> seeds the directory AND wrangler.toml's `name` (= deploy subdomain),
+# but both are editable after scaffold — see references/architecture.md § App-name
+# rules. Scaffold into the directory you want; don't scaffold-then-move.
+#
 # CLI is non-interactive by default (agent-friendly): omitting <app-name> prints
 # usage and exits 1 instead of prompting on stdin. Pass `--interactive` / `-i`
 # for the prompt-driven wizard. Probe with `--help` / `-h` (plain stdout, no
@@ -280,5 +284,6 @@ Cross-cutting traps that don't have a natural reference home. Domain-specific go
 - **`useAuth().isSignedIn` for auth checks** — `useUser()` loads async; gating on it produces a flash of "not signed in." Full rules and the rest of the auth gotchas live in `references/auth.md`.
 - **Scaffold's local UI primitives shadow the SDK** — `_app.tsx` wraps the tree in `ToastProvider` from `src/components/ui/`, not from `deepspace`. Importing `useToast` (or any locally-shadowed primitive) from `deepspace` throws `useToast must be used within ToastProvider` at runtime — the React contexts don't match. **Import from `../components/ui`, not from `deepspace`.** Full explanation in `references/uiux.md` § "Critical import rule."
 - **Page files belong in `src/pages/`** — generouted scans only this directory. Putting pages in `src/features/<name>/` results in 404s even if nav links exist.
+- **Don't scaffold-then-move to pair a directory with a different subdomain.** If you need directory `foo-site` with subdomain `foo-main`, scaffold into `foo-site` and edit `wrangler.toml`'s `name` to `foo-main`. Scaffolding as `foo-main` then moving the files lands in the same state with extra failure surface (broken `git init`, stray `.wrangler/` paths). See `references/architecture.md` § App-name rules.
 - **Never put identity in WebSocket URLs or `/api/*` headers.** The starter `wsRoute` strips `userId` / `userName` / `userEmail` / `userImageUrl` / `role` query params on every upgrade and re-applies them only from a verified JWT. The platform worker does the same on `/api/*` (overwrites `X-User-Id` from JWT, strips `X-App-Action`). Caller identity is **always** the JWT subject — there is no client-side override. Three valid WS states: no token → anonymous (DO assigns `anon-<uuid>`); invalid token → 401; valid token → JWT identity. (Cross-app scopes `workspace:*` / `dir:*` / `conv:*` have no anonymous path — auth is required.)
 - **Port 5173 may be held by a parallel session** — `tests/playwright.config.ts` ships with `reuseExistingServer: true`, so a sibling session's Vite on 5173 is picked up and your tests run against **its** app. **Do not kill a parallel session's processes.** For your own leaked workerd/wrangler (crashed terminal, IDE close), use `npx deepspace kill` (add `--all` to sweep every workerd/wrangler/vite on the box). For genuine parallel work, use `--port 5174` (or 5175, 5176, …) and edit `tests/playwright.config.ts` so `webServer.port` and `use.baseURL` both match before running tests.
