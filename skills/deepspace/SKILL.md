@@ -73,8 +73,12 @@ npx deepspace screenshot http://localhost:5173/ out.png
 npx deepspace screenshot http://localhost:5173/ out.png --full-page --wait-for-timeout 500
 
 # 6. Install scaffold features
-npx deepspace add --list           # discover available features (18 ship out of the box)
-npx deepspace add --info <name>    # see what a feature installs
+# MUST run `add --list` in THIS session before hand-rolling any non-trivial UI —
+# building from scratch when a scaffold feature exists is a defect. Never claim
+# to have run it without actually executing it and quoting the output; prior
+# knowledge of the feature set does not count.
+npx deepspace add --list           # REQUIRED first — discover available features
+npx deepspace add --info <name>    # inspect what a feature installs
 npx deepspace add <feature>        # install into current app
 
 # 7. Discover & test platform integrations from the CLI
