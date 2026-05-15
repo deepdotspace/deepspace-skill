@@ -10,8 +10,9 @@ description: >
   asks for anything involving real-time sync, multiplayer state, live
   cursors / presence, whiteboards or canvases, collaborative text editing
   (Yjs), channel-based chat, per-role permissions (RBAC), Durable Object
-  rooms, or one-package deploy to `.app.space` — even if they don't name
-  DeepSpace explicitly.
+  rooms, Stripe-backed subscriptions / paywalls / one-time products /
+  tips / refunds, or one-package deploy to `.app.space` — even if they
+  don't name DeepSpace explicitly.
 ---
 
 Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn/ui primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
@@ -270,6 +271,7 @@ Each reference declares its own "Load when …" trigger at the top. Read the mat
 | `references/cron.md` | Adding scheduled tasks, building the admin cron monitor, testing cron via `trigger`. |
 | `references/bindings.md` | Declaring custom Cloudflare bindings (Vectorize / R2 / KV / D1 / Queues / AI / Browser / Hyperdrive / AE), `"auto"` autoprovisioning, D1 bootstrap with `runMigrations`, per-tenant cost rollup via `meterAi` / `meterVectorize` / `meterUsage`. |
 | `references/integrations.md` | Calling external APIs (LLMs, search, media, social, finance, etc.). |
+| `references/payments.md` | Adding subscriptions, one-time products, ad-hoc charges (tips/donations), trials, refunds, or cancellation — manifest files (`src/subscriptions.ts`, `src/products.ts`), `useSubscription` / `useCheckout`, `requireSubscription` / `refundInvoice` / `cancelSubscription`. |
 | `references/domain.md` | Buying / attaching / managing a custom domain (`deepspace domain` CLI). Skip for apps that are happy on `<name>.app.space`. |
 | `references/integrations/livekit.md` | Adding audio/video rooms — token mint, billing model, room lifecycle. |
 | `references/integrations/google-oauth.md` | Calling Gmail / Calendar / Drive — per-user billing, scope step-up, `requiresOAuth` retry, test mocks. |
