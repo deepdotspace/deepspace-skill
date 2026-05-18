@@ -1,6 +1,5 @@
 # Index of all DeepSpace integration endpoints — hand-maintained.
 # For full input/output schemas, open the per-integration file referenced below.
-# Files are grouped by SDK folder (platform/api-worker/src/integrations/<name>/).
 #
 # USAGE: import { integration } from 'deepspace'
 #   await integration.post('<integration>/<endpoint>', { ...params })

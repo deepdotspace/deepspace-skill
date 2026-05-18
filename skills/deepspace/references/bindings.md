@@ -9,8 +9,6 @@ Load this reference when the app needs a Cloudflare resource beyond the SDK defa
 3. Deploy. The deploy worker validates the manifest, provisions any `"auto"` resources on the platform CF account, persists their IDs in `app-resources/<appName>.json`, and reuses them on every subsequent deploy.
 4. Optional: call `runMigrations(env.MY_DB, [...])` at worker startup to bootstrap D1 schema, and `meterAi` / `meterVectorize` after each call to roll cost up per tenant.
 
-**Custom bindings require an admin-tier DeepSpace account at deploy time.** Non-admin deploys return 403 with the offending binding name in the error message. Remove the binding (or upgrade the account) and redeploy.
-
 ## Declare in `wrangler.toml`
 
 The CLI reads `.wrangler/deploy/config.json` (the normalized output of `vite build`), extracts the non-DO bindings, validates them client-side, and posts the manifest to the deploy worker. Standard Cloudflare syntax — nothing DeepSpace-specific in the declaration:
@@ -49,7 +47,7 @@ queue = "auto"            # or a pre-existing queue name
 [ai]
 binding = "AI"
 
-# Browser Rendering (admin-tier; no provisioning)
+# Browser Rendering (no provisioning)
 [browser]
 binding = "BROWSER"
 
@@ -149,7 +147,7 @@ Cost rollup multipliers live in `COST_RATES` (also exported from `deepspace/work
 
 ## Undeploy / cleanup
 
-`npx deepspace deploy` triggers provisioning. The corresponding teardown happens on `DELETE /api/deploy/:appName` (CLI `undeploy` command + admin override path):
+`npx deepspace deploy` triggers provisioning. `npx deepspace undeploy` is the corresponding teardown:
 
 - **D1 / KV / Vectorize / Queues**: deleted via CF API and removed from the registry.
 - **R2 buckets**: deleted via CF API, but **non-empty buckets are skipped** (CF returns 409 / "not empty") to preserve user uploads. Clear the bucket manually if you want it gone with the app.
@@ -158,8 +156,7 @@ Cost rollup multipliers live in `COST_RATES` (also exported from `deepspace/work
 ## Gotchas
 
 - **Vectorize dimension / metric mismatch is not caught at deploy.** If you change `dimensions` from 768 → 1536 after the index was created, adoption succeeds and the failure surfaces at first-vector-insert at runtime. Delete the index and redeploy if you really need to change shape.
-- **Admin-tier gate runs server-side.** The CLI's friendly client-side validation won't catch it — non-admin deploys fail with 403 from the deploy worker, not at `vite build`. Try a deploy early to confirm tier.
-- **`"auto"` is platform-side only.** A `wrangler dev` against the local SDK won't provision anything; the binding only resolves at `npx deepspace deploy`. For local development against a real CF resource, point the binding at a manually-created resource by ID instead of `"auto"`.
+- **`"auto"` is platform-side only.** Local dev does not provision; the binding only resolves at `npx deepspace deploy`. For local development against a real CF resource, point the binding at a manually-created resource by ID instead of `"auto"`.
 - **User-secret names cannot collide with custom-binding names or DO class names.** The deploy worker rejects with 400 before forwarding to WfP. If you hit this, rename the `.dev.vars` key or the binding.
 - **`runMigrations` is naive on `;`-inside-literals.** If you need DDL with embedded semicolons (extremely rare; mostly only triggers when seeding fixture rows from a migration), split that statement into its own array entry without a trailing `;`.
 - **Hyperdrive can be declared but cannot use `"auto"`.** Provision the Hyperdrive config in the CF dashboard, copy the ID into `wrangler.toml`, and redeploy.

@@ -70,7 +70,7 @@ For non-interactive CI, prefer `domain attach` (re-pointing an already-bought do
 
 `domain attach` is the only routinely-automatable command — and even then, you need a domain you've already bought to test against, since `buy` is not safe to put in CI (real charges, real registry side-effects).
 
-**Endpoints live on the api-worker, not the app worker.** The CLI talks to `https://deepspace-api.eudaimonicincorporated.workers.dev` directly — the scaffolded app worker does not proxy `/api/domains/*`. Tests need to point at the api-worker URL (read from `ENVS.prod.api` in the SDK, or hardcode for now).
+**Endpoints live on the api-worker, not the app worker.** The CLI talks to `https://deepspace-api.eudaimonicincorporated.workers.dev` directly — the scaffolded app worker does not proxy `/api/domains/*`. Tests need to point at that api-worker URL directly.
 
 The reattach endpoint is `POST /api/domains/:id/reattach` — the path id is the database `id` from `list` output, **not** the domain string:
 

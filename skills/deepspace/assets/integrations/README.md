@@ -35,7 +35,7 @@ The `issues` array is the Zod validator's diff against `input_schema` — read i
 
 ## When this catalog drifts
 
-The YAMLs are hand-maintained from the api-worker's actual route handlers; the CLI (`integrations list`) reads its own runtime catalog over the network and is always live. If a CLI lookup disagrees with the YAML, the CLI is right — open an issue, then check `node_modules/deepspace/dist/...` or the api-worker source for the canonical shape.
+The YAMLs are hand-maintained from the api-worker's actual route handlers; the CLI (`integrations list`) reads its own runtime catalog over the network and is always live. If a CLI lookup disagrees with the YAML, the CLI is right — open an issue, then check `node_modules/deepspace/dist/...` for the canonical shape.
 
 ## Don't ship these files in the deployed app
 

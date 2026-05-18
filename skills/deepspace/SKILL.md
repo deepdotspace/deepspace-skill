@@ -46,10 +46,9 @@ cd <app-name>
 # `.git` is allowed but not required — empty / unversioned dirs scaffold fine,
 # and a trailing `git init` runs only when no `.git` exists yet.
 
-# 2. One-time login — opens browser, polls up to 10 minutes
+# 2. One-time login — opens browser, polls up to 10 minutes. Interactive; pause and
+# have the user complete the OAuth flow at the keyboard.
 npx deepspace login
-# 2a. Non-interactive alternative for CI / headless agents:
-npx deepspace login --email <e> --password <p>
 
 # 3. Local dev (Vite + worker in-process; HMR on localhost:5173, --strictPort fails loudly on clash)
 npx deepspace dev                  # default
@@ -102,16 +101,6 @@ npx deepspace domain attach <domain> --app <name>   # re-point a domain at a dif
 ```
 
 **Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Probe login state with `npx deepspace whoami` (`--json` for agents); don't stat `~/.deepspace/session` — that's a CLI implementation detail. Re-login only when `whoami` reports not-signed-in or the session has expired. See "Login, test, deploy" below for the full contract.
-
-### Scaffolding from a local SDK checkout (DeepSpace team only)
-
-For testing unreleased SDK changes. End users should always use `npm create deepspace@latest`.
-
-```bash
-# Local SDK (for development — replace path with your local SDK root).
-# Requires a built dist/ — run `pnpm build` in <local-sdk-path>/packages/deepspace first.
-<local-sdk-path>/packages/create-deepspace/dist/index.js <app-name> --local <local-sdk-path>
-```
 
 ## Two imports
 
@@ -221,13 +210,12 @@ This is the agent-friendly path — both commands print machine-readable JSON wi
 
 **`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path that `dev` / `test` / `deploy` use — if `whoami` succeeds, those will too. On failure: stderr `Not logged in. Run \`deepspace login\`.`, exit 1.
 
-`dev` / `test` / `deploy` themselves require a valid session at `~/.deepspace/session`; if absent, they exit with `Not logged in. Run \`deepspace login\` first.` Five hard rules:
+`dev` / `test` / `deploy` themselves require a valid session at `~/.deepspace/session`; if absent, they exit with `Not logged in. Run \`deepspace login\` first.` Four hard rules:
 
-1. **Pause and tell the user.** Login opens a browser tab (GitHub/Google OAuth) on their machine and polls up to 10 minutes. They need to be at the keyboard.
-2. **For CI / headless agent runs**, use `npx deepspace login --email <e> --password <p>` instead — the non-interactive path bypasses OAuth polling entirely. **Test-account fixtures only.** This flag is *not* a credential-handling path for real user accounts — real users always use the interactive `deepspace login` (browser OAuth, never sees a password). The `--password` path exists specifically so headless agents can sign in as a shared test-account fixture provisioned via `npx deepspace test-accounts create`. Those test accounts are scoped to the dev-tier pool (cap 10 per machine), have no production data or real billing attached, and a leaked test-account password only lets an attacker use a test account. Do not invent credentials or ask the user to share their personal password.
-3. **Run interactive login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. (`timeout` isn't installed on macOS by default; don't reach for it.) Run in foreground or a true background process.
-4. **After login completes, verify with `npx deepspace whoami`** before retrying `dev` / `test` / `deploy`. Re-running them while login is still polling produces the same error — that's expected order, not a bug.
-5. **Never copy `.dev.vars` from a sibling app.** `APP_OWNER_JWT` is minted against that app's wrangler name; borrowing causes silent auth mismatches.
+1. **Pause and tell the user.** Login opens a browser tab (GitHub/Google OAuth) on their machine and polls up to 10 minutes. They need to be at the keyboard. There is no agent-runnable bypass — never ask the user for their password.
+2. **Run interactive login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. (`timeout` isn't installed on macOS by default; don't reach for it.) Run in foreground or a true background process.
+3. **After login completes, verify with `npx deepspace whoami`** before retrying `dev` / `test` / `deploy`. Re-running them while login is still polling produces the same error — that's expected order, not a bug.
+4. **Never copy `.dev.vars` from a sibling app.** `APP_OWNER_JWT` is minted against that app's wrangler name; borrowing causes silent auth mismatches.
 
 ### Test (`npx deepspace test`)
 
@@ -259,6 +247,16 @@ Limits enforced server-side at deploy:
 - Name must not collide with `RESERVED_BINDING_NAMES` (12 SDK-owned), any declared custom binding, or any DO class in `__DO_MANIFEST__`.
 
 Read `references/bindings.md` if any of those collisions trip you.
+
+### Handling rules — `.dev.vars` holds live credentials
+
+The file holds a live `APP_OWNER_JWT` (signed against the user's identity) plus whatever third-party tokens (Stripe, OpenAI, …) the user wrote below the divider. Treat its contents as secret throughout the session, not just at commit time:
+
+- **Never read the file's values into your output.** No `cat .dev.vars`, no `head`/`grep`/`Read`-then-paste-into-chat, no inclusion in summaries, generated docs, READMEs, commit messages, PR bodies, or screenshots. If you need to confirm a key is present, check the *key name* (`grep -l '^STRIPE_SECRET_KEY=' .dev.vars` — files-only, not content) and report presence/absence — never the value.
+- **Never pass secrets as CLI args.** `MY_KEY=… npx deepspace dev` leaks into shell history, `ps aux`, and child-process env dumps. Write the line into `.dev.vars` below the divider and let the SDK pick it up via `env.MY_KEY` in worker code.
+- **Never commit `.dev.vars`.** The scaffold's `.gitignore` covers it; do not add a `!` exception, do not `git add -f .dev.vars`, do not paste its contents into a tracked file "for clarity." If a `git status` shows it untracked, that's the correct state — leave it.
+- **Never assert on secret values in tests.** Test that auth *works* (a request returns 200, a webhook fires) — never `expect(env.STRIPE_SECRET_KEY).toBe('sk_live_…')` and never echo the value into a request body that goes to a third party you don't control.
+- **Adding a new secret** is one step: append `KEY=value` below the divider in `.dev.vars`, then `npx deepspace dev` / `deploy`. The CLI handles upload as `secret_text` on deploy — no `wrangler secret put`, no out-of-band copy.
 
 ## References
 
