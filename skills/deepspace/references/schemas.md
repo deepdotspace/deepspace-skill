@@ -4,7 +4,10 @@ Load this reference when defining a new collection, choosing a permission rule, 
 
 ## Defining a collection
 
-Add one file per collection under `src/schemas/` and register it in `src/schemas.ts`. Every collection needs `name`, `columns`, and `permissions`. The scaffold already ships `usersSchema` (in `users-schema.ts`) and `settingsSchema` (in `admin-schema.ts`) — add your own alongside them, never replace them.
+Add one file per collection under `src/schemas/` and register it in `src/schemas.ts`. Every collection needs `name`, `columns`, and `permissions`. The scaffold already ships `usersSchema` (in `users-schema.ts`) and `settingsSchema` (in `admin-schema.ts`).
+
+- **`usersSchema` is required.** It uses `USERS_COLUMNS` from `deepspace/worker` and the SDK's `useUser` / `useUsers` / `useUserLookup` hooks plus the auth user-row writes all expect a `'users'` collection with this exact shape. Add columns to it if you need (e.g., a `bio` field), but never rename it, replace it, or drop the `USERS_COLUMNS` baseline.
+- **`settingsSchema` is just a scaffold starter** for admin-only key/value config. No SDK feature depends on it — customize the columns freely, or remove it entirely if your app doesn't need an admin settings store.
 
 ```typescript
 // src/schemas/items-schema.ts
