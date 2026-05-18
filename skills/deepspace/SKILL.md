@@ -84,7 +84,7 @@ npx deepspace add <feature>        # install into current app
 # Discovery is free (no login, no app dir, no dev server) — agents can probe the
 # catalog cold. Only `invoke <ep> --body` actually calls the endpoint and is
 # billed to the logged-in user.
-npx deepspace integrations list                            # NO AUTH — full catalog (31 integrations, 215 endpoints)
+npx deepspace integrations list                            # NO AUTH — full catalog
 npx deepspace integrations info openai/chat-completion     # NO AUTH — schema + example body for one endpoint
 npx deepspace invoke openai/chat-completion --body '{...}' # AUTH REQUIRED — actually call it (billed to caller)
 npx deepspace invoke openai/chat-completion --body-file -  # AUTH REQUIRED — body via stdin (cat req.json | …)

@@ -78,14 +78,14 @@ cat req.json | npx deepspace invoke openai/chat-completion --body-file -
 
 When the CLI isn't reachable (offline, sandboxed without network egress), the same data is bundled as YAML inside the skill itself. The skill is typically symlinked at `~/.claude/skills/deepspace/`, so the absolute path is `~/.claude/skills/deepspace/assets/integrations/`:
 
-- Index: [`assets/integrations/index.yaml`](../../assets/integrations/index.yaml) — all 215 endpoints grouped by integration, with one-line descriptions.
-- Per-integration specs: [`assets/integrations/<name>.yaml`](../../assets/integrations/) — one file per integration (31 total), with full input/output schemas.
+- Index: [`assets/integrations/index.yaml`](../../assets/integrations/index.yaml) — every endpoint grouped by integration, with one-line descriptions.
+- Per-integration specs: [`assets/integrations/<name>.yaml`](../../assets/integrations/) — one file per integration, with full input/output schemas.
 
 **Freshness caveat.** The bundle is hand-maintained — when the SDK adds a new integration, both the index and a new `<name>.yaml` need a manual regen. The skill aims to keep the bundle in sync with the live catalog (`integrations list`) at every release, but if you see a mismatch between what `integrations list` returns and what's on disk, the live CLI is the source of truth and you should `integrations info <ep>` (still no auth) to get the schema.
 
 Call pattern is always POST: `integration.post('<integration>/<endpoint>', body)`.
 
-**How to navigate these files to save context — read one level at a time.** The index is large (all 215 endpoints) and the per-integration YAMLs can each be hundreds of lines; loading them speculatively wastes the window.
+**How to navigate these files to save context — read one level at a time.** The index covers every endpoint and the per-integration YAMLs can each be hundreds of lines; loading them speculatively wastes the window.
 
 1. **Use `assets/integrations/index.yaml` only to discover** which integration and endpoint name matches the task (search by description, then grab the exact `<integration>/<endpoint>` key). Do not keep the index loaded after you have the names.
 2. **Load exactly one `assets/integrations/<name>.yaml`** — the single file covering the endpoint you're about to call — for the required body shape and output schema. Do not load multiple integration files at once.

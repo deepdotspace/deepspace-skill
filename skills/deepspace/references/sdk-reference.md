@@ -323,7 +323,6 @@ Omit the override to keep the legacy behavior (load the stored blob as-is).
 ### Auth
 - `verifyJwt(config, token)` — `config: JwtVerifierConfig` (`{ publicKey, issuer, audience, authorizedParties?, clockSkewMs? }`), `token: string | null | undefined`. Returns `Promise<VerifyOutcome>` — a `{ result: VerifyResult | null, error? }` envelope; **does not throw** on invalid tokens. Extract the JWT from the request yourself (e.g., `Authorization: Bearer <token>` or session cookie) before calling.
 - `decodeJwtPayload(token)` — base64url-decode the JWT payload **without verification**. Useful for inspecting `sub` / `email` / `name` for logging or routing where verification has already happened upstream. Never use as a substitute for `verifyJwt` on the trust boundary.
-- `verifyInternalSignature({ secret, payload, signature, timestamp })` / `buildInternalPayload(body)` / `signInternalPayload(...)` / `computeHmacHex(...)` / `timingSafeEqualHex(...)` — HMAC sign / verify primitives for internal platform → app calls and for cron's `ctx.integrations.call(...)` (which signs requests with `INTERNAL_STORAGE_HMAC_SECRET`). `DEFAULT_MAX_SKEW_MS` is the matching tolerance constant.
 - `createDeepSpaceAuth(config)` — constructs a Better Auth instance pre-wired for DeepSpace conventions (cookie names, JWT issuance). Types: `DeepSpaceAuth`, `DeepSpaceAuthConfig`. The scaffold doesn't build its own auth surface — it proxies to the platform auth-worker — so you only reach for this when standing up a custom auth-worker variant.
 
 ### AI provider helper

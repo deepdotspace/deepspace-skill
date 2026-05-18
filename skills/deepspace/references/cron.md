@@ -114,4 +114,4 @@ Don't write tests that wait for `0 9 * * 1-5` to fire. Don't change schedules to
 
 ## Migration note
 
-If you find a stale `cron.json`, `handleCron`, or `/internal/cron` route in an existing app, those are the pre-`CronRoom` pattern. Delete them and rewrite to the shape above. **Don't delete `verifyInternalSignature` / `buildInternalPayload` / `signInternalPayload` / `computeHmacHex` / `timingSafeEqualHex` / `DEFAULT_MAX_SKEW_MS`** — `buildCronContext` itself uses `signInternalPayload` + `buildInternalPayload` to authenticate `ctx.integrations.call(...)` HMAC calls to the api-worker. These primitives stay in `deepspace/worker`.
+If you find a stale `cron.json`, `handleCron`, or `/internal/cron` route in an existing app, those are the pre-`CronRoom` pattern. Delete them and rewrite to the shape above. Use `buildCronContext(env, ownerUserId, roomId?)` for all cron-side I/O — it owns the HMAC signing for `ctx.integrations.call(...)` so you don't hand-roll request auth.
