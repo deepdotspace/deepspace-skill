@@ -43,7 +43,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
 - `tools.create(coll, data)` → `{ recordId, record: Envelope }`
 - `tools.update(coll, id, patch)` → `{ recordId, record: Envelope }`
 - `tools.remove(coll, id)` → `{ deleted: true }`
-- `tools.integration(endpoint, data)` → `{ response, status? }` — proxies to the api-worker. **Billing depends on `src/integrations.ts`**: an integration set to `{ billing: 'developer' }` calls with `APP_OWNER_JWT` (owner pays); any other value (default: `'user'`) forwards the caller's JWT (caller pays). The api-worker bills the JWT subject; there is no client-supplied override.
+- `tools.integration<T>(endpoint, data?)` — proxies to the api-worker. **No envelope wrapper:** on success `result.data` *is* the integration's response body directly (e.g. `result.data.choices` for `openai/chat-completion`, `result.data.images` for `freepik/generate-image`). Pass `<T>` to type it. **Billing depends on `src/integrations.ts`**: an integration set to `{ billing: 'developer' }` calls with `APP_OWNER_JWT` (owner pays); any other value (default: `'user'`) forwards the caller's JWT (caller pays). The api-worker bills the JWT subject; there is no client-supplied override.
 
 The typed surface is generic per op (`tools.query<T>`, `tools.get<T>`, etc.), so passing a row type narrows `record.data` / `records[].data` to `T` instead of `Record<string, unknown>`.
 
