@@ -15,7 +15,7 @@ description: >
   don't name DeepSpace explicitly.
 ---
 
-Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn/ui primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
+Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn-style primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
 
 This skill targets **`deepspace` and `create-deepspace` v0.3.7** (verify with `npm view deepspace version` if drift is suspected).
 

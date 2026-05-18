@@ -109,9 +109,9 @@ Allowed emoji contexts:
 
 Everywhere else, use an `lucide-react` icon (already a scaffold dep) or a text-only treatment. Good wordmarks are plain text in a distinctive font — `font-serif tracking-tight` or similar — not an emoji next to a heading.
 
-## 3. UI Primitives — Use the Scaffolded Shadcn/UI Kit, Never Browser Defaults
+## 3. UI Primitives — Use the Scaffolded Shadcn-Style Kit, Never Browser Defaults
 
-The scaffold ships a full shadcn/ui-based kit in `src/components/ui/` (index at `src/components/ui/index.ts`). Use it. Browser-default controls ignore the theme tokens, render as native widgets on macOS/iOS, and break visual consistency.
+The scaffold ships a full shadcn-style primitives kit in `src/components/ui/` (index at `src/components/ui/index.ts`) — hand-maintained Radix + Tailwind + CVA components in the shadcn pattern, but no `components.json`, so the shadcn CLI is not wired up. Use the local kit; don't try to `shadcn add` new primitives. Browser-default controls ignore the theme tokens, render as native widgets on macOS/iOS, and break visual consistency.
 
 | Use case | Use this | Don't use |
 |---|---|---|
