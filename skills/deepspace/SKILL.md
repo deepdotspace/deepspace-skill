@@ -153,7 +153,7 @@ For maintenance work on an existing app, jump straight to the relevant reference
 
 ## Frontend hooks
 
-The three hooks every app uses. For everything else (messaging, directory, R2, Yjs, presence, canvas, cron monitor, theme, env), see `references/sdk-reference.md`.
+The three core auth + data hooks. `useAuth` is universal (every page that has a sign-in state uses it); `useQuery` / `useMutations` show up the moment a page reads or writes a collection. For everything else (messaging, directory, R2, Yjs, presence, canvas, cron monitor, theme, env), see `references/sdk-reference.md`.
 
 ```typescript
 const { records, status } = useQuery<Item>('items', { where: { status: 'published' }, orderBy: 'createdAt' })
@@ -208,9 +208,9 @@ This is the agent-friendly path — both commands print machine-readable JSON wi
 
 ### Login (`npx deepspace login`)
 
-**`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path that `dev` / `test` / `deploy` use — if `whoami` succeeds, those will too. On failure: stderr `Not logged in. Run \`deepspace login\`.`, exit 1.
+**`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path that `dev` / `test` / `deploy` use — if `whoami` succeeds, those will too. On failure: stderr `Not logged in`. Run \`deepspace login\`.`, exit 1.
 
-`dev` / `test` / `deploy` themselves require a valid session at `~/.deepspace/session`; if absent, they exit with `Not logged in. Run \`deepspace login\` first.` Four hard rules:
+`dev` / `test` / `deploy` themselves require a valid session at `~/.deepspace/session`; if absent, they exit with `Not logged in`. Run \`deepspace login\` first.` Four hard rules:
 
 1. **Pause and tell the user.** Login opens a browser tab (GitHub/Google OAuth) on their machine and polls up to 10 minutes. They need to be at the keyboard. There is no agent-runnable bypass — never ask the user for their password.
 2. **Run interactive login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. (`timeout` isn't installed on macOS by default; don't reach for it.) Run in foreground or a true background process.
@@ -276,7 +276,7 @@ Each reference declares its own "Load when …" trigger at the top. Read the mat
 | `references/payments.md` | Adding subscriptions, one-time products, ad-hoc charges (tips/donations), trials, refunds, or cancellation — manifest files (`src/subscriptions.ts`, `src/products.ts`), `useSubscription` / `useCheckout`, `requireSubscription` / `refundInvoice` / `cancelSubscription`. |
 | `references/domain.md` | Buying / attaching / managing a custom domain (`deepspace domain` CLI). Skip for apps that are happy on `<name>.app.space`. |
 | `references/integrations/livekit.md` | Adding audio/video rooms — token mint, billing model, room lifecycle. |
-| `references/integrations/google-oauth.md` | Calling Gmail / Calendar / Drive — per-user billing, scope step-up, `requiresOAuth` retry, test mocks. |
+| `references/integrations/google-oauth.md` | Calling Gmail / Calendar / Drive / Contacts — per-user billing, scope step-up, `requiresOAuth` retry, Playwright `page.route()` mocks. |
 | `references/uiux.md` | Working on theme, home page, primitives, interaction polish, or "feels generic" feedback. Trigger especially when about to use `<select>` / `window.confirm` / `window.alert` / `window.prompt`. |
 | `references/testing.md` | Writing or extending specs, applying the Step 8 checklist, building multi-user flows, route coverage, debugging flaky tests. |
 | `references/landing-design.md` | Building marketing / landing / splash pages, addressing "feels AI-generated" feedback, customizing the scaffolded `landing` feature. |
