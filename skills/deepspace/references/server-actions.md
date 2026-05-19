@@ -40,7 +40,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
 `ActionResult<T>` is a discriminated union — narrow with `if (result.success)` before reading `result.data`. **Response shapes** (under `.data` when `success` is true):
 - `tools.get(coll, id)` → `{ record: { recordId, data, createdBy, createdAt, updatedAt } }`
 - `tools.query(coll, opts?)` → `{ records: Envelope[], count: number }`
-- `tools.create(coll, data)` → `{ recordId, record: Envelope }`
+- `tools.create(coll, data, recordId?)` → `{ recordId, record: Envelope }`. The optional third arg upserts at a known key — use it when the recordId is derived from external identity (e.g., `tools.create('users', userData, userId)` to seed a users row keyed by Better Auth's user id, instead of letting the DO mint a random recordId).
 - `tools.update(coll, id, patch)` → `{ recordId, record: Envelope }`
 - `tools.remove(coll, id)` → `{ deleted: true }`
 - `tools.integration<T>(endpoint, data?)` — proxies to the api-worker. **No envelope wrapper:** on success `result.data` *is* the integration's response body directly (e.g. `result.data.choices` for `openai/chat-completion`, `result.data.images` for `freepik/generate-image`). Pass `<T>` to type it. **Billing depends on `src/integrations.ts`**: an integration set to `{ billing: 'developer' }` calls with `APP_OWNER_JWT` (owner pays); any other value (default: `'user'`) forwards the caller's JWT (caller pays). The api-worker bills the JWT subject; there is no client-supplied override.
@@ -118,7 +118,7 @@ test('inviteAttendee rejects unauthenticated callers', async ({ request, baseURL
 ## Types
 
 - `ActionHandler` — `(ctx: ActionContext) => Promise<ActionResult>`.
-- `ActionContext` — `{ userId, params, tools, env }`. `tools` exposes `create / update / remove / get / query` (bypass user RBAC) and `integration(endpoint, data)`.
+- `ActionContext` — `{ userId, params, tools, env, callerJwt }`. `tools` exposes `create / update / remove / get / query` (bypass user RBAC) and `integration(endpoint, data)`. **`callerJwt: string`** is the verified Bearer token the action was invoked with — forward it (`Authorization: Bearer ${ctx.callerJwt}`) on any outbound platform request that needs the user's identity (e.g., a `deploy-worker /api/apps` ownership check, or any `apiWorkerFetch` / `platformWorkerFetch` call where the caller must be the authenticated subject, not the app). Do **not** echo it into logs or response bodies.
 - `ActionResult` — `{ success: boolean, data?: unknown, error?: string }`.
 
 See `references/sdk-reference.md` § Server action types for the canonical signatures.

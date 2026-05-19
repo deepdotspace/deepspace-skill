@@ -17,11 +17,11 @@ description: >
 
 Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn-style primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
 
-This skill targets **`deepspace` and `create-deepspace` v0.3.7** (verify with `npm view deepspace version` if drift is suspected).
+This skill targets **`deepspace` and `create-deepspace` v0.3.10** (verify with `npm view deepspace version` if drift is suspected).
 
 ## Quickstart — the development lifecycle
 
-CLI commands, in order. Each step is rerunnable. `dev` and `test` rewrite only the **9 SDK-managed keys** in `.dev.vars` (auth + worker URLs + owner JWT + HMAC + debug flag); anything else you add — third-party tokens, custom flags — is preserved verbatim across runs and ships to prod as `secret_text` bindings on `deploy`. See "Login, test, deploy" for the contract.
+CLI commands, in order. Each step is rerunnable. `dev` and `test` rewrite only the **10 SDK-managed keys** in `.dev.vars` (auth + worker URLs + owner JWT + per-app identity token + HMAC + debug flag); anything else you add — third-party tokens, custom flags — is preserved verbatim across runs and ships to prod as `secret_text` bindings on `deploy`. See "Login, test, deploy" for the contract.
 
 ```bash
 # 1. Scaffold (no auth required — npm fetches create-deepspace via npx on demand)
@@ -98,6 +98,16 @@ npx deepspace domain search <query>          # find available domains and prices
 npx deepspace domain buy <domain>            # buy via Stripe Checkout (browser opens)
 npx deepspace domain list                    # list domains you own
 npx deepspace domain attach <domain> --app <name>   # re-point a domain at a different app
+
+# 10. (Optional) Publish the deployed app to the DeepSpace community library
+npx deepspace library publish --name "<title>" --description "<short>" --category <cat>
+npx deepspace library unpublish <handle>
+
+# 11. (Optional) Provision a DeepSpace-managed GitHub repo for users without their own GitHub account
+npx deepspace managed-repos list
+npx deepspace managed-repos create <app-name>      # platform-owned private repo
+npx deepspace managed-repos token <repo-id>        # short-lived clone token
+npx deepspace managed-repos delete <repo-id> --yes # per-day quota applies
 ```
 
 **Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Probe login state with `npx deepspace whoami` (`--json` for agents); don't stat `~/.deepspace/session` — that's a CLI implementation detail. Re-login only when `whoami` reports not-signed-in or the session has expired. See "Login, test, deploy" below for the full contract.
@@ -112,7 +122,7 @@ import { RecordProvider, RecordScope, useQuery, useMutations, useAuth } from 'de
 import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'
 ```
 
-A third entry point — `'deepspace/testing'` — exports a Playwright fixture for multi-user specs. See `references/testing.md`.
+Two more entry points exist for narrower use cases: **`'deepspace/server'`** for worker-side helpers backed by the platform (payments helpers + `captureScreenshot` — see `references/payments.md` / `references/sdk-reference.md`), and **`'deepspace/testing'`** for the Playwright multi-user fixture (see `references/testing.md`).
 
 ## Project layout
 
@@ -121,7 +131,7 @@ The scaffold generates a Vite + Cloudflare-Worker app. Files you'll touch most o
 | Path | Purpose |
 |---|---|
 | `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 5 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). AI chat routes live in `src/ai/chat-routes.ts` (registered via `registerAiChatRoutes(app, resolveAuth)`) — edit there, not here. Edit `worker.ts` itself when adding new DO classes / WebSocket routes, customizing `AppRecordRoom` options, adding custom HTTP routes, or wiring cross-app proxies. |
-| `wrangler.toml` | Cloudflare config. `name` becomes the `<name>.app.space` subdomain — must match `^[a-z0-9](?:-?[a-z0-9])+$` (2-63 chars, lowercase). `run_worker_first = ["/api/*", "/ws/*", "/internal/*", "/v1/*"]` — `/v1/*` is included by default so OpenAI-compatible routes mounted in `worker.ts` resolve before the SPA fallback. Declare custom Cloudflare bindings here (vectorize / r2 / kv / d1 / queue / ai / browser_rendering / hyperdrive / analytics_engine); use `"auto"` as the id to auto-provision. → `references/bindings.md`. |
+| `wrangler.toml` | Cloudflare config. `name` becomes the `<name>.app.space` subdomain — must match `^[a-z0-9](?:-?[a-z0-9])+$` (2-63 chars, lowercase). **`dev` and `deploy` fail-fast on a non-canonical `name` now** (was silent canonicalization in earlier SDKs) — fix the field rather than ignoring the error. `run_worker_first = ["/api/*", "/ws/*", "/internal/*", "/v1/*", "/_deepspace/*"]` — `/v1/*` is included so OpenAI-compatible routes mounted in `worker.ts` resolve before the SPA fallback; `/_deepspace/*` is the same-origin browser proxy the subscriptions / charges hooks call (don't strip it). Apps can append their own prefixes (`/oauth/*`, `/preview/*`, `/.well-known/*`); the CLI strips the reserved set and forwards the rest. Declare custom Cloudflare bindings here (vectorize / r2 / kv / d1 / queue / ai / browser_rendering / hyperdrive / analytics_engine); use `"auto"` as the id to auto-provision. → `references/bindings.md`. |
 | `src/pages/_app.tsx` | Provider stack: `ToastProvider → DeepSpaceAuthProvider → AuthBoot → RecordProvider → RecordScope`. **Extend, don't replace.** |
 | `src/pages/` | File-based routes via generouted. `(protected)/` is the gated route group. |
 | `src/schemas.ts` + `src/schemas/` | Collection schemas. Ships `usersSchema` + `settingsSchema`. |
@@ -224,7 +234,7 @@ The subdomain is the `name` field in `wrangler.toml`. Edit it there if you want 
 
 ## `.dev.vars` contract
 
-`dev` / `test` rewrite **only the 9 SDK-managed keys**: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `INTERNAL_STORAGE_HMAC_SECRET`, `ALLOW_DEBUG_ROUTES`. They live above a `# --- not managed by the SDK; preserved across dev/test runs ---` divider the CLI writes itself.
+`dev` / `test` rewrite **only the 10 SDK-managed keys**: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `APP_IDENTITY_TOKEN`, `INTERNAL_STORAGE_HMAC_SECRET`, `ALLOW_DEBUG_ROUTES`. They live above a `# --- not managed by the SDK; preserved across dev/test runs ---` divider the CLI writes itself. `APP_IDENTITY_TOKEN` is only populated after the first `npx deepspace deploy` (deploy-worker mints it on app registration) — fine for most apps; only matters if you're using payments or `captureScreenshot` locally before deploy. See `references/payments.md` / `references/sdk-reference.md`.
 
 Anything you add **below** that divider — third-party API tokens, custom feature flags, your own service URLs — is preserved verbatim across `dev` / `test` runs, **and shipped to prod as `secret_text` bindings on `deploy`** (same `env.MY_KEY` access pattern in dev and prod; no `wrangler secret put` step).
 

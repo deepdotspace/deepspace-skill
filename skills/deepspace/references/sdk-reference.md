@@ -2,12 +2,13 @@
 
 Load this reference when you need to confirm an export exists, look up a hook signature, pick between two similar APIs (e.g., `useMessages` vs `useConversation`, `usePresence` vs `usePresenceRoom`), or audit the worker / testing surface. Skip it when the topic has its own reference — `auth.md`, `schemas.md`, `server-actions.md`, `ai-chat.md`, `cron.md`, `bindings.md`, `integrations.md`, `testing.md`, `domain.md`, `architecture.md`, `uiux.md`, and `landing-design.md` cover their surfaces in task-shaped depth that this index does not.
 
-Complete surface of what the `deepspace` npm package exports. For exact type signatures, read `node_modules/deepspace/dist/index.d.ts` (frontend), `node_modules/deepspace/dist/worker.d.ts` (worker), and `node_modules/deepspace/dist/testing.d.ts` (Playwright fixture). This file is a navigable index — use it to discover what exists, then consult `.d.ts` for signatures.
+Complete surface of what the `deepspace` npm package exports. For exact type signatures, read `node_modules/deepspace/dist/index.d.ts` (frontend), `node_modules/deepspace/dist/worker.d.ts` (worker), `node_modules/deepspace/dist/server.d.ts` (platform-backed server helpers), and `node_modules/deepspace/dist/testing.d.ts` (Playwright fixture). This file is a navigable index — use it to discover what exists, then consult `.d.ts` for signatures.
 
 **Import paths:**
 ```typescript
 import { ... } from 'deepspace'          // frontend / React
-import { ... } from 'deepspace/worker'   // Cloudflare Worker
+import { ... } from 'deepspace/worker'   // Cloudflare Worker (DOs, schemas, JWT, metering)
+import { ... } from 'deepspace/server'   // platform-backed worker helpers (subscriptions, refunds, screenshot)
 import { ... } from 'deepspace/testing'  // Playwright multi-user fixture (test files only)
 ```
 
@@ -88,7 +89,7 @@ Backed by the `dir:<appId>` global DO. Each hook returns its records array plus 
 
 - `useYjsField(collection, recordId, fieldName)` — collaborative rich data in a field.
 - `useYjsText(collection, recordId, fieldName)` — collaborative text input (for textareas / contenteditable).
-- `useYjsRoom(docId, fieldName)` — standalone collab doc, not tied to a record.
+- `useYjsRoom(docId, fieldName)` — standalone collab doc, not tied to a record. Returns `{ doc, awareness, text, setText, synced, canWrite }` — `synced` flips true once the initial Yjs handshake completes (not "connected" — the socket may be open without sync being done), `canWrite` is the RBAC gate (use it to disable the input until writes are allowed), and `text` / `setText` are convenience accessors for the named `Y.Text` field (`setText` replaces full content). `awareness: Awareness` is the y-protocols awareness instance, already wired to the same WebSocket so local `awareness.setLocalStateField(...)` calls (cursor position, current selection, "is typing") are broadcast to other peers and remote states show up in `awareness.getStates()`. The `docs` feature's Tiptap toolbar uses this for live remote cursors — see its `useDocEditor` for a worked example. For the raw protocol constants (`MSG_AWARENESS`, `encodeAwarenessMessage`, etc.), see "Sync primitives" below.
 - `useCanvas(roomId)` — connects to a `CanvasRoom` DO. Returns `{ shapes, viewports, connected, addShape, moveShape, resizeShape, deleteShape, updateShape, setViewport, undo, redo }`. Shape and viewport types are `CanvasShapeClient` and `ViewportClient`.
 - `usePresence(options?)` — **online/offline derivation, NOT cursor presence.** Reads `lastSeenAt` from the users collection in the current `RecordScope`, sends a heartbeat every 60s so the server refreshes the caller's `lastSeenAt`, and returns `{ isOnline, getLastSeen, users }`. `isOnline(userId)` is `true` if the user heartbeated within `options.timeoutMs` (default 5 minutes). For cursor / typing / viewport state, use `usePresenceRoom` instead.
 - `usePresenceRoom(scopeId)` — **the cursor / typing / viewport hook.** Connects to a dedicated `PresenceRoom` DO at `/ws/presence/:scopeId`. Pass any string (`canvas:${id}`, `thread:${channelId}`, `doc:${docId}`). Returns `{ peers, connected, updateState(state) }`. `updateState` merges, so you can call it for cursor (`{ cursor: { x, y } }`), typing (`{ typing: true }`), viewport, etc. Each peer is `PresencePeerClient` (`{ userId, userName, userEmail, userImageUrl?, joinedAt, state }`). Self is excluded from `peers`.
@@ -214,7 +215,7 @@ function Gallery() {
 
 > `R2FileInfo` exposes `{ key, size, uploaded, url, originalName?, uploadedBy? }` — there is no `mimeType` / `contentType` field, so `isImageFile(f.mimeType)` won't work directly off a listed file. Either branch on extension (`f.key.endsWith('.png')`), capture the mime type at upload time and store it alongside the key in your own collection, or use `getUrl(f.key)` and let the browser handle non-images. Confirm fields in `node_modules/deepspace/dist/index.d.ts` before relying on additional ones.
 
-> ⚠️ **Local-dev limitation**: R2 upload round-trips require `APP_IDENTITY_TOKEN`, a secret minted by the deploy worker. The CLI does not currently provision it locally, so uploads will return 401 from the platform worker. In local dev, assert that `upload()` is dispatched (not the full round-trip); full flow works after `npx deepspace deploy`.
+> ⚠️ **Local-dev caveat**: R2 upload round-trips require `APP_IDENTITY_TOKEN`, a secret minted by the deploy worker. The CLI now writes it into `.dev.vars` on `dev` / `test` runs, **but only after the app has been registered by at least one `npx deepspace deploy`** — on a fresh scaffold the token is simply absent and uploads return 401 from the platform worker. After the first deploy, re-run `npx deepspace dev` so the CLI fetches the token; subsequent runs are fully working locally. The same `APP_IDENTITY_TOKEN` gate applies to `useSubscription`, `useCheckout`, and `captureScreenshot` — three different paths (R2 → `/api/files/*` → platform-worker `/internal/files/*`; subscriptions/charges → `/_deepspace/*` → api-worker; screenshot → server-side `platformWorkerFetch('/internal/screenshot')`), one shared bearer.
 
 ### Platform / Integrations
 
@@ -432,6 +433,22 @@ Production note: cross-worker calls over plain `*.workers.dev` URLs return Cloud
 
 ---
 
+## Platform-backed server helpers (`deepspace/server`)
+
+Worker-side helpers that call into shared platform services (Browser Rendering, Stripe, refund ledger) on the app's behalf, signing with the per-app `APP_IDENTITY_TOKEN`. They live in their own entry point so apps that don't need them avoid pulling the dependencies. All require `Env extends ApiWorkerEnv & { APP_IDENTITY_TOKEN: string; APP_NAME: string }`.
+
+### Screenshots (shared Browser Rendering)
+- `captureScreenshot(env, { url, viewport?, waitUntil?, timeoutMs?, fullPage? }) → Promise<{ body: ArrayBuffer; contentType: 'image/png' } | null>` — renders a URL via the platform's shared Browser Rendering binding. Returns `null` on any non-2xx (rate limit, allowlist miss, timeout) so the worker can fall back to a placeholder. The platform enforces a host allowlist (`*.app.space` / `*.deep.space`), per-app sliding rate limits, and viewport / timeout clamping. **Apps no longer need their own `browser_rendering` binding for standard preview / OG-image flows** — only add one if you need an unmetered or differently-configured browser (e.g., custom user agents, third-party hosts).
+
+### Subscriptions & charges (payments)
+- `requireSubscription(c, { tier? | atLeast? })` — gate route; throws `SubscriptionRequiredError` if the caller's tier doesn't match. See `references/payments.md`.
+- `getSubscription(c)`, `cancelSubscription(c, opts)`, `refundInvoice(c, opts)` — server-side admin/cancel/refund helpers. `cancelSubscription` returns `{ success, canceled, failures, atPeriodEnd, hasMore }` and batches at 50 — loop while `hasMore === true` to cancel every matching subscription (the underlying `cancel_at_period_end` flag is idempotent, so re-flagging is a safe no-op). See `references/payments.md`.
+- Error classes: `SubscriptionRequiredError`, `SubscriptionAuthError`, `CancelSubscriptionError`, `RefundError`.
+
+> The `/_deepspace/*` browser proxy in the starter `worker.ts` is what makes the client-side `useSubscription` / `useCheckout` hooks reach these handlers without exposing `APP_IDENTITY_TOKEN` to the browser. Don't strip it from `worker.ts` or `wrangler.toml`'s `run_worker_first`.
+
+---
+
 ## Testing (`deepspace/testing`)
 
 Imported only inside Playwright spec files. See `references/testing.md` for the full workflow.
@@ -448,9 +465,10 @@ Imported only inside Playwright spec files. See `references/testing.md` for the 
 
 ## Not listed here?
 
-Three places to look:
+Four places to look:
 1. `node_modules/deepspace/dist/index.d.ts` — authoritative type surface for frontend.
 2. `node_modules/deepspace/dist/worker.d.ts` — authoritative type surface for worker.
-3. `node_modules/deepspace/dist/testing.d.ts` — authoritative type surface for the Playwright fixture.
+3. `node_modules/deepspace/dist/server.d.ts` — authoritative type surface for the platform-backed server helpers.
+4. `node_modules/deepspace/dist/testing.d.ts` — authoritative type surface for the Playwright fixture.
 
 If a hook or type isn't in this reference, it probably exists in `.d.ts`. Read the declaration to get the exact signature. Do not guess.

@@ -95,3 +95,13 @@ When creating records scoped to specific users (e.g., conversations, private dat
 - **Never rely on client-side filtering alone** — data still syncs over WebSocket and is visible in dev tools, and a determined attacker reading the WS frames bypasses any client filter you add.
 
 `useConversations().createChannel(name)` defaults the underlying conversation record to `Visibility: 'public'` and `Type: 'public'`, which means all users in the directory see the conversation. Override the visibility by either (a) using `createDM` / `createGroupDM` instead (which set `Visibility: 'private'` and populate `ParticipantIds`), or (b) calling `useMutations<Conversation>('conversations').create({ ..., Visibility: 'private', ParticipantIds: [...] })` directly. The simple `useChannels().create(name)` from `'deepspace'` (against `CHANNELS_SCHEMA`) is a different surface and uses `type` instead of `Visibility`.
+
+## Schema-lint warnings
+
+The SDK runs a lightweight lint when each schema is registered (worker startup, first DO boot). Warnings print to the worker console prefixed `[schema-lint]` — they don't block boot, but each one flags a real privacy or correctness foot-gun. Treat them as errors:
+
+- **`visibilityField` declared, a role has `read: true`, but no role uses `read: 'published'` / `'shared'`** — the visibility column does nothing because the `read: true` roles see every row regardless of `visibility`. Either drop `visibilityField` (you didn't mean to gate reads) or change at least one role to `read: 'published'` (owner OR public) / `'shared'` (owner OR collaborator OR public) so the filter actually runs.
+- **`ownerField` set but the named column is not `userBound: true`** — owner-spoofing risk. `userBound: true` is what tells the DO to overwrite the column with the caller's verified userId on write, instead of trusting whatever the client sent. Add `userBound: true` (and ideally `immutable: true`) to the column definition.
+- **`userBound: true` on a non-`text` storage column** — the SDK can only coerce a userId into a text field; on `number` / `json` / `blob` columns the write will fail at runtime. Change `storage` to `'text'`.
+
+These are the most common shapes of "looks secure but isn't" — if a `[schema-lint]` line appears at `dev` startup, fix the schema before continuing.

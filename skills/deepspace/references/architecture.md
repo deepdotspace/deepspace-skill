@@ -21,6 +21,8 @@ App Worker (per-app)                 Platform Worker (shared)
 
 The scaffolded `AppRecordRoom` already passes your `schemas` to `RecordRoom` — you rarely need to touch `worker.ts`. The one case where you do is cross-app data sharing (below).
 
+> **The starter `/ws/yjs/:docId` route is docs-aware and token-required.** Unlike the other `/ws/*` routes (which allow anonymous connections), this one 401s without a verified JWT. When a `documents` collection exists, it looks up the row by `docId` and assigns the connecting user a Yjs role: `admin` if they are the doc's `ownerId` or the app's `OWNER_USER_ID`, `member` if they are in `editors`, `viewer` if they are in `collaborators`, otherwise 403. Apps without a `documents` collection fall through to a generic `'member'` role (the route is harmless to keep). **Don't replace this handler with a bare `wsRoute` when adding the `docs` feature** — the resulting "everyone is a viewer" / "every collaborator is read-only" bug is the #1 source of confusion. If you customize, preserve the role resolution.
+
 ## Scope conventions
 
 - `app:<APP_NAME>` — the app's primary RecordRoom. Default in the scaffold (`SCOPE_ID` in `src/constants.ts`).
@@ -84,7 +86,13 @@ The client SDK no longer sends identity params over WS URLs — the worker would
 
 ## App-name rules
 
-The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. Names that don't conform are sanitized (lowercased, non-alphanumerics → `-`, consecutive dashes collapsed, leading / trailing dashes stripped) and a warning surfaces at the CLI. The earlier behavior was silent sanitization; the current behavior is the same sanitization but visible — the deployed subdomain still ends up at the sanitized form, so update `wrangler.toml` if you see the warning.
+The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. **Both `deepspace dev` and `deepspace deploy` fail-fast on a non-canonical `name`** — for example, `name = "My_App"` bails with:
+
+```
+wrangler.toml: name "My_App" is not in canonical form. Update `name` to "my-app" and re-run.
+```
+
+Earlier SDKs silently sanitized, which split identity across `[vars].APP_NAME` / `SCOPE_ID` / deployed bindings — now you fix it once and every surface agrees. Edit the field and re-run.
 
 The `name` is seeded by the `<app-name>` argument at scaffold time but is fully editable afterward — `deploy` reads `wrangler.toml` fresh every run. The "final" name only needs to be committed before **first deploy**, not before scaffold. To pair an arbitrary directory with an arbitrary subdomain, scaffold into the directory you want, then edit `wrangler.toml`'s `name` to the subdomain you want. Don't regenerate or move the scaffold to align them.
 
