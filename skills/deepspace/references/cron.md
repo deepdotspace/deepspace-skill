@@ -4,7 +4,7 @@ Load this reference when adding a cron job (digest, cleanup, periodic sync), bui
 
 ## Architecture
 
-The scaffold ships a per-app `AppCronRoom extends CronRoom` DO; tasks live in `src/cron.ts` and run on the DO's alarm. There is **no `cron.json`, no `/internal/cron` endpoint, and no platform dispatch worker** — every app schedules and runs its own work in its own DO.
+The scaffold ships a per-app `AppCronRoom extends CronRoom` DO; tasks live in `src/cron.ts` and run on the DO's alarm. There is **no `cron.json`, no `/internal/cron` endpoint, and no centralized cron dispatcher** — every app schedules and runs its own work in its own DO via Cloudflare alarms.
 
 ## Define tasks in `src/cron.ts`
 
