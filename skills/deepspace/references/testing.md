@@ -1,6 +1,6 @@
 # Testing
 
-Load this reference when writing or updating a Playwright test, when `createTestUsers` errors with missing accounts, when a test fails and you need to decide how to diagnose, or when extending `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` / per-feature specs. Skip it for conversation, planning, code-reading, or code changes whose runtime behavior is already covered by an existing test.
+Load this reference when writing or updating a Playwright test, when the `users` fixture errors with missing accounts, when a test fails and you need to decide how to diagnose, or when extending `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts` / per-feature specs. Skip it for conversation, planning, code-reading, or code changes whose runtime behavior is already covered by an existing test.
 
 This file is canonical for the test extension checklist (the Step 8 rules below), the helpers, auth setup, cleanup conventions, route coverage, multi-user patterns, and self-diagnosis. `SKILL.md` links here.
 
@@ -76,11 +76,11 @@ These three files are where every test lives. Installing a feature (e.g., `docs`
 
 ## Two layers of helpers
 
-The SDK now ships two layers — pick based on the test you're writing:
+The SDK ships two layers — pick based on the test you're writing:
 
-### `deepspace/testing` — the published Playwright fixture (preferred for new multi-user tests)
+### `deepspace/testing` — the published Playwright fixture (for any signed-in test)
 
-The SDK publishes a `users` fixture and account helpers from `'deepspace/testing'` (shipped in `deepspace@0.2.5`+) — built on top of cached `storageState` so each test account signs in **once** per machine, not once per test. This sidesteps Better Auth's per-IP rate limit on `/api/auth/sign-in/email` and is materially faster than `createTestUsers` for suites that grow.
+The SDK publishes a `users` fixture and account helpers from `'deepspace/testing'` — built on top of cached `storageState` so each test account signs in **once** per machine, not once per test. This sidesteps Better Auth's per-IP rate limit on `/api/auth/sign-in/email` and is materially faster as a suite grows.
 
 ```typescript
 import { test, expect } from 'deepspace/testing'
@@ -114,15 +114,14 @@ test('alice and bob', async ({ users }) => {
 
 Types: `MultiplayerUser`, `UsersFixture`, `TestAccount`, `EnsureStorageStateOptions`.
 
-### `tests/helpers/` (local — still scaffolded for single-user flows and error tracking)
+### `tests/helpers/` (local — scaffolded utilities)
 
-Older or simpler suites also use the local helpers in `tests/helpers/`:
+The scaffolded `tests/helpers/` directory ships exactly two files (no auth helper — sign-in goes through the SDK fixture above):
 
-- `auth.ts` — `signInAs(page, email, password)`, `createTestUsers(browser, N)`, `loadLocalAccounts()`, `signOut(page)`. Reads credentials from `~/.deepspace/test-accounts.json`. Public sign-up is intentionally disabled server-side, so there is **no `signUp` helper**.
-- `global-setup.ts` — warms up the auth worker before tests run.
-- `errors.ts` — captures console errors and page errors during tests.
+- `errors.ts` — exports `captureConsoleErrors(page)` to capture console errors and page errors during tests. Used by `smoke.spec.ts`.
+- `global-setup.ts` — Playwright `globalSetup` hook that warms up the deployed auth-worker before tests run (cold-start latency can fail the first test otherwise).
 
-`createTestUsers` does not cache `storageState`, so it signs in fresh per test — fine for one or two specs, slow and rate-limit-prone for a larger suite. **Default to the `deepspace/testing` fixture for new multi-user tests**; keep `signInAs` / `loadLocalAccounts` for one-off single-user flows and the error-tracking helpers for any suite.
+For a single-user signed-in test, use `newSignedInContext` from the escape hatches below, or write the spec with `@playwright/test` directly if it doesn't need auth at all (the scaffolded `smoke.spec.ts` is an example).
 
 ## Authenticated tests — reuse the existing pool first
 
@@ -145,13 +144,11 @@ npx deepspace test-accounts create --email test-1-1776798210521@deepspace.test -
 npx deepspace test-accounts create --email test-2-1776798210521@deepspace.test --password Pass123! --name "Test User 2"
 ```
 
-If `createTestUsers` (the older non-fixture helper) throws about missing accounts, the error message prints the same copy-paste commands. The same rule applies — only create as many as you need to reach N, and only after verifying with `list`.
-
 Credentials persist at `~/.deepspace/test-accounts.json` (mode 0600). Emails must end `@deepspace.test`. Run any creation in the same session — don't silently skip collab tests or punt with "requires manual QA." Run `npx deepspace test-accounts --help` for the full CLI (includes `delete --email`, `clear`, `clear --label e2e`, `clear --yes` for cleanup).
 
 ## Writing New Tests
 
-**Single-user flows** (CRUD, navigation, UI state): import `signInAs` and `loadLocalAccounts` from `./helpers/auth` and sign one page in.
+**Single-user flows** (CRUD, navigation, UI state): use the `users` fixture and destructure one entry — `const [user] = await users(1)` — or call `newSignedInContext(email, browser)` directly if you want a single signed-in `BrowserContext` outside the fixture. If the test doesn't need auth, just `import { test, expect } from '@playwright/test'` like the scaffolded `smoke.spec.ts` does.
 
 **Multi-user flows** (real-time sync, sharing, permissions): use the published fixture from `'deepspace/testing'`. It opens N isolated browser contexts with cached `storageState`, returns `{ context, page, email, name, userId? }[]`, and auto-closes contexts when the test finishes.
 
@@ -167,7 +164,6 @@ test("user A's action appears for user B", async ({ users }) => {
 })
 ```
 
-> Existing suites may use `createTestUsers(browser, N)` from `./helpers/auth` with a `try/finally` that closes contexts manually. That still works, but prefer the fixture for new tests — it's faster (cached sign-in) and avoids rate limits.
 
 ## Test data cleanup — tests must not pollute the dev DB
 
@@ -235,7 +231,7 @@ Write and update tests **as you build**, not after. The Step 8 checklist in `SKI
 - **New page / route / nav item** → `smoke.spec.ts`. Navigate to the page, assert the expected headline/components are visible, page has no errors. Dynamic routes (`/polls/:id`) need real-content assertions against a created record — see "Route coverage" below.
 - **New CRUD feature** (items, posts, whatever — anything backed by a new schema) → `smoke.spec.ts` with a create → read → edit → delete happy path for a signed-in user.
 - **New worker route, server action, AI chat route, cron handler, any `integration.post(...)` call, or any UI that relies on an HTTP-enforced auth/role check (e.g., an admin-only action button calling `/api/actions/<name>`, even when the route itself is pre-existing)** → `api.spec.ts`. For integration calls, POST to `/api/integrations/<endpoint>` and assert the envelope is `success: true` with the data the UI consumes — this catches wrong endpoint names, the most common integration-heavy-app failure. For routes/actions/AI/cron, assert status codes, response shape, and auth gating — including the negative path (unauthenticated or wrong-role caller gets 401/403) and other error cases (bad input, missing resources).
-- **New multi-user behavior** — any schema with shared/public/team/own permissions or a `visibilityField`, or any call to `useYjs*`, `useMessages`, `useReactions`, `usePresence`, `useCanvas`, or shared scopes → `collab.spec.ts`. Create two users with `createTestUsers(browser, 2)`, act in one, assert in the other. This is the rule that catches "works for me, broken for the second user" regressions — do not skip it because the prompt didn't say "multi-user."
+- **New multi-user behavior** — any schema with shared/public/team/own permissions or a `visibilityField`, or any call to `useYjs*`, `useMessages`, `useReactions`, `usePresence`, `useCanvas`, or shared scopes → `collab.spec.ts`. Open two users with the SDK fixture (`const [a, b] = await users(2)` after `import { test, expect } from 'deepspace/testing'`), act in one, assert in the other. This is the rule that catches "works for me, broken for the second user" regressions — do not skip it because the prompt didn't say "multi-user."
 - **RBAC changes or permission tweaks** → `collab.spec.ts` with users of different roles, asserting what each can and cannot see/do.
 - **Bug fix** → write the failing test first (reproducing the bug), then fix the code until it passes. Leave the test in the suite.
 
