@@ -1,6 +1,6 @@
 ---
 name: deepspace
-version: 0.1.0
+version: 0.1.1
 description: >
   Use when building or maintaining real-time collaborative apps with the
   DeepSpace SDK on Cloudflare Workers — scaffolding new apps, adding
@@ -16,8 +16,6 @@ description: >
 ---
 
 Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-backed Durable Objects, RBAC, WebSocket subscriptions, Better Auth. Scaffolds with sensible defaults — generouted file-based routing, shadcn-style primitives, Vite + Tailwind v4. Apps deploy to `<name>.app.space`.
-
-This skill targets **`deepspace` and `create-deepspace` v0.3.10** (verify with `npm view deepspace version` if drift is suspected).
 
 ## Quickstart — the development lifecycle
 
