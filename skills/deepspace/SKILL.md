@@ -153,7 +153,7 @@ Steps run in dependency order. Each links its deep-dive reference; load that ref
 3. **Cross-app data sharing?** — if the app needs to read/write `workspace:*`, `dir:*`, or `conv:*` scopes shared across DeepSpace apps (e.g., the email-handle workspace, cross-app inbox), the scaffolded `/ws/:roomId` handler routes everything to the local DO and won't see shared data. Add the `PLATFORM_WORKER` proxy edit. → `references/architecture.md` § Cross-app shared scopes. Skip otherwise.
 4. **Auth model** — pick public, gated, or **mixed** (the default; gated routes drop into `src/pages/(protected)/`). → `references/auth.md`
 5. **Theme** — pick a preset on `<html data-theme="...">` in `index.html`, update `<title>`/favicon. **Don't ship the default `slate`.** → `references/uiux.md` §2
-6. **Pages and features** — pages in `src/pages/`. 18 ready features in `.deepspace/features/`; install with `npx deepspace add <feature>` (use `--list` to enumerate). → `references/uiux.md` for UI primitives.
+6. **Pages and features** — pages in `src/pages/`. Ready-made features ship inside the `deepspace` SDK (`node_modules/deepspace/features/`); install with `npx deepspace add <feature>` (use `--list` to enumerate). → `references/uiux.md` for UI primitives.
 7. **Tests** — read `references/testing.md` and apply the Step 8 checklist before extending `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts`. Multi-user features need a 2-user Playwright spec, not just `tsc` or unit tests.
 8. **Deploy** — `npx deepspace deploy`. Pre-deploy checklist: home replaced, theme picked, browser-default primitives removed, toasts wired to mutations. → `references/uiux.md` §5
 

@@ -2,7 +2,7 @@
 
 Build a landing page that looks human-crafted, not template-cloned. This reference is the design workflow: commit to a specific Direction before writing JSX, translate it into a Style Tile, pick one inspiration archetype, compose — then run the anti-AI grep gate.
 
-**When to load this reference:** the user asks for a landing page, marketing page, splash page, hero section, "front page," or any public-facing page a signed-out visitor is supposed to see before deciding to sign in. Also load it if the user installed the `landing` feature from `.deepspace/features/landing/` and wants it customized to their product, or if they've said the landing page "feels generic" / "looks AI-generated" / "needs more personality."
+**When to load this reference:** the user asks for a landing page, marketing page, splash page, hero section, "front page," or any public-facing page a signed-out visitor is supposed to see before deciding to sign in. Also load it if the user installed the `landing` feature via `npx deepspace add landing` and wants it customized to their product, or if they've said the landing page "feels generic" / "looks AI-generated" / "needs more personality."
 
 **Skip this reference for:** the authenticated home page of a working app (that's `uiux.md` §1), maintenance tweaks to an already-themed landing page, or apps without a marketing surface (signed-in-only productivity tools).
 
@@ -14,7 +14,7 @@ Build a landing page that looks human-crafted, not template-cloned. This referen
 
 Two paths:
 
-- **Install the `landing` feature.** `.deepspace/features/landing/feature.json` scaffolds `src/pages/landing.tsx` + `src/components/landing/primitives.tsx` + 9 optional section components (hero typewriter, features grid, FAQ, CTA, footer, etc.). The route `/` is added, `protected: false`. This gives you a working skeleton in ~5 minutes. **Then customize aggressively** — shipping the scaffolded sections with placeholder copy swapped in is the failure mode this skill is designed to prevent.
+- **Install the `landing` feature.** Run `npx deepspace add landing`. It scaffolds `src/pages/landing.tsx` + `src/components/landing/primitives.tsx` + 9 optional section components (hero typewriter, features grid, FAQ, CTA, footer, etc.). The route `/` is added, `protected: false`. This gives you a working skeleton in ~5 minutes. **Then customize aggressively** — shipping the scaffolded sections with placeholder copy swapped in is the failure mode this skill is designed to prevent.
 - **Write it from scratch.** Add `src/pages/landing.tsx` yourself, add a nav/route entry in `src/nav.ts` if needed, and install `framer-motion` + `lucide-react`. Use this path when your Direction calls for a page shape the scaffolded sections can't easily produce (manifesto, long-scroll editorial, single-screen brutalism, etc.).
 
 Either path, the rest of this workflow is the same.
@@ -103,7 +103,7 @@ Build section by section. Load `landing-design/pattern-library.md` first — it'
 
 A typical landing page reaches for 4–5 of these files. Don't load all 7. Adapt each pattern's content and visual tokens to serve your Direction. **The pattern is the structure; your Direction is the soul.**
 
-The scaffolded sections at `.deepspace/features/landing/src/sections/` are an alternative source — fine for a quick first pass, but:
+The scaffolded sections that `npx deepspace add landing` drops into `src/components/landing/sections/` are an alternative source — fine for a quick first pass, but:
 
 > **Scaffold audit note.** The scaffolded `LandingPage.tsx` and `primitives.tsx` (and `GlassCard`, `PlaceholderImage`, `BrowserMockup`, `SectionHeading`) ship with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, hardcoded `bg-emerald-400`, and a violet conic gradient — all of which fail the grep gate (rules #5 and #6). If you install the `landing` feature and use its sections or primitives, run the grep gate from the app root and replace every flagged line with semantic tokens (`bg-muted`, `border-border`, `bg-card`, `bg-primary/10`) before finishing. The patterns in `pattern-library.md` are already grep-clean.
 
