@@ -1,5 +1,7 @@
 # DeepSpace Integrations Reference
 
+Load this reference when calling an external API through `integration.post(...)` (LLMs, search, media, social, finance, etc.), debugging a `{ success: false, error: "..." }` envelope, looking up an endpoint's required body shape, or writing tests that mock integration calls. Skip it for app-internal data (use `useQuery` / `useMutations`).
+
 All integrations are called through the api-worker proxy:
 
 ```typescript

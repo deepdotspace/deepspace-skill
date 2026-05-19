@@ -260,7 +260,14 @@ The file holds a live `APP_OWNER_JWT` (signed against the user's identity) plus 
 
 ## References
 
-Each reference declares its own "Load when …" trigger at the top. Read the matching reference before doing the work in the right column.
+**Required preflight before any code change.** Before editing files or writing code:
+
+1. List the files you will touch.
+2. Scan the table below and list every row whose "Read before" trigger matches the work.
+3. `Read` each matching reference *in this turn*, before the first edit — not after, not "if needed later."
+4. If your list under (2) is empty, stop and re-scan the table; for any non-trivial DeepSpace work at least one row applies.
+
+Each reference also declares its own "Load when …" trigger as its first line — that gate is authoritative; if it says load, load it before touching the matching surface.
 
 | Reference | Read before |
 |---|---|
