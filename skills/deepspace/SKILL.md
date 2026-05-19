@@ -186,23 +186,12 @@ Call external APIs through the api-worker proxy:
 ```typescript
 import { integration } from 'deepspace'
 const result = await integration.post('openweathermap/geocoding', { q: city })
-// Returns: { success: true, data: {...} } or { success: false, error: "..." }
+// Returns: { success: true, data: <endpoint-specific> } | { success: false, error: string }
 ```
 
-**Endpoint names are two segments: `<integration>/<endpoint>`.** Don't guess — names like `geocode-city` or `weather-forecast` aren't real and return 404 at runtime. Verify with `npx deepspace invoke --list` (full catalog) or look up in `assets/integrations/index.yaml`.
+**Endpoint names are two segments: `<integration>/<endpoint>`.** Don't guess — names like `geocode-city` or `weather-forecast` aren't real and return 404 at runtime. Verify with `npx deepspace integrations list` / `info <ep>` (the agent-friendly catalog + schema source — no auth, no app dir required).
 
-**To discover the body shape for an endpoint** (the most common stumble for integration-heavy apps), run:
-
-```bash
-npx deepspace invoke <integration>/<endpoint> --info        # prints input schema + example body
-npx deepspace invoke <integration>/<endpoint> --body '{...}' # actually call it, see real response
-```
-
-This is the agent-friendly path — both commands print machine-readable JSON with `--json`, and the schema returned by `--info` is the same Zod schema the api-worker validates against. Prefer it over guessing the body shape from endpoint names.
-
-**Auth-gate any UI that calls `integration.post(...)`.** Default billing is owner-pays. The api-worker accepts anonymous callers, so a public endpoint silently bills the owner for every visitor (or bot) hit. Wrap calling components in `useAuth().isSignedIn`.
-
-**Any `integration.post(...)` call requires an `api.spec.ts` extension** that POSTs to `/api/integrations/<endpoint>` and asserts `success: true` with the data shape the UI consumes. This catches wrong endpoint names — the most common integration-heavy-app failure. See `references/integrations.md` and the Step 8 checklist in `references/testing.md`.
+Default billing is owner-pays, so **auth-gate any UI that calls `integration.post(...)`** to keep anonymous bots from billing the owner. → `references/integrations.md` for billing modes, the discovery CLI, testing rules, and the response-envelope gotchas.
 
 ## Login, test, deploy
 
@@ -292,7 +281,6 @@ Each reference also declares its own "Load when …" trigger as its first line �
 
 Cross-cutting traps that don't have a natural reference home. Domain-specific gotchas live in their topical reference (auth, schemas, integrations, architecture, testing, bindings).
 
-- **`useAuth().isSignedIn` for auth checks** — `useUser()` loads async; gating on it produces a flash of "not signed in." Full rules and the rest of the auth gotchas live in `references/auth.md`.
 - **Scaffold's local UI primitives shadow the SDK** — `_app.tsx` wraps the tree in `ToastProvider` from `src/components/ui/`, not from `deepspace`. Importing `useToast` (or any locally-shadowed primitive) from `deepspace` throws `useToast must be used within ToastProvider` at runtime — the React contexts don't match. **Import from `../components/ui`, not from `deepspace`.** Full explanation in `references/uiux.md` § "Critical import rule."
 - **Page files belong in `src/pages/`** — generouted scans only this directory. Putting pages in `src/features/<name>/` results in 404s even if nav links exist.
 - **Don't scaffold-then-move to pair a directory with a different subdomain.** If you need directory `foo-site` with subdomain `foo-main`, scaffold into `foo-site` and edit `wrangler.toml`'s `name` to `foo-main`. Scaffolding as `foo-main` then moving the files lands in the same state with extra failure surface (broken `git init`, stray `.wrangler/` paths). See `references/architecture.md` § App-name rules.
