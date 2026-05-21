@@ -98,7 +98,7 @@ npx deepspace domain list                    # list domains you own
 npx deepspace domain attach <domain> --app <name>   # re-point a domain at a different app
 
 # 10. (Optional) Publish the deployed app to the DeepSpace community library
-npx deepspace library publish --name "<title>" --description "<short>" --category <cat>
+npx deepspace library publish [--name "<title>"] [--description "<short>"] [--category <cat>]
 npx deepspace library unpublish <handle>
 
 # 11. (Optional) Provision a DeepSpace-managed GitHub repo for users without their own GitHub account

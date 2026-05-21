@@ -435,7 +435,7 @@ Production note: cross-worker calls over plain `*.workers.dev` URLs return Cloud
 
 ## Platform-backed server helpers (`deepspace/server`)
 
-Worker-side helpers that call into shared platform services (Browser Rendering, Stripe, refund ledger) on the app's behalf, signing with the per-app `APP_IDENTITY_TOKEN`. They live in their own entry point so apps that don't need them avoid pulling the dependencies. All require `Env extends ApiWorkerEnv & { APP_IDENTITY_TOKEN: string; APP_NAME: string }`.
+Worker-side helpers that call into shared platform services (Browser Rendering, Stripe, refund ledger) on the app's behalf, signing with the per-app `APP_IDENTITY_TOKEN`. They live in their own entry point so apps that don't need them avoid pulling the dependencies. All require `Env` to include `APP_IDENTITY_TOKEN: string` and `APP_NAME: string`. Subscriptions and refunds extend `ApiWorkerEnv`; `captureScreenshot` extends `PlatformWorkerEnv`.
 
 ### Screenshots (shared Browser Rendering)
 - `captureScreenshot(env, { url, viewport?, waitUntil?, timeoutMs?, fullPage? }) → Promise<{ body: ArrayBuffer; contentType: 'image/png' } | null>` — renders a URL via the platform's shared Browser Rendering binding. Returns `null` on any non-2xx (rate limit, allowlist miss, timeout) so the worker can fall back to a placeholder. The platform enforces a host allowlist (`*.app.space` / `*.deep.space`), per-app sliding rate limits, and viewport / timeout clamping. **Apps no longer need their own `browser_rendering` binding for standard preview / OG-image flows** — only add one if you need an unmetered or differently-configured browser (e.g., custom user agents, third-party hosts).
