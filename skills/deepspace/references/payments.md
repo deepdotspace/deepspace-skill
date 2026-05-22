@@ -1,10 +1,8 @@
 # Payments — subscriptions, one-time products, refunds, cancellation
 
-Load this reference when adding subscriptions, one-time products, ad-hoc charges (tips/donations), free trials, refunds, or subscription cancellation to a DeepSpace app. Skip it for apps that don't charge money, or for Stripe Connect / developer-onboarding UI (that lives in the DeepSpace dashboard at `/earnings`, not in app code).
+Load this reference when adding a paywall, pricing page, "Upgrade" button, or gating any feature behind a plan / tier (Pro, premium, etc.); when wiring subscriptions, one-time products, tips, donations, trials, refunds, or cancellation; or when the user mentions **Stripe**, **billing**, **payments**, **paywall**, **subscription**, or **monetization**. **Also load before touching `useSubscription` / `useCheckout` / `requireSubscription` / `cancelSubscription` / `refundInvoice` — and before installing `stripe` / `@stripe/stripe-js`, which you should not do; the SDK already handles Stripe.** Skip it only for apps that don't charge money, or for developer-side **Stripe Connect onboarding** (payouts UI for the app developer — lives in the DeepSpace dashboard at `/earnings`, not in app code).
 
-DeepSpace ships a Stripe-backed billing surface. The platform charges the customer; an admin transfers the developer's share to their connected account on demand. You do not write any Stripe code — you declare what you sell, then call SDK hooks and helpers.
-
-**Developer onboarding (Connect) is handled in the DeepSpace dashboard `/earnings` page — not in app code. Apps can declare and sell before the dev connects; payouts wait until they do.**
+DeepSpace ships a built-in Stripe-backed billing surface. The platform charges the customer; an admin transfers the developer's share to their connected account on demand. You declare what you sell in two manifest files, then call SDK hooks. Developer onboarding (Connect) is handled in the dashboard `/earnings` page — apps can declare and sell before the dev connects; payouts wait until they do.
 
 ## 1 — Declare what you sell
 
