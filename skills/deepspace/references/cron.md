@@ -1,6 +1,6 @@
 # Cron — scheduled background work
 
-Load this reference when adding a cron job (digest, cleanup, periodic sync), building an admin page that monitors / triggers / pauses cron tasks, debugging "why didn't my task fire," or migrating a stale `cron.json` / `handleCron` / `/internal/cron` setup. Skip it for one-shot manual operations (use a server action instead).
+Load this reference when adding a cron job (digest, cleanup, periodic sync), building an admin page that monitors / triggers / pauses cron tasks, debugging "why didn't my task fire," or migrating a stale `cron.json` / `handleCron` / `/internal/cron` setup. Skip it for one-shot manual operations (use a server action instead) or background work triggered by user actions rather than a schedule (use `references/jobs.md`).
 
 ## Architecture
 
