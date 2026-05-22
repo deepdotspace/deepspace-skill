@@ -128,7 +128,7 @@ The scaffold generates a Vite + Cloudflare-Worker app. Files you'll touch most o
 
 | Path | Purpose |
 |---|---|
-| `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 5 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`). AI chat routes live in `src/ai/chat-routes.ts` (registered via `registerAiChatRoutes(app, resolveAuth)`) — edit there, not here. Edit `worker.ts` itself when adding new DO classes / WebSocket routes, customizing `AppRecordRoom` options, adding custom HTTP routes, or wiring cross-app proxies. |
+| `worker.ts` | Hono app worker; `__DO_MANIFEST__` declares 6 DO classes (`AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`, `AppJobRoom`). AI chat routes live in `src/ai/chat-routes.ts` (registered via `registerAiChatRoutes(app, resolveAuth)`) — edit there, not here. Edit `worker.ts` itself when adding new DO classes / WebSocket routes, customizing `AppRecordRoom` options, adding custom HTTP routes, or wiring cross-app proxies. |
 | `wrangler.toml` | Cloudflare config. `name` becomes the `<name>.app.space` subdomain — must match `^[a-z0-9](?:-?[a-z0-9])+$` (2-63 chars, lowercase). **`dev` and `deploy` fail-fast on a non-canonical `name` now** (was silent canonicalization in earlier SDKs) — fix the field rather than ignoring the error. `run_worker_first = ["/api/*", "/ws/*", "/internal/*", "/v1/*", "/_deepspace/*"]` — `/v1/*` is included so OpenAI-compatible routes mounted in `worker.ts` resolve before the SPA fallback; `/_deepspace/*` is the same-origin browser proxy the subscriptions / charges hooks call (don't strip it). Apps can append their own prefixes (`/oauth/*`, `/preview/*`, `/.well-known/*`); the CLI strips the reserved set and forwards the rest. Declare custom Cloudflare bindings here (vectorize / r2 / kv / d1 / queue / ai / browser_rendering / hyperdrive / analytics_engine); use `"auto"` as the id to auto-provision. → `references/bindings.md`. |
 | `src/pages/_app.tsx` | Provider stack: `ToastProvider → DeepSpaceAuthProvider → AuthBoot → RecordProvider → RecordScope`. **Extend, don't replace.** |
 | `src/pages/` | File-based routes via generouted. `(protected)/` is the gated route group. |
@@ -139,6 +139,7 @@ The scaffold generates a Vite + Cloudflare-Worker app. Files you'll touch most o
 | `src/constants.ts` | `APP_NAME`, `SCOPE_ID = "app:${APP_NAME}"`, role re-exports. |
 | `src/actions/index.ts` | Server-action handlers. |
 | `src/cron.ts` | Scheduled tasks for `AppCronRoom`. |
+| `src/jobs.ts` | Background-job handlers for `AppJobRoom` (durable work outliving the HTTP response). |
 | `src/integrations.ts` | Per-integration billing config (`developer` vs `user`). |
 | `src/ai/tools.ts` | System prompt + tool allowlist for `/api/ai/chat`. Tools are **not read-only** by default — the scaffold ships `records.create` / `records.update` / `records.delete` alongside reads. Per-collection RBAC at the DO is the actual security boundary; trim the allowlist if you want a stricter assistant. |
 | `src/ai/chat-routes.ts` | Hono handlers for the 4 AI chat endpoints (`POST /api/ai/chats`, `PATCH /api/ai/chats/:id`, `DELETE /api/ai/chats/:id`, `POST /api/ai/chat` — the streaming turn). Edit to switch model/provider, change context-window compaction, or extend the tool surface. |
@@ -153,7 +154,7 @@ Steps run in dependency order. Each links its deep-dive reference; load that ref
 3. **Cross-app data sharing?** — if the app needs to read/write `workspace:*`, `dir:*`, or `conv:*` scopes shared across DeepSpace apps (e.g., the email-handle workspace, cross-app inbox), the scaffolded `/ws/:roomId` handler routes everything to the local DO and won't see shared data. Add the `PLATFORM_WORKER` proxy edit. → `references/architecture.md` § Cross-app shared scopes. Skip otherwise.
 4. **Auth model** — pick public, gated, or **mixed** (the default; gated routes drop into `src/pages/(protected)/`). → `references/auth.md`
 5. **Theme** — pick a preset on `<html data-theme="...">` in `index.html`, update `<title>`/favicon. **Don't ship the default `slate`.** → `references/uiux.md` §2
-6. **Pages and features** — pages in `src/pages/`. 18 ready features in `.deepspace/features/`; install with `npx deepspace add <feature>` (use `--list` to enumerate). → `references/uiux.md` for UI primitives.
+6. **Pages and features** — pages in `src/pages/`. Ready-made features ship inside the `deepspace` SDK (`node_modules/deepspace/features/`); install with `npx deepspace add <feature>` (use `--list` to enumerate). → `references/uiux.md` for UI primitives.
 7. **Tests** — read `references/testing.md` and apply the Step 8 checklist before extending `smoke.spec.ts` / `api.spec.ts` / `collab.spec.ts`. Multi-user features need a 2-user Playwright spec, not just `tsc` or unit tests.
 8. **Deploy** — `npx deepspace deploy`. Pre-deploy checklist: home replaced, theme picked, browser-default primitives removed, toasts wired to mutations. → `references/uiux.md` §5
 
@@ -161,7 +162,7 @@ For maintenance work on an existing app, jump straight to the relevant reference
 
 ## Frontend hooks
 
-The three core auth + data hooks. `useAuth` is universal (every page that has a sign-in state uses it); `useQuery` / `useMutations` show up the moment a page reads or writes a collection. For everything else (messaging, directory, R2, Yjs, presence, canvas, cron monitor, theme, env), see `references/sdk-reference.md`.
+The three core auth + data hooks. `useAuth` is universal (every page that has a sign-in state uses it); `useQuery` / `useMutations` show up the moment a page reads or writes a collection. For everything else (messaging, directory, R2, Yjs, presence, canvas, cron monitor, jobs, theme, env), see `references/sdk-reference.md`.
 
 ```typescript
 const { records, status } = useQuery<Item>('items', { where: { status: 'published' }, orderBy: 'createdAt' })
@@ -173,15 +174,17 @@ const { isSignedIn, isLoaded } = useAuth()                    // primary auth ch
 
 **`put` accepts `Partial<T>`** — server merges into the existing row (`{...existing, ...patch}`), so send only the fields you're changing (`put(id, { completed: true })`, not the whole spread). `create` still requires the full `T`.
 
-For anything beyond these three (messaging, presence, R2, Yjs, canvas, game rooms, cron, AI chat, integrations, theming, RBAC), read `references/sdk-reference.md` first; only then drop into `node_modules/deepspace/dist/index.d.ts` (frontend) or `node_modules/deepspace/dist/worker.d.ts` (worker) for exact type signatures. Do not guess hook names or argument shapes.
+For anything beyond these three (messaging, presence, R2, Yjs, canvas, game rooms, cron, jobs, AI chat, integrations, theming, RBAC), read `references/sdk-reference.md` first; only then drop into `node_modules/deepspace/dist/index.d.ts` (frontend) or `node_modules/deepspace/dist/worker.d.ts` (worker) for exact type signatures. Do not guess hook names or argument shapes.
 
 ## Worker-side extensions
 
-Five independent surfaces. Load only what you need:
+Seven independent surfaces. Load only what you need:
 
 - **Server actions** (privileged writes that bypass caller RBAC) → `references/server-actions.md`
 - **AI chat** (streamed Claude / OpenAI / Cerebras with multi-turn tool use, persistent chat history, context-window compaction) → `references/ai-chat.md`
 - **Cron** (scheduled tasks via `AppCronRoom` + `useCronMonitor`) → `references/cron.md`
+- **Jobs** (durable background work via `AppJobRoom` + `useJobs` — anything that needs to outlive the HTTP response: AI generation, exports, renders) → `references/jobs.md`
+- **Payments** (Stripe-backed subscriptions, paywalls, one-time products, tips, refunds, cancellation — never hand-roll Stripe; use `useSubscription` / `useCheckout` / `requireSubscription`) → `references/payments.md`
 - **Game rooms** (turn/tick game loops, lobby, host-advanced phases, `useGameRoom` + `GameRoom` DO) → `references/sdk-reference.md` § Real-time collab + § Game rooms
 - **Custom bindings & metering** (Vectorize, AI, R2, KV, D1, Queues, Hyperdrive; `"auto"` autoprovisioning; `runMigrations` for D1; `meterAi` / `meterVectorize` per-tenant rollup via the auto-attached `USAGE_EVENTS` AE dataset) → `references/bindings.md`
 
@@ -275,9 +278,10 @@ Each reference also declares its own "Load when …" trigger as its first line �
 | `references/server-actions.md` | Adding privileged writes that bypass the caller's RBAC. |
 | `references/ai-chat.md` | Adding a streamed chat UI with tool use over the app's records. |
 | `references/cron.md` | Adding scheduled tasks, building the admin cron monitor, testing cron via `trigger`. |
+| `references/jobs.md` | Adding background-job handlers (AI generation, exports, renders), choosing client vs server enqueue, handling progress / cancellation / multi-tick checkpoints. |
 | `references/bindings.md` | Declaring custom Cloudflare bindings (Vectorize / R2 / KV / D1 / Queues / AI / Browser / Hyperdrive / AE), `"auto"` autoprovisioning, D1 bootstrap with `runMigrations`, per-tenant cost rollup via `meterAi` / `meterVectorize` / `meterUsage`. |
 | `references/integrations.md` | Calling external APIs (LLMs, search, media, social, finance, etc.). |
-| `references/payments.md` | Adding subscriptions, one-time products, ad-hoc charges (tips/donations), trials, refunds, or cancellation — manifest files (`src/subscriptions.ts`, `src/products.ts`), `useSubscription` / `useCheckout`, `requireSubscription` / `refundInvoice` / `cancelSubscription`. |
+| `references/payments.md` | Anything involving money, Stripe, billing, paywalls, subscriptions, pricing pages, "Upgrade" buttons, Pro / premium tiers, gating features behind a plan, one-time products, tips, donations, free trials, refunds, or cancellation. **Never hand-roll Stripe in a DeepSpace app** — declare in `src/subscriptions.ts` / `src/products.ts` and use `useSubscription` / `useCheckout` / `requireSubscription`. |
 | `references/domain.md` | Buying / attaching / managing a custom domain (`deepspace domain` CLI). Skip for apps that are happy on `<name>.app.space`. |
 | `references/integrations/livekit.md` | Adding audio/video rooms — token mint, billing model, room lifecycle. |
 | `references/integrations/google-oauth.md` | Calling Gmail / Calendar / Drive / Contacts — per-user billing, scope step-up, `requiresOAuth` retry, Playwright `page.route()` mocks. |
