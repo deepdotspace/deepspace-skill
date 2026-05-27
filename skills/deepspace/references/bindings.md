@@ -1,6 +1,6 @@
 # Custom bindings & per-tenant metering
 
-Load this reference when the app needs a Cloudflare resource beyond the SDK defaults — **Vectorize, AI, R2, KV, D1, Queues, Browser Rendering, Hyperdrive, or Analytics Engine** — when wiring per-tenant cost tracking via `USAGE_EVENTS`, when bootstrapping a D1 schema with `runMigrations`, or when a deploy fails with a binding-related error. Skip it for apps that only use the SDK's built-in DOs (`AppRecordRoom` / `AppYjsRoom` / `AppCanvasRoom` / `AppPresenceRoom` / `AppCronRoom`) and the `integration.post(...)` proxy.
+Load this reference when the app needs a Cloudflare resource beyond the SDK defaults — **Vectorize, AI, R2, KV, D1, Queues, Browser Rendering, Hyperdrive, or Analytics Engine** — when wiring per-tenant cost tracking via `USAGE_EVENTS`, when bootstrapping a D1 schema with `runMigrations`, or when a deploy fails with a binding-related error. Skip it for apps that only use the SDK's built-in DOs (`AppRecordRoom` / `AppYjsRoom` / `AppCanvasRoom` / `AppPresenceRoom` / `AppCronRoom` / `AppJobRoom`) and the `integration.post(...)` proxy.
 
 ## TL;DR
 
@@ -83,13 +83,12 @@ Provisioned IDs persist in `app-resources/<appName>.json` on the platform R2 buc
 
 ## Reserved names — collisions to avoid
 
-`RESERVED_BINDING_NAMES` (12 SDK-owned, always present on every deploy):
+`RESERVED_BINDING_NAMES` (11 SDK-owned, always present on every deploy):
 
 ```
 ASSETS, PLATFORM_WORKER, API_WORKER, APP_NAME, OWNER_USER_ID,
 AUTH_JWT_PUBLIC_KEY, AUTH_JWT_ISSUER, AUTH_WORKER_URL,
-APP_IDENTITY_TOKEN, APP_OWNER_JWT, INTERNAL_STORAGE_HMAC_SECRET,
-USAGE_EVENTS
+APP_IDENTITY_TOKEN, APP_OWNER_JWT, USAGE_EVENTS
 ```
 
 `validateBindingManifest` rejects any custom-binding `name` in `RESERVED_BINDING_NAMES` and any intra-manifest duplicate. It does **not** check against DO class names (`__DO_MANIFEST__`) — those live in a separate manifest. If you accidentally name a custom binding `RECORD_ROOMS`, the deploy validator won't catch it; you'll find out at runtime when the DO binding shadows it (or the WfP upload errors). Pick a name that doesn't collide with either set yourself. (User secrets, in contrast, *are* validated against the union of `RESERVED_BINDING_NAMES`, custom-binding names, and DO class names at deploy time — see `.dev.vars` contract in SKILL.md.)

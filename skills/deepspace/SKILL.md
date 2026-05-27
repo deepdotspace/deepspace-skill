@@ -19,7 +19,7 @@ Build real-time collaborative apps on Cloudflare Workers in one package: SQLite-
 
 ## Quickstart — the development lifecycle
 
-CLI commands, in order. Each step is rerunnable. `dev` and `test` rewrite only the **10 SDK-managed keys** in `.dev.vars` (auth + worker URLs + owner JWT + per-app identity token + HMAC + debug flag); anything else you add — third-party tokens, custom flags — is preserved verbatim across runs and ships to prod as `secret_text` bindings on `deploy`. See "Login, test, deploy" for the contract.
+CLI commands, in order. Each step is rerunnable. `dev` and `test` rewrite only the **9 SDK-managed keys** in `.dev.vars` (auth + worker URLs + owner JWT + per-app identity token + debug flag); anything else you add — third-party tokens, custom flags — is preserved verbatim across runs and ships to prod as `secret_text` bindings on `deploy`. See "Login, test, deploy" for the contract.
 
 ```bash
 # 1. Scaffold (no auth required — npm fetches create-deepspace via npx on demand)
@@ -235,7 +235,7 @@ The subdomain is the `name` field in `wrangler.toml`. Edit it there if you want 
 
 ## `.dev.vars` contract
 
-`dev` / `test` rewrite **only the 10 SDK-managed keys**: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `APP_IDENTITY_TOKEN`, `INTERNAL_STORAGE_HMAC_SECRET`, `ALLOW_DEBUG_ROUTES`. They live above a `# --- not managed by the SDK; preserved across dev/test runs ---` divider the CLI writes itself. `APP_IDENTITY_TOKEN` is only populated after the first `npx deepspace deploy` (deploy-worker mints it on app registration) — fine for most apps; only matters if you're using payments or `captureScreenshot` locally before deploy. See `references/payments.md` / `references/sdk-reference.md`.
+`dev` / `test` rewrite **only the 9 SDK-managed keys**: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `APP_IDENTITY_TOKEN`, `ALLOW_DEBUG_ROUTES`. They live above a `# --- not managed by the SDK; preserved across dev/test runs ---` divider the CLI writes itself. `APP_IDENTITY_TOKEN` is only populated after the first `npx deepspace deploy` (deploy-worker mints it on app registration) — fine for most apps; only matters if you're using payments or `captureScreenshot` locally before deploy. See `references/payments.md` / `references/sdk-reference.md`.
 
 Anything you add **below** that divider — third-party API tokens, custom feature flags, your own service URLs — is preserved verbatim across `dev` / `test` runs, **and shipped to prod as `secret_text` bindings on `deploy`** (same `env.MY_KEY` access pattern in dev and prod; no `wrangler secret put` step).
 
@@ -244,7 +244,7 @@ Limits enforced server-side at deploy:
 - Per-value cap: **32 KB** (32 × 1024 bytes).
 - Total cap across all user secrets: **128 KB**.
 - Raw JSON payload cap: **1 MB** → 413.
-- Name must not collide with `RESERVED_BINDING_NAMES` (12 SDK-owned), any declared custom binding, or any DO class in `__DO_MANIFEST__`.
+- Name must not collide with `RESERVED_BINDING_NAMES` (11 SDK-owned), any declared custom binding, or any DO class in `__DO_MANIFEST__`.
 
 Read `references/bindings.md` if any of those collisions trip you.
 

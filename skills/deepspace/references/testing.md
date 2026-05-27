@@ -224,6 +224,30 @@ The `[data-testid="auth-overlay"]` attribute is on the SDK's `<AuthOverlay/>` �
 
 If you customize a `<AuthGate fallback={<TeaserPage/>}/>` to use a non-default fallback, swap the assertion to a stable selector inside your teaser instead.
 
+## Collaborative-editor surfaces (ProseMirror / `contenteditable`)
+
+Tiptap / ProseMirror editors backed by `useYjsRoom` need two pattern adjustments compared to plain inputs:
+
+- **Don't use `getByRole('textbox')`** — a page that renders a title `<input>` *and* a ProseMirror surface has multiple textbox-role nodes and the locator is ambiguous. Target the editable surface directly: `page.locator('[data-testid="editor-content"] .ProseMirror')` (or whatever stable `data-testid` you wrap `<EditorContent>` in).
+- **Don't use `expect(locator).toBeEditable()`** — Playwright's actionability poll runs busy enough to starve the WebSocket `onmessage` callback, so the YjsRoom AUTH frame (`{ type: 'auth', canWrite: true }`) never gets processed and `contenteditable` stays `"false"`. Switch to a passive attribute poll:
+
+```typescript
+const editor = page.locator('[data-testid="editor-content"] .ProseMirror')
+// Writer (member/owner) — wait for canWrite to flip true:
+await expect.poll(
+  () => editor.getAttribute('contenteditable'),
+  { timeout: 30_000, intervals: [500] },
+).toBe('true')
+
+// Viewer — assert it stays read-only:
+await expect.poll(
+  () => editor.getAttribute('contenteditable'),
+  { timeout: 30_000, intervals: [500] },
+).toBe('false')
+```
+
+Same race applies to any `useYjsRoom` / `useCanvas` / `useGameRoom` / `useCronMonitor` UI gated by `canWrite` — if the test wants to assert a writer can act before clicking, poll the gate's DOM signal (a disabled-state attribute, `aria-readonly`, or `contenteditable`) instead of relying on actionability checks.
+
 ## Proactive Test Authoring
 
 Write and update tests **as you build**, not after. The Step 8 checklist in `SKILL.md` is the canonical trigger list — each rule names a condition on the code and a required test file. Don't duplicate those rules here; instead, treat this section as the worked-example elaboration:

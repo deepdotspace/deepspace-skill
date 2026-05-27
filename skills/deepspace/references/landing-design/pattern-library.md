@@ -47,7 +47,7 @@ These apply to every snippet. The grep gate in `anti-ai-checklist.md` enforces t
 
 ## Scaffold gotcha (read once)
 
-The scaffolded `.deepspace/features/landing/src/LandingPage.tsx` and `primitives.tsx` ship with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, hardcoded `bg-emerald-400`, and a violet conic gradient. If you install the `landing` feature and run the grep gate, expect hits **inside the scaffold itself**. Clean them up before shipping — every flagged line has a semantic-token equivalent (`bg-muted`, `border-border`, `bg-primary`, etc.).
+The scaffolded `node_modules/deepspace/features/landing/src/LandingPage.tsx` and `primitives.tsx` ship with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, hardcoded `bg-emerald-400`, and a violet conic gradient. If you install the `landing` feature and run the grep gate, expect hits **inside the scaffold itself**. Clean them up before shipping — every flagged line has a semantic-token equivalent (`bg-muted`, `border-border`, `bg-primary`, etc.).
 
 ## After you compose
 

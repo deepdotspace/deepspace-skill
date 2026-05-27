@@ -33,8 +33,11 @@ export async function runTask(name: string, env: Env): Promise<void> {
     // Throws on any tool failure (rather than returning { success: false, error })
     // — wrap in try/catch if you need to handle a denied write inline.
     //
-    // Integrations — proxied through api-worker via signed internal HMAC,
-    // billed to the app owner (uses INTERNAL_STORAGE_HMAC_SECRET):
+    // Integrations — proxied through api-worker, billed to the app owner
+    // (auth: `Authorization: Bearer ${env.APP_OWNER_JWT}`; throws clearly if
+    // APP_OWNER_JWT is missing locally — `npx deepspace dev` mints it into
+    // .dev.vars). Returns the unwrapped `data` field; throws
+    // `Integration call <endpoint> failed: <detail>` on non-2xx or success:false:
     //   ctx.integrations.call(endpoint, params)            → Promise<response>
     //
     // Owner user ID:
@@ -77,9 +80,9 @@ Don't edit those bindings — add tasks in `src/cron.ts` and the DO picks them u
 
 ## Monitoring UI — `useCronMonitor`
 
-Render task status, history, and (optionally) `trigger` / `pause` / `resume` controls with `useCronMonitor(roomId)` from `deepspace`. Pass `SCOPE_ID` from `src/constants.ts` (default `app:${APP_NAME}`) to hit the app's `AppCronRoom` DO. The hook returns `{ tasks, history, connected, trigger(name), pause(name), resume(name) }`. Each task is a `CronTaskState` (`{ name, intervalMinutes, schedule, timezone, paused, lastRunAt, nextRunAt }`); each history entry is a `CronHistoryEntry` (`{ taskName, startedAt, completedAt, success, durationMs, error? }`).
+Render task status, history, and (optionally) `trigger` / `pause` / `resume` controls with `useCronMonitor(roomId)` from `deepspace`. Pass `SCOPE_ID` from `src/constants.ts` (default `app:${APP_NAME}`) to hit the app's `AppCronRoom` DO. The hook returns `{ tasks, history, connected, canWrite, trigger(name), pause(name), resume(name) }`. Each task is a `CronTaskState` (`{ name, intervalMinutes, schedule, timezone, paused, lastRunAt, nextRunAt }`); each history entry is a `CronHistoryEntry` (`{ taskName, startedAt, completedAt, success, durationMs, error? }`).
 
-**Auth-gate any page that exposes `trigger` / `pause` / `resume`** — the CronRoom DO does **not** enforce a role on these messages, so without a client-side role check any signed-in user can fire owner-billed tasks. Gate by `useUser().user?.role === 'admin'` before rendering the buttons (and ideally also wrap the route in `(protected)/`). Pure read-only monitoring (`tasks` + `history` + `connected`) is fine to leave open — the scaffolded page does this.
+**Server gates `trigger` / `pause` / `resume` on the role the wsRoute resolver returns.** `canWrite` defaults false until the server AUTH frame lands and stays false for any connection without a writer role, and write callbacks **silently no-op when false**. The scaffolded `/ws/cron/:roomId` passes `() => ({ role: 'member' })`, so any signed-in user gets `canWrite: true` and can fire owner-billed tasks; anonymous connections get no role and become read-only viewers. For owner-only writes, replace the wsRoute helper with an inline handler that resolves role from app state (e.g., return `role: 'member'` only when the JWT subject matches `OWNER_USER_ID`). Also gate the UI client-side by `useUser().user?.role === 'admin'` (or just `canWrite`) before rendering the buttons. Pure read-only monitoring (`tasks` + `history` + `connected`) is fine to leave open — the scaffolded page does this.
 
 ## Reference implementation
 
@@ -114,4 +117,4 @@ Don't write tests that wait for `0 9 * * 1-5` to fire. Don't change schedules to
 
 ## Migration note
 
-If you find a stale `cron.json`, `handleCron`, or `/internal/cron` route in an existing app, those are the pre-`CronRoom` pattern. Delete them and rewrite to the shape above. Use `buildCronContext(env, ownerUserId, roomId?)` for all cron-side I/O — it owns the HMAC signing for `ctx.integrations.call(...)` so you don't hand-roll request auth.
+If you find a stale `cron.json`, `handleCron`, or `/internal/cron` route in an existing app, those are the pre-`CronRoom` pattern. Delete them and rewrite to the shape above. Use `buildCronContext(env, ownerUserId, roomId?)` for all cron-side I/O — it signs `ctx.integrations.call(...)` with `APP_OWNER_JWT` so you don't hand-roll request auth. (`Env` must extend `ApiWorkerEnv` — `API_WORKER` service binding or `API_WORKER_URL` fallback — and carry `APP_OWNER_JWT`; the scaffolded `worker.ts` already does both.)
