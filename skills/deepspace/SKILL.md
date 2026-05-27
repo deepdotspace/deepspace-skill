@@ -1,6 +1,6 @@
 ---
 name: deepspace
-version: 0.1.1
+version: 0.1.2
 description: >
   Use when building or maintaining real-time collaborative apps with the
   DeepSpace SDK on Cloudflare Workers — scaffolding new apps, adding
