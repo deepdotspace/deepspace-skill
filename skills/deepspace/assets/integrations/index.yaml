@@ -8,8 +8,8 @@ sdk_import: import { integration } from 'deepspace'
 call_pattern: await integration.post('<integration>/<endpoint>', body)
 response_envelope: "{ success: true, data: <endpoint-specific> } | { success:
   false, error: string }"
-integration_count: 31
-endpoint_count: 215
+integration_count: 29
+endpoint_count: 210
 oauth_required_integrations:
   - google
 categories:
@@ -240,12 +240,6 @@ categories:
           subject:feedback")
       - endpoint: google/gmail-send
         description: Send email via Gmail
-  instagram:
-    file: instagram.yaml
-    endpoint_count: 1
-    endpoints:
-      - endpoint: instagram/extract-content
-        description: Extract content from Instagram posts (captions and media)
   latex:
     file: latex.yaml
     endpoint_count: 1
@@ -644,18 +638,6 @@ categories:
       - endpoint: submagic/wait-for-completion
         description: Submit + poll a SubMagic project until it finishes (handles the
           polling loop)
-  tiktok:
-    file: tiktok.yaml
-    endpoint_count: 4
-    endpoints:
-      - endpoint: tiktok/cancel-scheduled-post
-        description: Cancel a scheduled TikTok post by postId
-      - endpoint: tiktok/get-scheduled-posts
-        description: List scheduled TikTok posts
-      - endpoint: tiktok/post-video
-        description: Post a video to TikTok (sandbox)
-      - endpoint: tiktok/user-info
-        description: Get TikTok user profile
   websearch:
     file: websearch.yaml
     endpoint_count: 1
