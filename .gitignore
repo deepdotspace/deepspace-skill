@@ -6,3 +6,6 @@
 *.swp
 .vscode/
 .idea/
+
+# Skill-creator eval workspaces (benchmark runs, eval outputs, viewer HTML)
+skills/*-workspace/

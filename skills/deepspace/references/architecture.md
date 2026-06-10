@@ -4,7 +4,7 @@ Load this reference when editing `worker.ts`, adding a new Durable Object class,
 
 ## Per-app DOs
 
-Each app has its own set of Durable Objects with schemas baked in at deploy time. The scaffold declares five DO classes in `__DO_MANIFEST__` and wires them in `worker.ts`: `AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`. (Audio/video uses LiveKit via the `livekit/*` integrations — there is no `MediaRoom` DO.)
+Each app has its own set of Durable Objects with schemas baked in at deploy time. The scaffold declares six DO classes in `__DO_MANIFEST__` and wires them in `worker.ts`: `AppRecordRoom`, `AppYjsRoom`, `AppCanvasRoom`, `AppPresenceRoom`, `AppCronRoom`, `AppJobRoom` (the last for durable background work — see `references/jobs.md`). (Audio/video uses LiveKit via the `livekit/*` integrations — there is no `MediaRoom` DO.)
 
 ```
 App Worker (per-app)                 Platform Worker (shared)
@@ -20,6 +20,10 @@ App Worker (per-app)                 Platform Worker (shared)
 ```
 
 The scaffolded `AppRecordRoom` already passes your `schemas` to `RecordRoom` — you rarely need to touch `worker.ts`. The one case where you do is cross-app data sharing (below).
+
+### Route reservation (`run_worker_first`)
+
+`wrangler.toml` ships `run_worker_first = ["/api/*", "/ws/*", "/internal/*", "/v1/*", "/_deepspace/*"]` — these paths hit the worker *before* the SPA 404 fallback. The SDK reserves that baseline on the platform side and apps can't override it; `/v1/*` is in the set so OpenAI-compatible routes mounted in `worker.ts` resolve ahead of the SPA, and `/_deepspace/*` is the same-origin proxy the subscriptions/charges hooks call — don't strip either. Apps **can** add their own dynamic prefixes (e.g. `/oauth/*`, `/preview/*`, `/.well-known/*`) by appending to `run_worker_first`; `deploy` forwards the extras and merges them into the deployed metadata.
 
 > **The starter `/ws/yjs/:docId` route is docs-aware and token-required.** Unlike the other `/ws/*` routes (which allow anonymous connections), this one 401s without a verified JWT. When a `documents` collection exists, it looks up the row by `docId` and assigns the connecting user a Yjs role: `admin` if they are the doc's `ownerId` or the app's `OWNER_USER_ID`, `member` if they are in `editors`, `viewer` if they are in `collaborators`, otherwise 403. Apps without a `documents` collection fall through to a generic `'member'` role (the route is harmless to keep). **Don't replace this handler with a bare `wsRoute` when adding the `docs` feature** — the resulting "everyone is a viewer" / "every collaborator is read-only" bug is the #1 source of confusion. If you customize, preserve the role resolution.
 
