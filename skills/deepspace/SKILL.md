@@ -45,14 +45,15 @@ import { RecordProvider, RecordScope, useQuery, useMutations, useAuth } from 'de
 import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'                        // worker
 ```
 
-## 3. Build — features before hand-rolling
+## 3. Build — discover before you hand-build
 
-Features are SDK-blessed building blocks that auto-wire their own schema, actions, routes, nav, and `(protected)` placement. Rebuilding one by hand re-implements all that wiring and tends to mis-wire it — so **list what exists before writing any non-trivial UI, and actually run the command** (memory of the catalog doesn't count):
+Run both catalogs before hand-building anything — you can't know their contents from memory: don't hand-build non-trivial UI before `add --list`, or hand-roll a third-party API call before `integrations list`.
 
 ```bash
-npx deepspace add --list           # ~20 features: kanban, messaging, items, ai-chat, presence, canvas, docs, landing…
-npx deepspace add --info <name>    # what it installs
-npx deepspace add <feature>        # install into the app
+npx deepspace add --list           # 16 UI feature blocks — auto-wire schema/routes/nav
+npx deepspace add --info <feature>    # inspect a feature before installing
+npx deepspace add <feature>           # install it
+npx deepspace integrations list    # external APIs via owner-pays proxy, no keys to manage
 ```
 
 When you build by hand, where things live (load the matching reference from the table below as you touch each):
