@@ -50,10 +50,10 @@ import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'       
 Run both catalogs before hand-building anything — you can't know their contents from memory: don't hand-build non-trivial UI before `add --list`, or hand-roll a third-party API call before `integrations list`.
 
 ```bash
-npx deepspace add --list           # 16 UI feature blocks — auto-wire schema/routes/nav
+npx deepspace add --list           # 16 UI blocks — landing, topbar, file-manager, kanban, messaging… auto-wire schema/routes/nav
 npx deepspace add --info <feature>    # inspect a feature before installing
 npx deepspace add <feature>           # install it
-npx deepspace integrations list    # external APIs via owner-pays proxy, no keys to manage
+npx deepspace integrations list    # external APIs (weather, LLMs, stocks, sports…) via owner-pays proxy, no keys to manage
 ```
 
 When you build by hand, where things live (load the matching reference from the table below as you touch each):
