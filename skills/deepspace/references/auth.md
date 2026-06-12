@@ -51,7 +51,7 @@ Adding a new gated page is a one-file change: drop it inside `(protected)/`. The
 
 ## Rules either way
 
-- **Use `useAuth().isSignedIn` for auth-state checks in components.** Session-based, updates immediately on sign-in / sign-out. `useUser()` returns `{ user, isLoading, refetch }` where `user` is the merged storage-layer profile + room role; `user` is `null` until the async profile load completes, which produces a flash of "not signed in" if you gate on `user` truthy without also checking `isLoading`. The canonical "is the user signed in?" check is `useAuth().isSignedIn`. This is the rule SKILL.md's gotcha list points back to.
+- **Use auth-layer state for auth checks; use profile readiness for profile-backed UI.** `useAuth().isSignedIn` is the canonical signed-in check, and `useAuthStatus()` is safe in app shells before `<RecordProvider>`. `useUser()` loads async; for user menus, role nav, account names, admin controls, or authenticated dashboards under `<RecordProvider>`, prefer `useAuthProfileReady({ requireUser: true })` and render a skeleton while `isSignedIn && userLoading`.
 - `<AuthGate>` controls the **UI layer** — children don't mount until signed in. `RecordProvider allowAnonymous` controls the **data layer** — server accepts unsigned client connections. Inside an `<AuthGate>` subtree the user is always signed in, so `allowAnonymous` is moot there.
 - Don't add a second sign-out — the avatar dropdown in `Navigation.tsx` already calls `signOut()`.
 - **If the app requires sign-in, a sign-out control is non-negotiable.** If you replace `Navigation.tsx`, ensure it still calls `signOut()` from `deepspace` somewhere reachable when signed in.

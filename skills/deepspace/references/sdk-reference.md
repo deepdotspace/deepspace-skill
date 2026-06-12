@@ -31,6 +31,8 @@ import { ... } from 'deepspace/testing'  // Playwright multi-user fixture (test 
 - `useAuth()` — `{ isLoaded, isSignedIn, userId, sessionId }`. Primary auth check. Session-based; `isLoaded` flips true once the first Better Auth session check resolves and **stays true** for the page's lifetime (does not flap back to false on background refetches / tab refocus) — safe to gate `RecordProvider` / data-layer mounts on it without remount churn. `isSignedIn` updates immediately on sign-in / sign-out.
 - `useAuthUser()` — `{ isLoaded, isSignedIn, user }` where `user` is the auth-layer user (Better Auth session: `{ id, fullName, firstName, primaryEmailAddress, ... } | null`). Different from `useUser()`, which returns the storage-layer user with karma/credits/role merged in.
 - `useUser()` — `{ user, isLoading, refetch }`. The `user` object is the storage-layer user (`{ id, name, email, role, karma, credits, ... } | null`); destructure as `const { user } = useUser(); user?.id`, **not** `const { id } = useUser()`. Loads async.
+- `useAuthStatus({ requireSignedIn? })` — auth-only readiness helper. Returns `useAuth()` fields plus `{ status, isReady }`; safe outside `<RecordProvider>`.
+- `useAuthProfileReady({ requireSignedIn?, requireUser? })` — profile-aware readiness helper under `<RecordProvider>`. Returns `useAuth()` fields plus `{ user, userLoading, refetchUser, status, isReady }`.
 - `useDisplayName()` — resolved display name or null.
 
 **Utilities**
@@ -220,7 +222,9 @@ function Gallery() {
 
 ### Platform / Integrations
 
-- `integration` — `{ get / post / put / delete (endpoint, data?, options?) }`. `options` is `{ headers?, timeoutMs? }` (default 120s). Returns `Promise<IntegrationResponse<T>>` — the envelope is `{ success: true, data } | { success: false, error, issues? }`. `issues` (when present) is an array of `{ path?, message, code? }` returned by the api-worker's Zod validator on a body-shape mismatch — read it instead of guessing field names. See `references/integrations.md` for endpoint list and the `requiresOAuth` retry shape.
+- `integration` — `{ get / post / put / delete (endpoint, data?, options?) }`. `options` is `{ headers?, timeoutMs?, signal? }` (default timeout 120s). Returns `Promise<IntegrationResponse<T>>` — the envelope is `{ success: true, data } | { success: false, error, issues? }`. `issues` (when present) is an array of `{ path?, message, code? }` returned by the api-worker's Zod validator on a body-shape mismatch — read it instead of guessing field names. See `references/integrations.md` for endpoint list and the `requiresOAuth` retry shape.
+- `useAsyncResource<T>(fetcher, deps, options?)` — client hook for external/API resources. `fetcher` receives an `AbortSignal` and returns `Promise<T>`. Options: `{ enabled?, initialData?, keepPreviousData?, retry?, retryDelayMs?, slowAfterMs? }` where `retry` defaults to `0`. Result: `{ status, data, error, isRefreshing, isSlow, retryCount, reload }`.
+- `usePagedResource<TItem>(fetchPage, deps, options?)` — client hook for API-backed feeds/search/timelines/infinite scroll. `fetchPage` receives `{ page, pageSize, signal }` and returns `{ items, hasMore? }`. Options: `{ enabled?, initialItems?, pageSize?, maxItemsPerPage?, keepPreviousData?, autoRetryOnError?, retryDelayMs?, maxRetryDelayMs? }`. Result: `{ items, status, error, warning, hasMore, isLoadingInitial, isLoadingMore, isRefreshing, loadMore, retry, refresh }`.
 - Re-exported types: `IntegrationResponse`, `RequestOptions`.
 
 **Cross-app platform context (opt-in, not in the scaffold by default).** The platform exports below let an app subscribe to its cross-app inbox (DMs / notifications routed through the platform-worker). They require `<PlatformProvider>` to be mounted somewhere above the consumers — the scaffolded `_app.tsx` does **not** include it, so wrap the tree manually if you need this surface:
