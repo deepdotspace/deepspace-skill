@@ -10,7 +10,7 @@ const result = await integration.post('<integration-name>/<endpoint-name>', { ..
 // Returns: { success: true, data: ... } or { success: false, error: "..." }
 ```
 
-**UI loading rule:** external API UI must render loading/error/empty/success states. Use `useAsyncResource` for one-shot API data and local Retry via `resource.reload()`. For API feeds/search/timelines/infinite scroll, use `usePagedResource` with a bounded first request (`pageSize`, `limit`, etc.); don't fetch the whole endpoint and reveal rows locally. Never recover from an API-resource failure with a full page reload.
+**UI loading rule:** external API UI must render loading/error/empty/success states. Use `useAsyncResource` for one-shot API data and local Retry via `resource.reload()`. For API feeds, use `usePagedResource` with a bounded first request (`pageSize`, `limit`, etc.); don't fetch the whole endpoint. Never recover from an API-resource failure with a full page reload.
 
 **Endpoint keys are two segments: `<integration>/<endpoint>`.** Use the exact names from `assets/integrations/index.yaml` — do not invent or paraphrase.
 
