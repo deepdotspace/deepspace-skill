@@ -1,6 +1,5 @@
 ---
 name: deepspace
-version: 0.2.0
 description: >
   Use when building or maintaining real-time collaborative apps with the
   DeepSpace SDK on Cloudflare Workers — scaffolding new apps, adding
@@ -81,10 +80,11 @@ Records are envelopes — `{ recordId, data: T, createdBy, createdAt, updatedAt 
 ```bash
 npx deepspace test       # after runtime-affecting changes; multi-user features need a 2-user spec → references/testing.md
 npx deepspace deploy     # → <wrangler.name>.app.space
+npx deepspace deploy --env staging   # → isolated staging instance (v0.4+); rehearse risky changes first
 npx deepspace kill       # if your own dev port is stuck (never kill a sibling session's)
 ```
 
-Deploy's subdomain is `wrangler.toml`'s `name`, not the folder. On a **first** deploy, clear the pre-deploy checklist in `references/uiux.md` §5 (real home, theme picked, no browser-default primitives). Deploy mechanics + the `.dev.vars` contract + secret handling → `references/deploy.md`. The full CLI catalog (`integrations`, `test-accounts`, `screenshot`, `domain`, `library`, `managed-repos`, dev/kill flags) → `references/cli.md`.
+Deploy's subdomain is `wrangler.toml`'s `name`, not the folder. On a **first** deploy, clear the pre-deploy checklist in `references/uiux.md` §5 (real home, theme picked, no browser-default primitives). Deploy mechanics, the `.dev.vars` contract, secret handling, and **multi-env / staging (`--env`, incl. the client-`APP_NAME` sync gotcha)** → `references/deploy.md`. The full CLI catalog (`integrations`, `test-accounts`, `screenshot`, `domain`, `library`, `managed-repos`, dev/kill flags) → `references/cli.md`.
 
 ## Load a reference when you reach its surface
 
@@ -93,7 +93,7 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 | Reference | Read before |
 |---|---|
 | `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`integrations`/`test-accounts`/`screenshot`/`library`/`managed-repos`), and the `test` command. |
-| `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, and secret handling. |
+| `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, and multi-environment / staging deploys (`deploy --env`). |
 | `references/sdk-reference.md` | Any hook / type / export beyond `useQuery` / `useMutations` / `useAuth` — messaging, game rooms, presence, Yjs, canvas, R2. Open before `node_modules/deepspace/dist/*.d.ts`. |
 | `references/schemas.md` | Defining a collection, picking a permission rule, debugging "why can't this user see/edit X." |
 | `references/auth.md` | Choosing the auth model (public / gated / mixed), adding `<AuthGate>`, customizing the sign-in fallback. |

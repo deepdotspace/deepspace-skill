@@ -35,7 +35,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
 }
 ```
 
-`tools.{create, update, remove, get, query}` **all** bypass user RBAC — including `tools.query`. Earlier SDKs (≤ 0.3.3) silently filtered `tools.query` results by the caller's role; v0.3.4+ matches the other ops so an action that calls `tools.query('events')` always sees every event in the collection, not just the caller's. If you need caller-scoped reads, do them client-side via `useQuery` (which the DO RBAC governs) or pass a `where` clause in the action.
+`tools.{create, update, remove, get, query}` **all** bypass user RBAC — including `tools.query`. An action that calls `tools.query('events')` always sees every event in the collection, not just the caller's. If you need caller-scoped reads, do them client-side via `useQuery` (which the DO RBAC governs) or pass a `where` clause in the action.
 
 `ActionResult<T>` is a discriminated union — narrow with `if (result.success)` before reading `result.data`. **Response shapes** (under `.data` when `success` is true):
 - `tools.get(coll, id)` → `{ record: { recordId, data, createdBy, createdAt, updatedAt } }`
