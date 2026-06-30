@@ -53,12 +53,6 @@ npx deepspace domain attach <domain> --app <name>
 # --- Publish to the DeepSpace community library ---
 npx deepspace library publish [--name "<title>"] [--description "<short>"] [--category <cat>]
 npx deepspace library unpublish <handle>
-
-# --- Managed GitHub repos (for users without their own GitHub account) ---
-npx deepspace managed-repos list
-npx deepspace managed-repos create <app-name>      # platform-owned private repo
-npx deepspace managed-repos token <repo-id>        # short-lived clone token
-npx deepspace managed-repos delete <repo-id> --yes # per-day quota applies
 ```
 
 The scaffolder (`npm create deepspace@latest <app-name>`) is non-interactive by default (agent-friendly): omitting `<app-name>` prints usage and exits 1 instead of prompting. Pass `--interactive` / `-i` for the wizard; probe with `--help` / `--version` (plain stdout, no ANSI) before scripting. It scaffolds into a fresh, near-empty, or current dir ("near-empty" = only boilerplate like `.git`, `*.md`, `.dev.vars`); anything else triggers `Directory <name> already exists` and it bails. After scaffold, dependencies install in a detached background process; every subsequent `npx deepspace` command waits on it (gates on `node_modules/deepspace`), so you never need a manual `npm install`.
