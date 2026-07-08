@@ -84,7 +84,7 @@ npx deepspace deploy --env staging   # → isolated staging instance (v0.4+); re
 npx deepspace kill       # if your own dev port is stuck (never kill a sibling session's)
 ```
 
-Deploy's subdomain is `wrangler.toml`'s `name`, not the folder. On a **first** deploy, clear the pre-deploy checklist in `references/uiux.md` §5 (real home, theme picked, no browser-default primitives). Deploy mechanics, the `.dev.vars` contract, secret handling, and **multi-env / staging (`--env`, incl. the client-`APP_NAME` sync gotcha)** → `references/deploy.md`. The full CLI catalog (`integrations`, `test-accounts`, `screenshot`, `domain`, `library`, `managed-repos`, dev/kill flags) → `references/cli.md`.
+Deploy's subdomain is `wrangler.toml`'s `name`, not the folder. On a **first** deploy, clear the pre-deploy checklist in `references/uiux.md` §5 (real home, theme picked, no browser-default primitives). Deploy mechanics, the `.dev.vars` contract, secret handling, and **multi-env / staging (`--env`, incl. the client-`APP_NAME` sync gotcha)** → `references/deploy.md`. The full CLI catalog (`integrations`, `test-accounts`, `screenshot`, `domain`, `library`, dev/kill flags) → `references/cli.md`.
 
 ## Load a reference when you reach its surface
 
@@ -92,7 +92,7 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 
 | Reference | Read before |
 |---|---|
-| `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`integrations`/`test-accounts`/`screenshot`/`library`/`managed-repos`), and the `test` command. |
+| `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`integrations`/`test-accounts`/`screenshot`/`library`), and the `test` command. |
 | `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, and multi-environment / staging deploys (`deploy --env`). |
 | `references/secrets.md` | Managing app secrets, using `npx deepspace secrets`, project/config mapping, generated `.dev.vars` cache behavior, or changing SDK cache handling. |
 | `references/sdk-reference.md` | Any hook / type / export beyond `useQuery` / `useMutations` / `useAuth` — messaging, game rooms, presence, Yjs, canvas, R2. Open before `node_modules/deepspace/dist/*.d.ts`. |
