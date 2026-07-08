@@ -156,7 +156,7 @@ Cost rollup multipliers live in `COST_RATES` (also exported from `deepspace/work
 
 - **Vectorize dimension / metric mismatch is not caught at deploy.** If you change `dimensions` from 768 → 1536 after the index was created, adoption succeeds and the failure surfaces at first-vector-insert at runtime. Delete the index and redeploy if you really need to change shape.
 - **`"auto"` is platform-side only.** Local dev does not provision; the binding only resolves at `npx deepspace deploy`. For local development against a real CF resource, point the binding at a manually-created resource by ID instead of `"auto"`.
-- **User-secret names cannot collide with custom-binding names or DO class names.** The deploy worker rejects with 400 before forwarding to WfP. If you hit this, rename the `.dev.vars` key or the binding.
+- **User-secret names cannot collide with custom-binding names or DO class names.** The deploy worker rejects with 400 before forwarding to WfP. If you hit this, rename the remote secret key or the binding.
 - **`runMigrations` is naive on `;`-inside-literals.** If you need DDL with embedded semicolons (extremely rare; mostly only triggers when seeding fixture rows from a migration), split that statement into its own array entry without a trailing `;`.
 - **Hyperdrive can be declared but cannot use `"auto"`.** Provision the Hyperdrive config in the CF dashboard, copy the ID into `wrangler.toml`, and redeploy.
 - **R2 + Vectorize CF-side names are not the binding name.** When debugging in the CF dashboard, look for `app-<appName>-<bindingLower>` — that's the actual resource name. The friendly `binding = "VEC"` is only what your worker code sees.

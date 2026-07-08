@@ -1,4 +1,4 @@
-_Load this reference for deploy mechanics, the `.dev.vars` contract, and secret handling. For the login contract and the full CLI command catalog, see `references/cli.md`._
+_Load this reference for deploy mechanics, the `.dev.vars` contract, and secret handling. For managing app secrets or understanding `.dev.vars` cache behavior, also read `references/secrets.md`. For the login contract and the full CLI command catalog, see `references/cli.md`._
 
 # Deploy, `.dev.vars`, and secrets
 
@@ -14,24 +14,25 @@ On an **initial build**, run the pre-deploy checklist in `references/uiux.md` §
 
 ## `.dev.vars` contract
 
-`dev` / `test` rewrite **only the 9 SDK-managed keys**: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `APP_IDENTITY_TOKEN`, `ALLOW_DEBUG_ROUTES`. They live above a `# --- not managed by the SDK; preserved across dev/test runs ---` divider the CLI writes itself. `APP_IDENTITY_TOKEN` is only populated after the first `npx deepspace deploy` (deploy-worker mints it on app registration) — only matters if you use payments or `captureScreenshot` locally before deploy.
+`dev` / `test` rewrite the SDK-managed keys: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `APP_IDENTITY_TOKEN`, `ALLOW_DEBUG_ROUTES`. `APP_IDENTITY_TOKEN` is only populated after the first `npx deepspace deploy` (deploy-worker mints it on app registration) — only matters if you use payments or `captureScreenshot` locally before deploy.
 
-Anything you add **below** that divider — third-party API tokens, custom feature flags, your own service URLs — is preserved verbatim across `dev` / `test` runs, **and shipped to prod as `secret_text` bindings on `deploy`** (same `env.MY_KEY` access in dev and prod; no `wrangler secret put` step).
+App secrets now live in the remote DeepSpace secrets store for every environment, including local-only dev/test. `.dev.vars` is a generated local cache that `dev`, `test`, and `deploy` refresh when `wrangler.toml` links a secrets project/config. Checked-out apps may list required secret names in a `DeepSpace required secrets` comment block in `wrangler.toml`; set those values with the CLI. Do **not** add or update app secrets by editing `.dev.vars`; use `npx deepspace secrets ...` instead. Detailed command usage, project/config mapping, and troubleshooting -> `references/secrets.md`.
 
 Limits enforced server-side at deploy:
-- Name must match `^[A-Za-z_][A-Za-z0-9_]*$`.
+- Name must match `^[A-Z_][A-Z0-9_]*$`.
 - Per-value cap: **32 KB**. Total across all user secrets: **128 KB**. Raw JSON payload cap: **1 MB** → 413.
 - Name must not collide with `RESERVED_BINDING_NAMES` (11 SDK-owned), any declared custom binding, or any DO class in `__DO_MANIFEST__`. Read `references/bindings.md` if a collision trips you.
 
-## Handling rules — `.dev.vars` holds live credentials
+## Handling rules — `.dev.vars` can hold live credentials
 
-The file holds a live `APP_OWNER_JWT` (signed against the user's identity) plus whatever third-party tokens (Stripe, OpenAI, …) the user wrote below the divider. Treat its contents as secret throughout the session, not just at commit time:
+The file holds a live `APP_OWNER_JWT` (signed against the user's identity) plus a plaintext local cache of any linked remote secrets. Treat its contents as secret throughout the session, not just at commit time:
 
 - **Never read the file's values into your output.** No `cat .dev.vars`, no `head`/`grep`/`Read`-then-paste, no inclusion in summaries, generated docs, READMEs, commit messages, PR bodies, or screenshots. To confirm a key is present, check the *key name* (`grep -l '^STRIPE_SECRET_KEY=' .dev.vars` — files-only, not content) and report presence/absence — never the value.
-- **Never pass secrets as CLI args.** `MY_KEY=… npx deepspace dev` leaks into shell history, `ps aux`, and child-process env dumps. Write the line into `.dev.vars` below the divider and read it via `env.MY_KEY` in worker code.
+- **Never write app secrets directly to `.dev.vars`, even for local-only testing.** The CLI is the source-of-truth path for local, test, staging, and production. If a local test needs a secret, link the appropriate config and run `npx deepspace secrets set KEY=value` or `npx deepspace secrets upload FILE`.
+- **Never pass secret values as shell env or unrelated CLI args.** `MY_KEY=… npx deepspace dev` leaks into shell history, `ps aux`, and child-process env dumps. Use `npx deepspace secrets set KEY=value` or `npx deepspace secrets upload FILE`.
 - **Never commit `.dev.vars`.** The scaffold's `.gitignore` covers it; don't add a `!` exception, don't `git add -f`, don't paste its contents into a tracked file. If `git status` shows it untracked, that's correct — leave it.
 - **Never assert on secret values in tests.** Test that auth *works* (a request returns 200, a webhook fires) — never `expect(env.STRIPE_SECRET_KEY).toBe('sk_live_…')`.
-- **Adding a new secret** is one step: append `KEY=value` below the divider, then `npx deepspace dev` / `deploy`. The CLI uploads it as `secret_text` on deploy — no `wrangler secret put`, no out-of-band copy.
+- **Adding a new linked secret** is `npx deepspace secrets setup --config <config>` once per app/env, then `npx deepspace secrets set KEY=value`. Use `--project <project> --config <config>` for one-off reads/writes; create staging-like configs with `configs clone prd --project <project> --name staging` instead of manually copying values. `set` updates the remote store; `dev`, `test`, and `deploy` refresh the generated cache only when that project/config is linked. A one-off `--project` / `--config` write stays remote-only and prints a link reminder. No `wrangler secret put`, no out-of-band copy.
 
 ## Staging / multiple environments (`--env`, v0.4+)
 
@@ -39,7 +40,7 @@ The file holds a live `APP_OWNER_JWT` (signed against the user's identity) plus 
 npx deepspace deploy --env staging   # deploys the [env.staging] block
 ```
 
-`--env <name>` deploys a named `[env.<name>]` wrangler block to its own subdomain with its own isolated Durable Objects — use it to rehearse risky changes (schema migrations, bulk imports, destructive backfills) before production. Omit `--env` to deploy the top-level config. The build runs with `CLOUDFLARE_ENV=<name>`, so the Cloudflare Vite plugin applies that env's overrides and reads **`.dev.vars.<name>`** instead of `.dev.vars` (so per-env secrets like a staging-only gate live in `.dev.vars.staging`, below the same divider).
+`--env <name>` deploys a named `[env.<name>]` wrangler block to its own subdomain with its own isolated Durable Objects — use it to rehearse risky changes (schema migrations, bulk imports, destructive backfills) before production. Omit `--env` to deploy the top-level config. The build runs with `CLOUDFLARE_ENV=<name>`, so the Cloudflare Vite plugin applies that env's overrides. DeepSpace still uses a single generated `.dev.vars` cache. Linked secrets default to config `prd` for top-level deploys and config `<name>` for `--env <name>` unless `wrangler.toml` overrides them.
 
 Two rules the CLI fail-fasts on:
 
