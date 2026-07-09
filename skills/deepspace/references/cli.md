@@ -38,11 +38,18 @@ npx deepspace test e2e             # all Playwright specs
 npx deepspace test unit            # vitest
 npx deepspace screenshot http://localhost:5173/ out.png [--full-page --wait-for-timeout 500]
 
+# --- App secrets (remote source of truth for all envs; never hand-edit .dev.vars*) → references/secrets.md ---
+npx deepspace secrets list
+npx deepspace secrets set API_KEY=...
+npx deepspace secrets pull
+npx deepspace secrets configs clone prd --project myapp --name staging
+npx deepspace secrets setup --project myapp --config staging --env staging
+
 # --- Integrations discovery (NO AUTH for list/info; invoke is billed) → references/integrations.md ---
 npx deepspace integrations list
 npx deepspace integrations info openai/chat-completion
 npx deepspace invoke openai/chat-completion --body '{...}'      # AUTH REQUIRED — actually calls, billed to caller
-npx deepspace invoke openai/chat-completion --body-file -        # body via stdin
+npx deepspace invoke openai/chat-completion --body-file request.json
 
 # --- Custom domain (→ references/domain.md) ---
 npx deepspace domain search <query>

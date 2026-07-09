@@ -94,6 +94,7 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 |---|---|
 | `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`integrations`/`test-accounts`/`screenshot`/`library`), and the `test` command. |
 | `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, and multi-environment / staging deploys (`deploy --env`). |
+| `references/secrets.md` | Managing app secrets, using `npx deepspace secrets`, project/config mapping, generated `.dev.vars` cache behavior, or changing SDK cache handling. |
 | `references/sdk-reference.md` | Any hook / type / export beyond `useQuery` / `useMutations` / `useAuth` — messaging, game rooms, presence, Yjs, canvas, R2. Open before `node_modules/deepspace/dist/*.d.ts`. |
 | `references/schemas.md` | Defining a collection, picking a permission rule, debugging "why can't this user see/edit X." |
 | `references/auth.md` | Choosing the auth model (public / gated / mixed), adding `<AuthGate>`, customizing the sign-in fallback. |
