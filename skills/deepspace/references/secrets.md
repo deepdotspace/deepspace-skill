@@ -1,43 +1,58 @@
-_Load this reference before managing app secrets, understanding `.dev.vars` cache behavior, or changing SDK cache/deploy handling._
+_Load this reference before managing app secrets, migrating a legacy `.dev.vars` app, understanding cache behavior, or debugging a secrets 403 as a collaborator._
 
 # Secrets
 
-DeepSpace app secrets are platform-owned and project-scoped. The remote store is the source of truth for every environment, including local-only dev/test. `.dev.vars` is a generated plaintext cache that `dev`, `test`, and `deploy` refresh before running when a secrets project is linked; do not add or update app secrets by editing that file directly.
+App secrets are platform-owned, encrypted at rest, and project-scoped. The remote store is the source of truth for **every** environment — local dev/test included. `.dev.vars` is a generated plaintext cache (written `0600`) that `dev`, `test`, and `deploy` refresh before running whenever a secrets project is linked. Never add or edit app secrets in that file directly.
+
+Worker code reads secrets as `env.API_KEY` — identical in dev and after deploy (deploy binds them as Cloudflare `secret_text`).
+
+## Bootstrap: one command
+
+```bash
+npx deepspace secrets setup        # link this app → <wrangler name>/prd
+npx deepspace secrets set API_KEY=sk_test_...
+npx deepspace dev                  # refreshes the cache, worker sees env.API_KEY
+```
+
+`setup` does everything at once: writes the link into `wrangler.toml`, **creates the remote project/config if it doesn't exist yet**, and — if the app has legacy hand-written secrets in `.dev.vars` — **migrates them** (see below). No flags needed for the standard case.
+
+## Migrating a legacy app
+
+Apps that predate the secrets store kept secrets as hand-written `.dev.vars` lines (still deployed via a legacy pass-through — deploy prints a nudge). Migration is the same one command:
+
+```bash
+npx deepspace secrets setup
+# Imported 2 legacy secrets from .dev.vars into myapp/prd: MY_API_KEY, MY_TOKEN
+# Removed the migrated lines from the local file; the remote store owns them now.
+```
+
+Rules: import runs only into an **empty** config (never overwrites existing remote values — it says so and points at `secrets upload` for a manual merge); SDK-managed keys are skipped; the migrated lines are deleted from the local file only **after** the upload is confirmed. A fully-migrated legacy `.dev.vars.<env>` file is removed entirely.
 
 ## Commands
 
 ```bash
-npx deepspace secrets list
-npx deepspace secrets set API_KEY=sk_test_...
+npx deepspace secrets list                     # masked; never prints values
+npx deepspace secrets set API_KEY=sk_test_...  # KEY=value or `set KEY value`; multiline/PEM values fine
 npx deepspace secrets get API_KEY --plain
 npx deepspace secrets delete API_KEY
-npx deepspace secrets pull
-npx deepspace secrets download .env --format env
-npx deepspace secrets upload .env
-npx deepspace secrets upload .env --replace
+npx deepspace secrets pull                     # refresh the cache without running dev
+npx deepspace secrets download --no-file --format env   # stdout; also json|yaml|docker; file arg writes 0600
+npx deepspace secrets upload .env [--replace]  # dotenv or JSON; --replace deletes keys absent from the file
 
 npx deepspace secrets configs list
-npx deepspace secrets configs clone prd --project myapp --name staging
-npx deepspace secrets configs delete --project myapp --config staging
-npx deepspace secrets setup --project myapp --config staging --env staging
-npx deepspace secrets configure unset project config
+npx deepspace secrets configs create qa
+npx deepspace secrets configs clone prd --name staging  # server-side copy — never read+re-set values manually
+npx deepspace secrets configs delete staging --yes
+npx deepspace secrets configure unset project config    # unlink + clear the generated cache
 ```
 
-Secret names follow the Doppler-style env-safe format: uppercase letters, numbers, and underscores only, and not starting with a number. Values are available to worker code as `env.API_KEY` in dev and after deploy.
+Names: `[A-Za-z_][A-Za-z0-9_]*`, conventionally `UPPER_SNAKE`. SDK-reserved binding names (`ASSETS`, `APP_OWNER_JWT`, …) are rejected. Caps: 32 KB per value, 128 KB total per config.
 
-## Projects And Configs
+## Projects and configs
 
-Defaults are intentionally quiet:
+A **project** groups **configs** (`prd`, `staging`, `qa`, …); each config is a flat set of KEY=value secrets. Doppler users can bring their muscle memory — `-p/--project`, `-c/--config`, `--scope`, `KEY value`, `upload`/`download` all behave as expected.
 
-- Project defaults to the top-level canonical `wrangler.toml` `name`.
-- Top-level deploys default to config `prd`.
-- Use `--project <project> --config <config>` for one-off reads/writes, in that order, matching Doppler's mental model.
-- `--env <wrangler-env>` is only for the wrangler env link slot (`[env.<env>.vars]`); do not use it as the normal way to choose a secrets config.
-- `secrets set`, `secrets upload`, `secrets pull`, `configs create`, and `configs clone` can target remote projects/configs, but they do **not** persist a link in `wrangler.toml`.
-- `configs clone prd --project myapp --name staging` creates `staging` by copying current values from `prd` server-side; do this instead of manually reading and re-setting existing secrets.
-- Only `secrets setup` writes `DEEPSPACE_SECRETS_PROJECT` / `DEEPSPACE_SECRETS_CONFIG`; only `secrets configure unset project config` removes them.
-
-Links are non-secret vars:
+Defaults are quiet: project = top-level `wrangler.toml` `name`; config = `prd` (or `<env>` for `--env <env>` targets). One-off `--project`/`--config` flags read/write remote state **without** linking; only `setup` writes the link, only `configure unset` removes it. Links are plain vars:
 
 ```toml
 [vars]
@@ -45,55 +60,46 @@ DEEPSPACE_SECRETS_PROJECT = "myapp"
 DEEPSPACE_SECRETS_CONFIG = "prd"
 
 [env.staging.vars]
-DEEPSPACE_SECRETS_CONFIG = "staging"
+DEEPSPACE_SECRETS_CONFIG = "staging"   # env slots inherit the project, override the config
 ```
 
-Env blocks inherit the top-level secrets project unless explicitly linked to another project. Use `npx deepspace secrets setup --project myapp --config staging --env staging` to map a deploy env to a config. Use `--project other-project` only when you intentionally want a different project.
-
-First-time app flow:
+Staging flow:
 
 ```bash
-npx deepspace secrets setup --config prd
-npx deepspace secrets set API_KEY=sk_test_...
-npx deepspace dev      # or test/deploy; refreshes the linked cache before running
+npx deepspace secrets configs clone prd --name staging
+npx deepspace secrets setup --config staging --env staging
 ```
 
-For staging:
+Keep **one project per app** unless you deliberately want sharing — collaborator access is project-wide (see below).
 
-```bash
-npx deepspace secrets configs clone prd --project myapp --name staging
-npx deepspace secrets setup --project myapp --config staging --env staging
-npx deepspace secrets set --project myapp --config staging API_KEY=sk_test_...
-```
+## Checked-out apps: the advisory block
 
-## Cloned Projects
-
-When working in a checked-out existing app, inspect `wrangler.toml` for a comments-only advisory before running `dev`, `test`, or `deploy`:
+A checked-out app may carry a names-only comment block in `wrangler.toml` (the CLI maintains it on `set`/`delete`/`upload`):
 
 ```toml
-# --- DeepSpace required secrets (names only; values live in `npx deepspace secrets`) ---
+# --- DeepSpace detected secrets (names only; values live in `npx deepspace secrets`) ---
 #   OPENAI_API_KEY
 #   STRIPE_SECRET_KEY
-# --- end DeepSpace required secrets ---
+# --- end DeepSpace detected secrets ---
 ```
 
-These are names only, not values, and the block is nonblocking metadata for the top-level production-linked config. If names are listed, create/link your own config for the cloned app and set each value with `npx deepspace secrets set KEY=value` or `npx deepspace secrets upload FILE`; never infer values and never write `.dev.vars` directly. If you need a staging-like config that starts from production values, use `configs clone prd --project <project> --name staging` instead of reading and re-setting secrets. If the block is absent or says `(none declared)`, proceed normally unless the user or app docs provide required secret names elsewhere.
+These are names, not values, and they describe the owner's linked config. If you don't have access to that project, run `setup --project <your-project>` to link your own and `secrets set` each listed name. Never infer values; never write `.dev.vars` directly.
 
-## Cache Behavior
+## Collaborators
 
-The generated cache marker looks like:
+A collaborator ([references/collaborators.md](collaborators.md)) gets secrets access **through the app link**: run commands from the app checkout so the CLI scopes requests to the app. Within the owner's linked project they can read, write, and manage configs (writes are audited under their own id). They **cannot** create a missing project, change which project the app links to, or reach any project the owner's app doesn't link. A `secrets_project_not_linked` 403 means the owner hasn't deployed/linked yet.
 
-```dotenv
-# --- DeepSpace secrets cache: generated by `npx deepspace secrets`; do not edit manually ---
-```
+## Cache behavior
 
-Do not manually edit `.dev.vars` to add local, test, staging, or production app secrets. Use the `secrets` command and then rerun `dev`, `test`, or `deploy`; those commands refresh linked secrets before using `.dev.vars`. `secrets set` / `upload` also refresh the cache immediately when the selected target is already linked. A one-off `--project` / `--config` command updates or reads remote state only unless that target is already linked for the app/env. If refresh fails for a linked project, deploy fails instead of shipping stale cached values.
-
-Fresh apps with no `DEEPSPACE_SECRETS_PROJECT` link do not create a secrets project and do not fail just because no remote secrets exist. `secrets configure unset project config` clears the generated cache while preserving non-generated vars the SDK does not own; do not use that preserved area as a workaround for app secrets.
+- `dev` / `test` / `deploy` re-pull linked secrets before running; if the refresh fails, they **abort** rather than ship a stale cache.
+- `set` / `upload` / `delete` refresh the cache immediately when the target is linked; unlinked one-off writes stay remote-only and print a link reminder.
+- The generated section is fenced by a `# --- DeepSpace secrets cache: … ---` marker; content above it (non-secret local vars) is preserved across rewrites.
+- `configure unset project config` unlinks and strips the generated section.
 
 ## Troubleshooting
 
-- `Project not found` or `Config not found`: run `npx deepspace secrets configs create --project <project> --config <config>` or relink with `secrets setup`.
-- Secret changed but production still sees the old value: redeploy. Runtime secrets are bound as Cloudflare `secret_text`, so deployed workers do not fetch secrets remotely.
-- Name rejected: rename it to match `^[A-Z_][A-Z0-9_]*$` and avoid SDK-reserved binding names like `ASSETS`.
-- Staging reads production data: check `[env.staging].name`, `[env.staging.vars].APP_NAME`, and the secrets config link separately. App identity and secrets config are related but not the same setting.
+- **Changed a secret but production still sees the old value** → redeploy. Deployed workers hold `secret_text` bindings; they don't fetch at runtime.
+- **`secrets_project_not_linked` (403)** → you're accessing as a collaborator but the owner's app doesn't link this project. The owner runs `setup` + `deploy` first.
+- **`Collaborators cannot create missing secrets projects` (403)** → the owner must create it (their `setup` does), then you can work inside it.
+- **Pull returned 0 secrets** → check which project/config is linked (`wrangler.toml` vars) — a fresh config is legitimately empty; `-c <other>` reads a different config without relinking.
+- **Name rejected** → match `[A-Za-z_][A-Za-z0-9_]*` and avoid SDK-reserved binding names.

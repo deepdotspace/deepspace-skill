@@ -10,16 +10,18 @@ npx deepspace deploy   # → <wrangler.name>.app.space
 
 The subdomain is the `name` field in `wrangler.toml`, **not** the app-folder name — edit it there if you want a different deploy target; `deploy` does not accept a name override. It must match `^[a-z0-9](?:-?[a-z0-9])+$` (2-63 chars, lowercase); `dev` and `deploy` fail-fast on a non-canonical name (see `references/architecture.md` § App-name rules). Deploy requires a logged-in session — re-run `npx deepspace login` if it expired (full login contract → `references/cli.md`).
 
+You don't have to own the app: a **collaborator** the owner added (`npx deepspace collaborators add <email>`) deploys the same way — the CLI prints `Deployed on behalf of owner <id>` and ownership/billing stay the owner's. Collaborators cannot `undeploy`. → `references/collaborators.md`
+
 On an **initial build**, run the pre-deploy checklist in `references/uiux.md` §5 first (home replaced, theme picked, browser-default primitives removed, toasts wired). On follow-up deploys with those already verified, just run the command.
 
 ## `.dev.vars` contract
 
 `dev` / `test` rewrite the SDK-managed keys: `AUTH_JWT_PUBLIC_KEY`, `AUTH_JWT_ISSUER`, `AUTH_WORKER_URL`, `API_WORKER_URL`, `PLATFORM_WORKER_URL`, `OWNER_USER_ID`, `APP_OWNER_JWT`, `APP_IDENTITY_TOKEN`, `ALLOW_DEBUG_ROUTES`. `APP_IDENTITY_TOKEN` is only populated after the first `npx deepspace deploy` (deploy-worker mints it on app registration) — only matters if you use payments or `captureScreenshot` locally before deploy.
 
-App secrets now live in the remote DeepSpace secrets store for every environment, including local-only dev/test. `.dev.vars` is a generated local cache that `dev`, `test`, and `deploy` refresh when `wrangler.toml` links a secrets project/config. Checked-out apps may list required secret names in a `DeepSpace required secrets` comment block in `wrangler.toml`; set those values with the CLI. Do **not** add or update app secrets by editing `.dev.vars`; use `npx deepspace secrets ...` instead. Detailed command usage, project/config mapping, and troubleshooting -> `references/secrets.md`.
+App secrets live in the remote DeepSpace secrets store for every environment, including local-only dev/test. `.dev.vars` is a generated local cache (written `0600`) that `dev`, `test`, and `deploy` refresh when `wrangler.toml` links a secrets project/config. Checked-out apps may list secret names in a `DeepSpace detected secrets` comment block in `wrangler.toml`; set those values with the CLI. Do **not** add or update app secrets by editing `.dev.vars`; use `npx deepspace secrets ...` instead — and on an older app that still has hand-written secret lines, one `npx deepspace secrets setup` migrates them into the store (deploy prints a nudge while the legacy pass-through is in use). Detailed command usage, project/config mapping, migration, and troubleshooting → `references/secrets.md`.
 
 Limits enforced server-side at deploy:
-- Name must match `^[A-Z_][A-Z0-9_]*$`.
+- Name must match `^[A-Za-z_][A-Za-z0-9_]*$` (convention: `UPPER_SNAKE`).
 - Per-value cap: **32 KB**. Total across all user secrets: **128 KB**. Raw JSON payload cap: **1 MB** → 413.
 - Name must not collide with `RESERVED_BINDING_NAMES` (11 SDK-owned), any declared custom binding, or any DO class in `__DO_MANIFEST__`. Read `references/bindings.md` if a collision trips you.
 
