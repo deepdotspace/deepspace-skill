@@ -39,11 +39,17 @@ npx deepspace test unit            # vitest
 npx deepspace screenshot http://localhost:5173/ out.png [--full-page --wait-for-timeout 500]
 
 # --- App secrets (remote source of truth for all envs; never hand-edit .dev.vars*) → references/secrets.md ---
-npx deepspace secrets list
+npx deepspace secrets setup        # link once; auto-creates the config, migrates legacy .dev.vars secrets
 npx deepspace secrets set API_KEY=...
+npx deepspace secrets list
 npx deepspace secrets pull
-npx deepspace secrets configs clone prd --project myapp --name staging
-npx deepspace secrets setup --project myapp --config staging --env staging
+npx deepspace secrets configs clone prd --name staging
+npx deepspace secrets setup --config staging --env staging
+
+# --- Collaborators (owner-only management; collaborators can deploy, not undeploy) → references/collaborators.md ---
+npx deepspace collaborators list
+npx deepspace collaborators add teammate@example.com     # must already be a DeepSpace user
+npx deepspace collaborators remove teammate@example.com
 
 # --- Integrations discovery (NO AUTH for list/info; invoke is billed) → references/integrations.md ---
 npx deepspace integrations list
