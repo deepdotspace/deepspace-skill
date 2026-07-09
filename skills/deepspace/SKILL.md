@@ -61,7 +61,7 @@ When you build by hand, where things live (load the matching reference from the 
 |---|---|
 | `src/schemas.ts` + `src/schemas/` | Collection schemas. Ships `usersSchema` (required, don't rename) + `settingsSchema`. |
 | `src/pages/` | File routes (generouted). `(protected)/` is the gated group. `_app.tsx` is the provider stack — **extend, don't replace.** |
-| `src/themes.ts` + `src/themes.css` | 15 presets, set on `<html data-theme>`. **Don't ship the default `slate`.** |
+| `src/themes.ts` + `src/themes.css` | Theme tokens, set on `<html data-theme>`. Ships two placeholders (`slate` dark default, `paper` light example) — **create the app's own theme; don't ship a placeholder.** → `references/uiux.md` §2 |
 | `src/constants.ts` | `APP_NAME`, `SCOPE_ID`, role re-exports. |
 | `worker.ts` | Hono worker; `__DO_MANIFEST__` declares the DO classes. AI chat routes live in `src/ai/chat-routes.ts`. → `references/architecture.md` |
 
@@ -84,7 +84,7 @@ npx deepspace deploy --env staging   # → isolated staging instance (v0.4+); re
 npx deepspace kill       # if your own dev port is stuck (never kill a sibling session's)
 ```
 
-Deploy's subdomain is `wrangler.toml`'s `name`, not the folder. On a **first** deploy, clear the pre-deploy checklist in `references/uiux.md` §5 (real home, theme picked, no browser-default primitives). Deploy mechanics, the `.dev.vars` contract, secret handling, and **multi-env / staging (`--env`, incl. the client-`APP_NAME` sync gotcha)** → `references/deploy.md`. The full CLI catalog (`integrations`, `test-accounts`, `screenshot`, `domain`, `library`, dev/kill flags) → `references/cli.md`.
+Deploy's subdomain is `wrangler.toml`'s `name`, not the folder. On a **first** deploy, clear the pre-deploy checklist in `references/uiux.md` §5 (real home replacing the placeholder stub, an own theme created — not `slate`/`paper`, no browser-default primitives). Deploy mechanics, the `.dev.vars` contract, secret handling, and **multi-env / staging (`--env`, incl. the client-`APP_NAME` sync gotcha)** → `references/deploy.md`. The full CLI catalog (`integrations`, `test-accounts`, `screenshot`, `domain`, `library`, dev/kill flags) → `references/cli.md`.
 
 ## Load a reference when you reach its surface
 
@@ -108,11 +108,14 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 | `references/domain.md` | Buying / attaching / managing a custom domain. |
 | `references/uiux.md` | Theme, home page, primitives, "feels generic" feedback. Before `<select>` / `window.confirm` / `window.alert`. |
 | `references/testing.md` | Writing/extending specs, multi-user flows, debugging flaky tests. |
+| `references/preview.md` | Using the Claude desktop preview tool (`preview_start`), or when the preview shows stale code / edits never appear — especially inside a `.claude/worktrees/*` worktree. |
 | `references/landing-design.md` | Marketing / landing / splash pages. |
 
 ## Traps worth knowing up front
 
+- **The scaffold shell is a placeholder, not a design.** The stub home page, minimal nav bar, and `slate`/`paper` themes are deliberately bare — never extend or imitate them as "the house style." Design the app's own look and theme (→ `references/uiux.md`; landing pages → `references/landing-design/`).
 - **Scaffold's UI primitives shadow the SDK.** `_app.tsx` uses `ToastProvider` from `src/components/ui/`, not `deepspace`. Importing `useToast` (or any local primitive) from `deepspace` throws at runtime. **Import from `../components/ui`.**
 - **Page files belong in `src/pages/`** — generouted scans only there; pages under `src/features/<name>/` 404.
 - **Don't kill or assume a clean port 5173.** `tests/playwright.config.ts` ships `reuseExistingServer: true`, so if a sibling session already holds 5173 your tests silently run against *its* app. Don't kill another session's processes — use `npx deepspace dev --port 5174` and match `webServer.port` + `use.baseURL` in the config. → `references/testing.md`
 - **Never put identity in WebSocket URLs or `/api/*` headers** — the starter strips `userId`/`role`/etc. and re-applies them only from a verified JWT. Caller identity is always the JWT subject. → `references/architecture.md`
+- **Preview tool shows stale code / your edits never appear** — if you're editing in `.claude/worktrees/*`, the desktop preview tool serves the MAIN repo, not the worktree. Run `npx deepspace dev` once in the worktree and use the `wt-<name>` preview config it prints. → `references/preview.md`
