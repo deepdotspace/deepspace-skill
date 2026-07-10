@@ -61,7 +61,7 @@ Themes are `[data-theme="<id>"]` CSS blocks overriding the shadcn tokens, activa
 3. **Register it** — add an entry to the `THEMES` array in `src/themes.ts` (type safety + catalog), then set `data-theme="<your-id>"` in `index.html`.
 4. **Shape** — the primitives take their corner rounding from `--radius` (default `0.5rem`). Sharp/technical product → shrink it; soft/friendly → grow it. One variable, whole-app effect.
 5. **Update `<title>`** in `index.html` and replace the favicon. The defaults say "DeepSpace App".
-6. **Wordmark & nav** — the scaffold `Navigation.tsx` is a minimal placeholder bar. Restyle or rebuild it to fit the app (a plain-text wordmark in a distinctive font is enough), but keep its wired mechanisms: sign-in (`AuthOverlay`), sign-out, and links driven by `src/nav.ts` (append there to add items). **Keep the `data-testid` hooks (`app-navigation`, `nav-sign-in-button`, `nav-user-name`)** — the shipped tests assert on them.
+6. **Wordmark & nav** — the scaffold `Navigation.tsx` is a minimal placeholder bar. Restyle or rebuild it to fit the app (a plain-text wordmark with a deliberate treatment is enough — §2a), but keep its wired mechanisms: sign-in (`AuthOverlay`), sign-out, and links driven by `src/nav.ts` (append there to add items). **Keep the `data-testid` hooks (`app-navigation`, `nav-sign-in-button`, `nav-user-name`)** — the shipped tests assert on them.
 
 A single token swap is not enough; a theme that still looks like `slate` with one changed accent is not a theme. Set at least: background, foreground, card, primary, secondary, accent, ring.
 
@@ -94,7 +94,7 @@ Allowed emoji contexts:
 - **Message reactions** — the reaction picker itself (👍 🎉 ❤️ etc. as the selectable set).
 - **The user explicitly asks for emojis** ("add a grocery emoji to the header").
 
-Everywhere else, use a `lucide-react` icon (already a scaffold dep) or a text-only treatment. Good wordmarks are plain text in a distinctive font — not an emoji next to a heading. **Vary the treatment per app** (serif, mono, wide-tracked caps, weight contrast, a two-tone mark…): if every app's wordmark is `font-serif tracking-tight`, that's its own monoculture.
+Everywhere else, use a `lucide-react` icon (already a scaffold dep) or a text-only treatment. Good wordmarks are plain text with a deliberate treatment — not an emoji next to a heading. Design the treatment by choosing along four dimensions — **font family, weight, letter-spacing, case** — to match the theme's personality. Any consistent choice is fine; derive it from *this* app's character, not from a previous app or an example.
 
 ## 3. UI Primitives — Use the Scaffolded Base UI Kit, Never Browser Defaults
 
