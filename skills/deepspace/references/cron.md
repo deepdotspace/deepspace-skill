@@ -89,7 +89,7 @@ Render task status, history, and (optionally) `trigger` / `pause` / `resume` con
 `npx deepspace add cron` installs:
 
 - a 1-minute `heartbeat` task in `src/cron.ts` (no-op `runTask` — extend it),
-- a public, read-only `/cron-log` viewer page (`src/pages/cron-log.tsx`) that subscribes via `useCronMonitor(SCOPE_ID)` and renders `tasks` + `history` + connection status. It does **not** expose `trigger` / `pause` / `resume` — add those yourself with the admin-gating rule above if you need them.
+- a public, read-only `/cron-log` viewer page (installed at `src/pages/(app)/cron-log.tsx` — the installer places page files under the `(app)/` route group so the providers mount) that subscribes via `useCronMonitor(SCOPE_ID)` and renders `tasks` + `history` + connection status. It does **not** expose `trigger` / `pause` / `resume` — add those yourself with the admin-gating rule above if you need them.
 
 The cron feature does **not** ship a Playwright spec into the scaffolded app — it adds the runtime surfaces only. Write your own cron spec in `tests/api.spec.ts` using `trigger` to fire `onTask` synchronously and asserting against `cron_history`. Don't wait for `intervalMinutes: 1` to tick.
 

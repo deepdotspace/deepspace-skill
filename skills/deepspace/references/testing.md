@@ -15,7 +15,7 @@ Every scaffolded app includes Playwright tests in `tests/` with helpers for auth
 | Trigger | Required test |
 |---|---|
 | Added a schema | `smoke.spec.ts` — CRUD happy path (create → read → edit → delete for a signed-in user) |
-| Added/edited a route, page, nav item, or top-level UI (landing, gallery, dashboard, settings) | `smoke.spec.ts` — page-load with **real-content** assertion (not just "no crash"). For `(protected)/` routes: also assert two-state (signed-out → `[data-testid="auth-overlay"]` visible **and** content not in DOM; signed-in → content visible, no overlay). For public routes: `[data-testid="auth-overlay"]` count is `0`. |
+| Added/edited a route, page, nav item, or top-level UI (landing, gallery, dashboard, settings) | `smoke.spec.ts` — page-load with **real-content** assertion (not just "no crash"). For `(app)/(protected)/` routes: also assert two-state (signed-out → `[data-testid="auth-overlay"]` visible **and** content not in DOM; signed-in → content visible, no overlay). For public routes: `[data-testid="auth-overlay"]` count is `0`. |
 | Schema with `visibilityField` or `'public'`/`'shared'`/`'team'`/`'own'` permissions | `collab.spec.ts` — two-user assertion (A acts, B sees) |
 | Used `useYjs*` / `useMessages` / `useReactions` / `usePresence` / `useCanvas` | `collab.spec.ts` — two-user assertion |
 | Added/edited worker route, server action, `/api/ai/chat`, cron handler, `integration.post(...)`, or auth-gated UI calling `/api/actions/<name>` | `api.spec.ts` — status codes + response shape + auth gating (incl. 401/403 negative path). For integrations: POST and assert `success: true` with the shape the UI consumes — locks the contract, catches wrong endpoint names. |
@@ -212,13 +212,14 @@ Passing a smoke test where the detail page silently shows "Poll not found" is th
 
 ## Auth-state coverage — public vs gated routes
 
-The scaffold ships the **mixed** auth config (public landing + gated app via `(protected)/_layout.tsx`). Every route falls in one of three buckets — each needs a different smoke assertion:
+The scaffold ships the **mixed** auth config (static landing at the top level of `src/pages/`, dynamic app under `(app)/`, gated group via `(app)/(protected)/_layout.tsx`). Every route falls in one of these buckets — each needs a different smoke assertion:
 
 | Route lives at | Smoke assertion |
 |---|---|
-| `src/pages/<name>.tsx` (public) | `signed-out` visitor sees real content + `[data-testid="auth-overlay"]` has count `0`. If overlay leaks, the route is accidentally gated. |
-| `src/pages/(protected)/<name>.tsx` (gated) | `signed-out` visitor sees `[data-testid="auth-overlay"]` visible **and** the page's real content is **not** in the DOM. `signed-in` visitor sees real content + zero overlays. |
-| Any route after a sign-out from inside `(protected)/` | After clicking Sign out, URL navigates to `redirectOnSignOut` (default `'/'`, which usually redirects on to `/home`). Assert the URL change happened AND the overlay didn't appear. The full-page `window.location.replace` is the SDK's safe-redirect; testing it catches the regression where users got stranded staring at the overlay. |
+| `src/pages/<name>.tsx` (static, public) | `signed-out` visitor sees real content + `[data-testid="auth-overlay"]` has count `0`. Also assert the **static contract**: no `/api/auth` request fired and no WebSocket opened during load (the shipped `smoke.spec.ts` "static contract" test for the landing is the pattern to copy). |
+| `src/pages/(app)/<name>.tsx` (dynamic, public) | `signed-out` visitor sees real content + `[data-testid="auth-overlay"]` has count `0`. If overlay leaks, the route is accidentally gated. |
+| `src/pages/(app)/(protected)/<name>.tsx` (gated) | `signed-out` visitor sees `[data-testid="auth-overlay"]` visible **and** the page's real content is **not** in the DOM. `signed-in` visitor sees real content + zero overlays. |
+| Any route after a sign-out from inside `(app)/(protected)/` | After clicking Sign out, URL navigates to `redirectOnSignOut` (default `'/'` — the static landing in the shipped scaffold). Assert the URL change happened AND the overlay didn't appear. The full-page `window.location.replace` is the SDK's safe-redirect; testing it catches the regression where users got stranded staring at the overlay. |
 
 The `[data-testid="auth-overlay"]` attribute is on the SDK's `<AuthOverlay/>` — both the AuthGate's default fallback and the standalone usage. Querying for it is more reliable than text matching ("Sign in" appears in many places).
 

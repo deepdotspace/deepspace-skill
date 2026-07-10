@@ -1,6 +1,6 @@
 # Auth — public, gated, and mixed configurations
 
-Load this reference when picking the auth model for a new app, adding a gated page, customizing the sign-in fallback, debugging "why does my page show the AuthOverlay" / "why are signed-out users seeing my admin route," or replacing `Navigation.tsx`. Skip it for the default mixed config plus `(protected)/` page additions, which are one-line changes that don't need this depth.
+Load this reference when picking the auth model for a new app, adding a gated page, customizing the sign-in fallback, debugging "why does my page show the AuthOverlay" / "why are signed-out users seeing my admin route," or replacing `Navigation.tsx`. Skip it for the default mixed config plus `(app)/(protected)/` page additions, which are one-line changes that don't need this depth.
 
 ## The three configurations
 
@@ -8,41 +8,47 @@ Auth gating is route-scoped via `<AuthGate>` from `'deepspace'`. The scaffold sh
 
 ### 1. Fully public
 
-Every page reachable signed-out. Don't import `<AuthGate>` anywhere; rely on `RecordProvider allowAnonymous` (already on by default in the scaffolded `_app.tsx`).
+Every page reachable signed-out. Don't import `<AuthGate>` anywhere; rely on `RecordProvider allowAnonymous` (already on by default in the scaffolded `(app)/_layout.tsx`). Pages still need to live under `(app)/` to reach the data layer — "public" and "static" are different axes (see the mixed config below).
 
 ### 2. Fully gated
 
-Every page requires sign-in. Wrap the tree in `_app.tsx` with `<AuthGate>` and drop `allowAnonymous`:
+Every dynamic page requires sign-in. Wrap the data layer in `src/pages/(app)/_layout.tsx` with `<AuthGate>` and drop `allowAnonymous` from `AuthBoot`'s `<RecordProvider>`:
 
 ```tsx
-// src/pages/_app.tsx
+// src/pages/(app)/_layout.tsx
 <DeepSpaceAuthProvider>
   <AuthGate>
-    <RecordProvider>{/* no allowAnonymous — nothing public */}
-      <RecordScope ...>
-        <Navigation />
-        <Outlet />
-      </RecordScope>
-    </RecordProvider>
+    <AuthBoot>{/* AuthBoot's RecordProvider: drop allowAnonymous — nothing public */}
+      <Navigation />
+      <Outlet />
+    </AuthBoot>
   </AuthGate>
 </DeepSpaceAuthProvider>
 ```
 
+Static top-level pages (like the shipped `index.tsx` landing) sit outside `(app)/` and stay reachable signed-out regardless — if truly *nothing* should render without a session, point `/` at a gated page instead of shipping the static landing.
+
 ### 3. Mixed (default)
 
-Public pages live at `src/pages/<name>.tsx`; gated pages go inside the `(protected)/` generouted route group. The scaffolded `src/pages/(protected)/_layout.tsx` applies `<AuthGate>` once for everything inside:
+Three tiers, decided by where the file lives under `src/pages/` (`(app)` and `(protected)` are generouted route groups — the parentheses mean they don't appear in the URL, so `(app)/home.tsx` serves `/home`):
+
+- **Static + public** — top level of `src/pages/`. No providers mount: no `/api/auth` fetch, no records WebSocket, and no `useAuth`/`useQuery` (they crash at render). For landing/marketing/docs/legal.
+- **Dynamic + public** — directly under `(app)/`. Providers mount (`(app)/_layout.tsx`); hooks work signed-out via `allowAnonymous`.
+- **Dynamic + gated** — under `(app)/(protected)/`. The scaffolded `(app)/(protected)/_layout.tsx` applies `<AuthGate>` once for everything inside.
 
 ```
 src/pages/
-  home.tsx                  ← public (/home)
-  landing.tsx               ← public (/landing)
-  (protected)/
-    _layout.tsx             ← <AuthGate><Outlet /></AuthGate>
-    settings.tsx            ← gated (/settings)
-    dashboard.tsx           ← gated (/dashboard)
+  index.tsx                 ← static landing (/) — no providers, no data hooks
+  (app)/
+    _layout.tsx             ← mounts the providers (auth + realtime) + Navigation
+    home.tsx                ← dynamic, public (/home)
+    (protected)/
+      _layout.tsx           ← <AuthGate><Outlet /></AuthGate>
+      settings.tsx          ← gated (/settings)
+      api-status.tsx        ← gated (/api-status)
 ```
 
-Adding a new gated page is a one-file change: drop it inside `(protected)/`. The folder name is wrapped in literal parentheses — generouted treats it as a route group that doesn't appear in the URL.
+Adding a new gated page is a one-file change: drop it inside `(app)/(protected)/`. To flip a page between static and dynamic, move it across the `(app)/` boundary and fix up its `../` relative imports for the new depth. `npx deepspace add <feature>` places feature pages under `(app)/` (or `(app)/(protected)/`) automatically.
 
 ## `<AuthGate>` props
 
@@ -61,18 +67,29 @@ Adding a new gated page is a one-file change: drop it inside `(protected)/`. The
 
 ## Provider stack — extend, don't replace
 
-The scaffolded `src/pages/_app.tsx` ships:
+The stack is split across two files:
+
+**`src/pages/_app.tsx`** — the root shell, wrapping every route, static and dynamic alike. It deliberately mounts **no** DeepSpace providers (that's what keeps top-level pages static — no auth fetch, no WebSocket). Only local UI state lives here:
 
 ```tsx
 // App() returns:
 <ToastProvider>                           // from ../components/ui (local, NOT 'deepspace')
-  <DeepSpaceAuthProvider>
-    <AuthBoot>                            // local helper: shows loader while auth resolves, then mounts data layer
-      <Navigation />
-      <main><Outlet /></main>
-    </AuthBoot>
-  </DeepSpaceAuthProvider>
+  <div data-testid="app-root">            // canonical "shell mounted" test hook — don't rename
+    <Suspense><Outlet /></Suspense>
+  </div>
 </ToastProvider>
+```
+
+**`src/pages/(app)/_layout.tsx`** — the dynamic boundary: auth + realtime data + app chrome, for everything under `(app)/`:
+
+```tsx
+// AppLayout() returns:
+<DeepSpaceAuthProvider>
+  <AuthBoot>                              // local helper: waits for auth to resolve, then mounts data layer
+    <Navigation />
+    <main><Outlet /></main>
+  </AuthBoot>
+</DeepSpaceAuthProvider>
 
 // AuthBoot mounts the data layer for everyone (signed-in OR signed-out):
 <RecordProvider allowAnonymous>
@@ -82,9 +99,9 @@ The scaffolded `src/pages/_app.tsx` ships:
 </RecordProvider>
 ```
 
-`AuthBoot` is local to `_app.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for `useAuth().isLoaded` so the data layer always mounts with valid auth state, and then renders children regardless of sign-in status. Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default.
+`AuthBoot` is local to `(app)/_layout.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for auth to resolve (`useAuthStatus().isLoaded`) so the data layer always mounts with valid auth state, then renders children regardless of sign-in status (while resolving it shows a fixed theme-colored panel, not a spinner). Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default.
 
-Do not rewrite `_app.tsx`. The defaults already:
+Do not rewrite either file. The defaults already:
 
 - Wrap the tree in the scaffold's local `ToastProvider` (import `useToast` from `../components/ui`, not `deepspace`).
 - Render routes for both signed-in and signed-out users.
@@ -92,14 +109,17 @@ Do not rewrite `_app.tsx`. The defaults already:
 
 Extend by adding schemas, pages, and nav entries (`src/nav.ts`). To share data across DeepSpace apps (e.g., the email-handle workspace), pass `sharedScopes` to the existing `<RecordScope>` — but see `references/architecture.md` § "Cross-app shared scopes" for the worker-side proxy that's required.
 
-## Landing-page exception
+## Landing pages and app chrome
 
-If (and only if) you're building a public landing page, conditionally hide the global `<Navigation />` on the landing route(s) so your landing's own nav (or no-nav) owns the viewport. The default scaffold stacks Navigation above every `<Outlet />`, which would put landing-page chrome on top of app chrome:
+The global `<Navigation />` renders from `(app)/_layout.tsx`, so it only wraps pages under `(app)/`. The shipped landing (`src/pages/index.tsx`) is a static top-level page — it never inherits app chrome, and needs no patch.
+
+Only if your landing lives *under* `(app)/` (e.g. installed via `npx deepspace add landing`, which places it at `(app)/landing.tsx`) do you need to hide the global nav on that route, in `(app)/_layout.tsx`:
 
 ```tsx
+// src/pages/(app)/_layout.tsx
 import { useLocation } from 'react-router-dom'
-// inside App(), above the existing markup:
-const isLanding = useLocation().pathname === '/' || useLocation().pathname === '/landing'
+// inside AppLayout(), above the existing markup:
+const isLanding = useLocation().pathname === '/landing'
 // then in the layout:
 {!isLanding && <Navigation />}
 ```

@@ -14,38 +14,36 @@ Build a landing page that looks human-crafted, not template-cloned. This referen
 
 Two paths:
 
-- **Install the `landing` feature.** Run `npx deepspace add landing`. It scaffolds `src/pages/landing.tsx` + `src/components/landing/primitives.tsx` + 9 optional section components (hero typewriter, features grid, FAQ, CTA, footer, etc.). The route `/` is added, `protected: false`. This gives you a working skeleton in ~5 minutes. **Then customize aggressively** — shipping the scaffolded sections with placeholder copy swapped in is the failure mode this skill is designed to prevent.
-- **Write it from scratch.** Add `src/pages/landing.tsx` yourself, add a nav/route entry in `src/nav.ts` if needed, and install `framer-motion` + `lucide-react`. Use this path when your Direction calls for a page shape the scaffolded sections can't easily produce (manifesto, long-scroll editorial, single-screen brutalism, etc.).
+- **Design the shipped static landing.** The scaffold already ships `src/pages/index.tsx` — a **static** landing at `/`. Top-level pages mount no DeepSpace providers (no auth fetch, no WebSocket, no data hooks — see the template CLAUDE.md § "Static vs dynamic pages"), which is exactly right for marketing/crawler traffic, and they inherit no app chrome. Rewrite that file (install `framer-motion` + `lucide-react` as needed). Use this path when your Direction calls for a page shape the feature's scaffolded sections can't easily produce (manifesto, long-scroll editorial, single-screen brutalism, etc.) — or by default.
+- **Install the `landing` feature.** Run `npx deepspace add landing`. It scaffolds a landing page at `src/pages/(app)/landing.tsx` (the installer places page files under the `(app)/` route group, so this landing is *dynamic* — providers mount, and it inherits the global Navigation) + `src/components/landing/primitives.tsx` + 9 optional section components (hero typewriter, features grid, FAQ, CTA, footer, etc.), and wires a nav entry (`protected: false`). This gives you a working skeleton in ~5 minutes. **Then customize aggressively** — shipping the scaffolded sections with placeholder copy swapped in is the failure mode this skill is designed to prevent. Note the shipped static `index.tsx` still owns `/`; decide which page is the real front door and remove or repoint the other.
 
 Either path, the rest of this workflow is the same.
 
-#### Hide the global Navigation on the landing route — required
+#### Hide the global Navigation on the landing route — required if the landing lives under `(app)/`
 
-The scaffolded `_app.tsx` always renders the app's `<Navigation />` (the top bar with Home / Settings / Sign In) above the route's `<Outlet />`. That means stacking your landing's own nav (or your no-nav decision) **on top of** the global app chrome — landing chrome on top of app chrome reads less polished, and is the clearest telltale that a landing was bolted on without thought.
+The scaffold renders the app's `<Navigation />` (the top bar with Home / Settings / Sign In) from `src/pages/(app)/_layout.tsx`, above every `(app)/` route's `<Outlet />`. A **static top-level landing** (the shipped `src/pages/index.tsx`) sits outside that layout and never shows app chrome — skip this patch entirely.
 
-Patch `src/pages/_app.tsx` with a route-aware conditional. This is the **one acceptable edit** to `_app.tsx` (see SKILL.md Step 3):
+If your landing lives under `(app)/` (the `add landing` install path), the global nav stacks on top of your landing's own nav (or your no-nav decision) — landing chrome on top of app chrome reads less polished, and is the clearest telltale that a landing was bolted on without thought. Patch `src/pages/(app)/_layout.tsx` with a route-aware conditional:
 
 ```tsx
-// src/pages/_app.tsx
+// src/pages/(app)/_layout.tsx
 import { useLocation } from 'react-router-dom'
 
-export default function App() {
+export default function AppLayout() {
   const { pathname } = useLocation()
-  const isLanding = pathname === '/' || pathname === '/landing'  // adjust to wherever your landing route lives
+  const isLanding = pathname === '/landing'  // adjust to wherever your landing route lives
 
   return (
-    <ToastProvider>
-      <DeepSpaceAuthProvider>
-        <AuthBoot>
-          <div className="flex h-screen flex-col bg-background overflow-hidden">
-            {!isLanding && <Navigation />}
-            <main className="flex-1 overflow-y-auto min-h-0">
-              <Suspense fallback={...}><Outlet /></Suspense>
-            </main>
-          </div>
-        </AuthBoot>
-      </DeepSpaceAuthProvider>
-    </ToastProvider>
+    <DeepSpaceAuthProvider>
+      <AuthBoot>
+        <div className="flex h-screen flex-col bg-background overflow-hidden">
+          {!isLanding && <Navigation />}
+          <main className="flex-1 overflow-y-auto min-h-0">
+            <Suspense fallback={...}><Outlet /></Suspense>
+          </main>
+        </div>
+      </AuthBoot>
+    </DeepSpaceAuthProvider>
   )
 }
 ```
@@ -54,7 +52,7 @@ The landing page now owns the viewport. If you don't make this edit, every nav p
 
 ### 2. Fill the Design Direction block BEFORE any JSX
 
-At the top of `src/pages/landing.tsx`, write a prose block with two halves: a 6-prompt **brief** (product, emotion, visual metaphor, three references, signature element, hero visual) and a 6-token **Style Tile** (color, type pair, theme, art direction, motion personality, voice). The brief is prose. The Style Tile is six one-line commitments.
+At the top of the landing page file (`src/pages/index.tsx`, or `src/pages/(app)/landing.tsx` on the feature-install path), write a prose block with two halves: a 6-prompt **brief** (product, emotion, visual metaphor, three references, signature element, hero visual) and a 6-token **Style Tile** (color, type pair, theme, art direction, motion personality, voice). The brief is prose. The Style Tile is six one-line commitments.
 
 Put it in a multi-line comment block at the top of the file. It stays in source as documentation:
 
@@ -149,23 +147,23 @@ Run from the app root before finishing. Any hit is a bug. Full version with comm
 cd ~/Desktop/Work/<app-name>
 
 # hardcoded colors
-grep -rnE "#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}\b|rgba?\([0-9]|\b(violet|indigo|purple|blue|emerald|teal|amber|rose|pink|cyan|sky|green|red|orange|yellow|lime|fuchsia)-[0-9]{3}" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}\b|rgba?\([0-9]|\b(violet|indigo|purple|blue|emerald|teal|amber|rose|pink|cyan|sky|green|red|orange|yellow|lime|fuchsia)-[0-9]{3}" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # fractional-opacity foreground
-grep -rnE "(bg|text|border)-foreground/(\[|[0-9])" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "(bg|text|border)-foreground/(\[|[0-9])" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # pictograph emojis
-grep -rnP "[\x{1F000}-\x{1FFFF}]" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnP "[\x{1F000}-\x{1FFFF}]" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # template copy
-grep -rniE "Your DeepSpace app is running|My App|[Ll]orem [Ii]psum|streamline your|cutting.edge|state.of.the.art|next.generation|revolutionary|world.class|game.chang" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rniE "Your DeepSpace app is running|My App|[Ll]orem [Ii]psum|streamline your|cutting.edge|state.of.the.art|next.generation|revolutionary|world.class|game.chang" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # TODOs
-grep -rnE "TODO[: ]" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "TODO[: ]" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 ```
 
 Also verify by eye:
-- Design Direction block at the top of `landing.tsx` is filled with prose (no empty prompt lines)
+- Design Direction block at the top of the landing page file is filled with prose (no empty prompt lines)
 - Hero headline is 3–8 words
 - Hero has a commanding visual, not just centered text
 - Features section is not 3 identical cards

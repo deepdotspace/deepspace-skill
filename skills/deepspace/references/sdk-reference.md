@@ -227,11 +227,11 @@ function Gallery() {
 - `usePagedResource<TItem>(fetchPage, deps, options?)` — client hook for API-backed feeds/search/timelines/infinite scroll. `fetchPage` receives `{ page, pageSize, signal }` and returns `{ items, hasMore? }`. Options: `{ enabled?, initialItems?, pageSize?, maxItemsPerPage?, keepPreviousData?, autoRetryOnError?, retryDelayMs?, maxRetryDelayMs? }`. Result: `{ items, status, error, warning, hasMore, isLoadingInitial, isLoadingMore, isRefreshing, loadMore, retry, refresh }`.
 - Re-exported types: `IntegrationResponse`, `RequestOptions`.
 
-**Cross-app platform context (opt-in, not in the scaffold by default).** The platform exports below let an app subscribe to its cross-app inbox (DMs / notifications routed through the platform-worker). They require `<PlatformProvider>` to be mounted somewhere above the consumers — the scaffolded `_app.tsx` does **not** include it, so wrap the tree manually if you need this surface:
+**Cross-app platform context (opt-in, not in the scaffold by default).** The platform exports below let an app subscribe to its cross-app inbox (DMs / notifications routed through the platform-worker). They require `<PlatformProvider>` to be mounted somewhere above the consumers — the scaffold does **not** include it, so wrap the tree manually if you need this surface:
 
 ```tsx
 import { PlatformProvider, usePlatform, useInbox } from 'deepspace'
-// inside _app.tsx, ABOVE <RecordProvider>:
+// inside src/pages/(app)/_layout.tsx (where the providers live), ABOVE <RecordProvider>:
 <PlatformProvider>{/* ...rest of tree... */}</PlatformProvider>
 ```
 

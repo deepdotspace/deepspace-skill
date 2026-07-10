@@ -91,27 +91,27 @@ From the app root (e.g., `cd ~/Desktop/Work/<app-name>`), scope to landing files
 
 ```bash
 # ── Hardcoded colors — should never appear ───────────────────────────────────
-grep -rnE "#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}\b" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
-grep -rnE "rgba?\([0-9]" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
-grep -rnE "\b(violet|indigo|purple|fuchsia|rose|amber|emerald|teal|cyan|sky|blue|green|red|orange|yellow|lime|pink)-[0-9]{3}" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}\b" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
+grep -rnE "rgba?\([0-9]" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
+grep -rnE "\b(violet|indigo|purple|fuchsia|rose|amber|emerald|teal|cyan|sky|blue|green|red|orange|yellow|lime|pink)-[0-9]{3}" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # ── Fractional-opacity foreground patterns ───────────────────────────────────
-grep -rnE "(bg|text|border)-foreground/(\[|[0-9])" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "(bg|text|border)-foreground/(\[|[0-9])" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # ── Continuous animations — advisory; review each for a useReducedMotion gate
-grep -rnE "repeat:\s*Infinity|setInterval\(|requestAnimationFrame\(" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "repeat:\s*Infinity|setInterval\(|requestAnimationFrame\(" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # ── Pictograph emojis (Unicode 1F000-1FFFF). Plain marks like ✓ ✗ → ★ are NOT
 # caught (they're in the BMP < 1F000) and are allowed as text glyphs.
-# Needs PCRE: use `rg "[\u{1F000}-\u{1FFFF}]" src/pages/landing.tsx src/components/landing/` if `grep -P` is unavailable.
-grep -rnP "[\x{1F000}-\x{1FFFF}]" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+# Needs PCRE: use `rg "[\u{1F000}-\u{1FFFF}]" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/` if `grep -P` is unavailable.
+grep -rnP "[\x{1F000}-\x{1FFFF}]" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # ── Template placeholder copy + generic marketing phrases ────────────────────
-grep -rniE "My App|Welcome to [Mm]y|[Ll]orem [Ii]psum|Your DeepSpace app is running" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
-grep -rniE "streamline your|transform your|cutting.edge|state.of.the.art|next.generation|revolutionary|world.class|best.in.class|game.chang" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rniE "My App|Welcome to [Mm]y|[Ll]orem [Ii]psum|Your DeepSpace app is running" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
+grep -rniE "streamline your|transform your|cutting.edge|state.of.the.art|next.generation|revolutionary|world.class|best.in.class|game.chang" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # ── Unfilled TODOs ───────────────────────────────────────────────────────────
-grep -rnE "TODO[: ]" --include="*.tsx" src/pages/landing.tsx src/components/landing/ 2>/dev/null
+grep -rnE "TODO[: ]" --include="*.tsx" src/pages/index.tsx 'src/pages/(app)/landing.tsx' src/components/landing/ 2>/dev/null
 
 # ── Illegal import from landing-design/examples/ (read-only reference) ──────
 grep -rn "from.*landing-design/examples" --include="*.tsx" src/ 2>/dev/null

@@ -28,12 +28,12 @@ These two paragraphs apply to every pattern in every section file. Read once.
 - **Primitives that contain rule violations** (`GlassCard`, `PlaceholderImage`, `BrowserMockup`, `SectionHeading`): each ships with `bg-foreground/[0.06]`, `border-foreground/[0.08]`, or hardcoded color names that fail the grep gate. Two choices when you reach for one:
   1. **Recommended:** build the surface inline in your pattern/section with semantic tokens (`bg-card`, `border-border`, `bg-muted`) — the patterns in this library do this.
   2. Edit `primitives.tsx` directly to replace the violating lines (they all have semantic-token equivalents).
-- **`markLandingSeen`** is exported from `src/pages/landing.tsx` (the scaffolded landing page), not from primitives. Import it as `import { markLandingSeen } from '../pages/landing'` from inside `src/components/landing/`, or inline the 2-line helper at the top of whatever file needs it:
+- **`markLandingSeen`** is exported from the feature-installed landing page (`src/pages/(app)/landing.tsx`), not from primitives. Import it as `import { markLandingSeen } from '../pages/(app)/landing'` from inside `src/components/landing/`, or inline the 2-line helper at the top of whatever file needs it:
   ```tsx
   const LANDING_SEEN_KEY = 'app-landing-seen'
   function markLandingSeen() { try { localStorage.setItem(LANDING_SEEN_KEY, 'true') } catch {} }
   ```
-- **Navigation** goes to `/home` (which is **public by default** in the scaffold) via `useNavigate()` from `react-router-dom`. To force sign-in on a CTA click, point at a route under `src/pages/(protected)/` (any file there is gated by the scaffolded `(protected)/_layout.tsx`) — see SKILL.md Step 4. Sign-in itself lives in the scaffold's top-level `Navigation.tsx` (AuthOverlay).
+- **Navigation** goes to `/home` (which is **public by default** in the scaffold — dynamic but not gated, at `src/pages/(app)/home.tsx`) via `useNavigate()` from `react-router-dom`. To force sign-in on a CTA click, point at a route under `src/pages/(app)/(protected)/` (any file there is gated by the scaffolded `(app)/(protected)/_layout.tsx`) — see SKILL.md Step 4. Sign-in itself lives in the scaffold's global `Navigation.tsx` (AuthOverlay).
 
 ## Universal rules
 

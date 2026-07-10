@@ -34,7 +34,7 @@ The streaming pipeline (`POST /api/ai/chat` handler):
 Installs three files into the scaffolded app:
 
 - `src/components/ChatPanel.tsx` — reusable chat surface. Renders `useQuery('ai-messages')` + an in-flight overlay during the stream. Owns model picker, abort button, and Markdown rendering (`react-markdown` + GFM + `rehype-highlight`).
-- `src/pages/assistant.tsx` — full-page assistant with a slide-in chat history rail.
+- `src/pages/(app)/(protected)/assistant.tsx` — full-page assistant with a slide-in chat history rail (the feature's route is protected, so the installer places it in the gated group).
 - `src/schemas/ai-chat-schema.ts` — re-exports `aiChatSchemas = [AI_CHATS_SCHEMA, AI_MESSAGES_SCHEMA]`. Spread into `src/schemas.ts`'s `schemas` array (the feature.json's `schema.spreadOperator: true` does this automatically on install).
 
 `feature.json` declares the scaffold dependencies (`react-markdown`, `remark-gfm`, `remark-breaks`, `rehype-highlight`, `highlight.js`) so `npx deepspace add ai-chat` runs `npm install` for them.

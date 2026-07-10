@@ -2,7 +2,7 @@
 
 6 patterns. Pick **one** that fits your Direction. See `pattern-library.md` for the shared rules + import conventions; the patterns below assume those.
 
-> **Before any of these patterns will look right:** the scaffolded `_app.tsx` renders the app's global `<Navigation />` above every route. You must hide it on the landing route or you'll have two stacked navs (landing-page chrome on top of app chrome — the clearest telltale of a bolted-on landing). The required `_app.tsx` patch is in `references/landing-design.md` § "Hide the global Navigation on the landing route" — do this **before** dropping in any pattern below.
+> **Before any of these patterns will look right:** the scaffold renders the app's global `<Navigation />` from `src/pages/(app)/_layout.tsx`, above every `(app)/` route. A static top-level landing (the shipped `src/pages/index.tsx`) sits outside that layout and inherits no app chrome — nothing to hide. But if your landing lives under `(app)/` (the `add landing` install path), you must hide the global nav on the landing route or you'll have two stacked navs (landing-page chrome on top of app chrome — the clearest telltale of a bolted-on landing). The required `(app)/_layout.tsx` patch is in `references/landing-design.md` § "Hide the global Navigation on the landing route" — do this **before** dropping in any pattern below.
 
 ---
 
@@ -71,7 +71,7 @@ export function LandingNav() {
   }
 
   // /home is public by default in the scaffold. To force sign-in on click,
-  // either swap to a `(protected)/<page>` route or open <AuthOverlay> here.
+  // either swap to an `(app)/(protected)/<page>` route or open <AuthOverlay> here.
   const enterApp = () => { markLandingSeen(); navigate('/home') }
 
   const mobileDropdown = (
