@@ -213,16 +213,15 @@ After customizing home, theme, and primitives, extend `smoke.spec.ts`:
 - Spot-check a mutation and assert a toast appears.
 - Keep the nav test hooks intact: `app-navigation`, `nav-sign-in-button`, `nav-user-name`.
 
-If the smoke test passes but the app still looks unfinished, it is almost always one of: still on the `slate`/`paper` placeholder theme, missing empty states, or a `<select>` / `window.confirm` / `window.alert` / `window.prompt` still hiding somewhere. Before declaring done, grep the whole `src/` tree for:
+If the smoke test passes but the app still looks unfinished, it is almost always one of: still on the `slate`/`paper` placeholder theme, missing empty states, or a `<select>` / `window.confirm` / `window.alert` / `window.prompt` still hiding somewhere. Before declaring done, run this full check block — it has two halves and BOTH matter:
 
-```
-<select  |  window.confirm  |  window.alert  |  window.prompt
-placeholder page  |  data-theme="slate"
-```
+```bash
+# Half 1 — ABSENCE: any hit below means the app is NOT ready
+grep -rn "<select\|window\.confirm\|window\.alert\|window\.prompt" src/
+grep -rn "placeholder page" src/
+grep -rn 'data-theme="slate"' index.html
 
-Any hit means the app is not ready. Then two **assert-presence** checks — both must hit or the home page is not done:
-
-```
-grep "home pattern:" src/pages/home.tsx        # the §1 skeleton declaration
-grep -c "data-theme" src/themes.css            # ≥ 2: your own theme block exists
+# Half 2 — PRESENCE: any MISS below means the home page is NOT done
+grep "home pattern:" src/pages/home.tsx      # the §1 skeleton declaration, first line
+grep 'data-theme="' src/themes.css           # your own theme block exists
 ```
