@@ -28,6 +28,8 @@ Grep for `placeholder page` in `src/` — if it still exists at the end of the s
 
 A good home page in < 60 lines of JSX using `EmptyState`, `Button`, and token-styled sections is normal. For marketing-style landing pages, pick a design direction from `references/landing-design/` first.
 
+**Do not default to "centered hero + three icon-title-description cards."** That layout is the most-common AI-generated-page tell (see `landing-design/pattern-library/features.md`), and left to habit every app converges on it. Before writing the home page, open `references/landing-design/pattern-library/` and pick a structure that fits *this* product — split hero, product-preview-first, single-column narrative, data-forward, etc. If two of your apps would end up with the same home-page skeleton, change one.
+
 ---
 
 ## 2. Theme — Create One for the App
@@ -76,7 +78,7 @@ Allowed emoji contexts:
 - **Message reactions** — the reaction picker itself (👍 🎉 ❤️ etc. as the selectable set).
 - **The user explicitly asks for emojis** ("add a grocery emoji to the header").
 
-Everywhere else, use a `lucide-react` icon (already a scaffold dep) or a text-only treatment. Good wordmarks are plain text in a distinctive font — `font-serif tracking-tight` or similar — not an emoji next to a heading.
+Everywhere else, use a `lucide-react` icon (already a scaffold dep) or a text-only treatment. Good wordmarks are plain text in a distinctive font — not an emoji next to a heading. **Vary the treatment per app** (serif, mono, wide-tracked caps, weight contrast, a two-tone mark…): if every app's wordmark is `font-serif tracking-tight`, that's its own monoculture.
 
 ## 3. UI Primitives — Use the Scaffolded Base UI Kit, Never Browser Defaults
 
