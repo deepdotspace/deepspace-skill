@@ -20,7 +20,7 @@ The scaffold ships **two** front-of-house pages, and this section is about the s
 - `src/pages/index.tsx` — the **static landing** at `/`. It lives at the top level of `src/pages/`, so no DeepSpace providers mount: no auth fetch, no WebSocket, and no data hooks. It's the marketing front door; design it with `references/landing-design.md`, not this procedure.
 - `src/pages/(app)/home.tsx` — the **dynamic home** at `/home` (`(app)` is a route group — it doesn't appear in the URL). It sits inside the provider boundary, so `useAuth`/`useQuery` work, signed-out included (`allowAnonymous`). **This is the page the procedure below targets.** If the product wants the live surface at `/` instead of a marketing page, move the home page to the top slot only by keeping it under `(app)/` (e.g. `(app)/index.tsx` after removing the static landing) — a top-level `index.tsx` can't call data hooks.
 
-The scaffolded `src/pages/(app)/home.tsx` is an explicit stub: the app name plus "This is a placeholder page. Replace `src/pages/home.tsx`…". It must be replaced before shipping — and it is a *stub to delete*, not a layout to grow.
+The scaffolded `src/pages/(app)/home.tsx` is an explicit stub: the app name plus "This is a placeholder page. Replace `src/pages/(app)/home.tsx`…". It must be replaced before shipping — and it is a *stub to delete*, not a layout to grow.
 
 Grep for `placeholder page` in `src/` — if it still exists at the end of the session, the home page is not done.
 
