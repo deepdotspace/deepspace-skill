@@ -19,16 +19,32 @@ The scaffolded `src/pages/home.tsx` is an explicit stub: the app name plus "This
 
 Grep for `placeholder page` in `src/` — if it still exists at the end of the session, the home page is not done.
 
-**Minimum bar for the replacement home page:**
-- A real H1 that names the app. Not "Welcome", not "Welcome to DeepSpace", not the raw app id, not "Home".
-- A one-sentence description of what the app actually does, under the H1.
-- A primary action button for the most common flow (create, browse, search) visible above the fold.
-- For unauthenticated users: a meaningful preview or a clear Sign In CTA — never an empty page behind an `AuthOverlay`-only gate with nothing to read first.
-- For first-time signed-in users with no data yet: an `EmptyState` with icon, copy, and an action (see §3a) — not a blank page and not a bare "No items" string.
+**Build the home page with this decision procedure — in order, no skipping:**
 
-A good home page in < 60 lines of JSX using `EmptyState`, `Button`, and token-styled sections is normal. For marketing-style landing pages, pick a design direction from `references/landing-design/` first.
+1. **Name the app's primary surface.** The thing users open the app to see: the board, the list, the grid, the feed, the document. That surface *is* the home page. A poster *describing* the app is not a home page.
 
-**Do not default to "centered hero + three icon-title-description cards."** That layout is the most-common AI-generated-page tell (see `landing-design/pattern-library/features.md`), and left to habit every app converges on it. Before writing the home page, open `references/landing-design/pattern-library/` and pick a structure that fits *this* product — split hero, product-preview-first, single-column narrative, data-forward, etc. If two of your apps would end up with the same home-page skeleton, change one.
+2. **Pick the home skeleton by what the product is, and declare it.** The skeletons:
+   - `product-preview-first` — the real primary surface, rendered with sample/preview data for visitors
+   - `data-forward` — a dashboard/grid of live numbers, statuses, streaks above the fold
+   - `search-first` — a search bar + the list, single column
+   - `split-hero` — one-line pitch on one side, the live product surface on the other
+   - `single-column-narrative` — for content/reading apps
+
+   Write the declaration as the **first line of `home.tsx`, before any code**, then make the JSX agree with it:
+
+   ```tsx
+   /* home pattern: data-forward — today's habit grid above the fold */
+   ```
+
+   The comment is required — the §5 pre-deploy grep checks for it. Pick by what the product *is*, not by what is easiest to render. Two apps declaring the same skeleton with the same composition means one of them is wrong — change it. For section-level detail (heroes, CTAs, social proof, scroll motion) open `references/landing-design/pattern-library/`.
+
+3. **Signed-in home = the primary surface**, above the fold, with the user's real data.
+
+4. **Signed-out home = the same surface in preview form** — sample data, read-only or blurred, with an inline sign-in CTA. Never an empty page behind an `AuthOverlay`-only gate, and **never a poster page** (icon + H1 + tagline + button with no product visible). If a visitor can't tell what the app looks like inside, the home page failed.
+
+5. **Content bar** (applies to every skeleton): a real H1 naming the app (not "Welcome", not the raw app id, not "Home"); a one-sentence description of what it does; the primary action visible above the fold; and for signed-in users with no data yet, an `EmptyState` with icon, copy, and an action (§3a) — never a bare "No items" string.
+
+Known AI tells to avoid: "centered hero + three icon-title-description cards" (see `landing-design/pattern-library/features.md`) and its minimal cousin "centered icon badge + H1 + tagline + single CTA." Both read as template output regardless of theme.
 
 ---
 
@@ -204,4 +220,9 @@ If the smoke test passes but the app still looks unfinished, it is almost always
 placeholder page  |  data-theme="slate"
 ```
 
-Any hit means the app is not ready.
+Any hit means the app is not ready. Then two **assert-presence** checks — both must hit or the home page is not done:
+
+```
+grep "home pattern:" src/pages/home.tsx        # the §1 skeleton declaration
+grep -c "data-theme" src/themes.css            # ≥ 2: your own theme block exists
+```
