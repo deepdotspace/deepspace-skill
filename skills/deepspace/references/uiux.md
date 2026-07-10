@@ -120,7 +120,7 @@ The scaffold ships a copy-paste primitives kit in `src/components/ui/` (index at
 | Search box | `SearchInput` (wraps `Input` with search icon + clear) | raw `<input type="search">` |
 | Tabs | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` | hand-rolled tab buttons |
 | Anchored popups | `Popover`, `PopoverTrigger`, `PopoverContent` | absolutely-positioned divs |
-| Tooltips | `Tooltip`, `TooltipTrigger`, `TooltipContent` (wrap tree in `TooltipProvider` once) | `title=""` attribute |
+| Tooltips | `Tooltip`, `TooltipTrigger`, `TooltipContent` — each `Tooltip` ships its own provider (200ms delay), so no app-level `TooltipProvider` is needed; pass `delay` per tooltip | `title=""` attribute |
 | Avatars | `Avatar`, `AvatarImage`, `AvatarFallback` | raw `<img>` |
 | Status pills | `Badge` | hand-rolled rounded divs |
 | Cards / tables / separators | No primitive — token-styled elements (`rounded-lg border border-border bg-card p-4`; styled `<table>` with `border-border` rows; `border-t border-border`) | hardcoded colors |
