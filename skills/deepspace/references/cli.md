@@ -13,7 +13,7 @@ Four hard rules:
 1. **Pause and tell the user.** Login opens a browser tab (GitHub/Google OAuth) on their machine and polls up to 10 minutes. They need to be at the keyboard. There is no agent-runnable bypass — never ask the user for their password.
 2. **Run interactive login without an artificial time bound.** **Do not** wrap in `timeout N`, `sleep N && kill`, or any cutoff — those terminate OAuth before completion and leave no session. Run in foreground or a true background process.
 3. **After login completes, verify with `npx deepspace whoami`** before retrying `dev` / `test` / `deploy`. Re-running them while login is still polling produces the same error — that's expected order, not a bug.
-4. **Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Re-login only when `whoami` reports signed-out or expired. **Never copy `.dev.vars` from a sibling app** — `APP_OWNER_JWT` is minted against that app's wrangler name; borrowing causes silent auth mismatches.
+4. **Login state is shared across all apps on the machine.** One `deepspace login` covers `dev`, `test-accounts`, and `deploy` for any app. Re-login only when `whoami` reports signed-out or expired. **Never copy `.dev.vars` from a sibling app** — `APP_OWNER_JWT` is minted per app; borrowing causes silent auth mismatches.
 
 ## Full command catalog
 
@@ -38,15 +38,22 @@ npx deepspace test e2e             # all Playwright specs
 npx deepspace test unit            # vitest
 npx deepspace screenshot http://localhost:5173/ out.png [--full-page --wait-for-timeout 500]
 
-# --- App secrets (remote source of truth for all envs; never hand-edit .dev.vars*) → references/secrets.md ---
-npx deepspace secrets setup        # link once; auto-creates the config, migrates legacy .dev.vars secrets
-npx deepspace secrets set API_KEY=...
+# --- App secrets (one store per app, keyed by DEEPSPACE_APP_ID; source of truth for all envs; never hand-edit .dev.vars) → references/secrets.md ---
+npx deepspace secrets set API_KEY=...    # no setup step; works pre-deploy
 npx deepspace secrets list
-npx deepspace secrets pull
-npx deepspace secrets configs clone prd --name staging
-npx deepspace secrets setup --config staging --env staging
+npx deepspace secrets pull               # refresh the .dev.vars cache
+npx deepspace secrets upload .env        # dotenv/JSON; the legacy-.dev.vars migration path
+npx deepspace secrets configs create staging --copy-from prd
+# every secrets command: -a/--app <appId>, -c/--config <name>, -e/--env <name>
 
-# --- Collaborators (owner-only management; collaborators can deploy, not undeploy) → references/collaborators.md ---
+# --- App identity & lifecycle (id = the app; name = the URL) → references/app-identity.md ---
+npx deepspace apps                       # all your apps: id, URL, deploy state (--json)
+npx deepspace init                       # stamp DEEPSPACE_APP_ID into an existing repo
+npx deepspace init --new-id              # fork a cloned repo into your OWN app (fresh data + secrets)
+npx deepspace undeploy [--env <name>]    # off the network; the id survives, redeploy revives
+npx deepspace transfer offer <email>     # 7-day ownership handshake; accept --app <appId> | cancel | status
+
+# --- Collaborators (owner-only management; collaborators can deploy + manage secrets, not undeploy/transfer) → references/collaborators.md ---
 npx deepspace collaborators list
 npx deepspace collaborators add teammate@example.com     # must already be a DeepSpace user
 npx deepspace collaborators remove teammate@example.com

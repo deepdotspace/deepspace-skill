@@ -98,7 +98,9 @@ wrangler.toml: name "My_App" is not in canonical form. Update `name` to "my-app"
 
 Earlier SDKs silently sanitized, which split identity across `[vars].APP_NAME` / `SCOPE_ID` / deployed bindings — now you fix it once and every surface agrees. Edit the field and re-run.
 
-The `name` is seeded by the `<app-name>` argument at scaffold time but is fully editable afterward — `deploy` reads `wrangler.toml` fresh every run. The "final" name only needs to be committed before **first deploy**, not before scaffold. To pair an arbitrary directory with an arbitrary subdomain, scaffold into the directory you want, then edit `wrangler.toml`'s `name` to the subdomain you want. Don't regenerate or move the scaffold to align them.
+The `name` is seeded by the `<app-name>` argument at scaffold time but is fully editable afterward — `deploy` reads `wrangler.toml` fresh every run. To pair an arbitrary directory with an arbitrary subdomain, scaffold into the directory you want, then edit `wrangler.toml`'s `name` to the subdomain you want. Don't regenerate or move the scaffold to align them.
+
+The `name` is only the URL: the app's **identity** is the immutable `DEEPSPACE_APP_ID` in `[vars]` (minted at scaffold / `init` / first deploy — commit it), and data, secrets, collaborators, and custom domains all key to that id. Changing `name` on a deployed app is a supported **rename** — the CLI asks for confirmation (or `--rename`), everything else follows the id, and the old subdomain stays reserved for you for 30 days. → `references/app-identity.md`
 
 ## Upstream proxy helpers
 

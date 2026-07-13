@@ -1,105 +1,83 @@
-_Load this reference before managing app secrets, migrating a legacy `.dev.vars` app, understanding cache behavior, or debugging a secrets 403 as a collaborator._
+_Load this reference before managing app secrets, migrating a legacy `.dev.vars` app, understanding cache behavior, or debugging a secrets 403._
 
 # Secrets
 
-App secrets are platform-owned, encrypted at rest, and project-scoped. The remote store is the source of truth for **every** environment — local dev/test included. `.dev.vars` is a generated plaintext cache (written `0600`) that `dev`, `test`, and `deploy` refresh before running whenever a secrets project is linked. Never add or edit app secrets in that file directly.
+Every app has exactly **one** platform-owned, encrypted secrets store, keyed by the immutable `DEEPSPACE_APP_ID` in `wrangler.toml` (→ [references/app-identity.md](app-identity.md)). There is **no setup or link step**: run the commands from the app directory (or pass `--app <appId>`) and they work — for the owner and collaborators alike, even before the first deploy.
 
-Worker code reads secrets as `env.API_KEY` — identical in dev and after deploy (deploy binds them as Cloudflare `secret_text`).
+The store is the source of truth for **every** environment. `.dev.vars` is a generated plaintext cache (written `0600`) that `dev` and `test` regenerate at startup; `deploy` never reads it — the store is the only deploy input. Never add or edit app secrets in that file: on a store-backed app the SDK rewrites the whole file on the next run.
 
-## Bootstrap: one command
+Worker code reads secrets as `env.API_KEY` — identical in dev and after deploy (deploy binds each store secret as a Cloudflare `secret_text`).
 
-```bash
-npx deepspace secrets setup        # link this app → <wrangler name>/prd
-npx deepspace secrets set API_KEY=sk_test_...
-npx deepspace dev                  # refreshes the cache, worker sees env.API_KEY
-```
-
-`setup` does everything at once: writes the link into `wrangler.toml`, **creates the remote project/config if it doesn't exist yet**, and — if the app has legacy hand-written secrets in `.dev.vars` — **migrates them** (see below). No flags needed for the standard case.
-
-## Migrating a legacy app
-
-Apps that predate the secrets store kept secrets as hand-written `.dev.vars` lines (still deployed via a legacy pass-through — deploy prints a nudge). Migration is the same one command:
+## Bootstrap: no setup step
 
 ```bash
-npx deepspace secrets setup
-# Imported 2 legacy secrets from .dev.vars into myapp/prd: MY_API_KEY, MY_TOKEN
-# Removed the migrated lines from the local file; the remote store owns them now.
+npx deepspace secrets set API_KEY=sk_test_...   # works even pre-deploy (first write registers the app id to you)
+npx deepspace dev                                # regenerates the cache; worker sees env.API_KEY
 ```
 
-Rules: import runs only into an **empty** config (never overwrites existing remote values — it says so and points at `secrets upload` for a manual merge); SDK-managed keys are skipped; the migrated lines are deleted from the local file only **after** the upload is confirmed. A fully-migrated legacy `.dev.vars.<env>` file is removed entirely.
+Two propagation rules the CLI reminds you of: a **deployed** app picks up changes only at the next `deploy` (bindings are set at deploy time), and a **running** `dev` session only on restart (the cache regenerates at startup, not mid-session).
 
 ## Commands
 
 ```bash
-npx deepspace secrets list                     # masked; never prints values
-npx deepspace secrets set API_KEY=sk_test_...  # KEY=value or `set KEY value`; multiline/PEM values fine
-npx deepspace secrets get API_KEY --plain
-npx deepspace secrets delete API_KEY
-npx deepspace secrets pull                     # refresh the cache without running dev
-npx deepspace secrets download --no-file --format env   # stdout; also json|yaml|docker; file arg writes 0600
-npx deepspace secrets upload .env [--replace]  # dotenv or JSON; --replace deletes keys absent from the file
+npx deepspace secrets list                     # masked (name, version, updated); --only-names, --json
+npx deepspace secrets set API_KEY=sk_... B=2   # one or more KEY=value pairs; multiline/PEM values fine
+npx deepspace secrets get API_KEY --plain      # byte-exact when piped (`> key.pem`)
+npx deepspace secrets delete API_KEY OLD_KEY   # already-absent keys tolerated (idempotent)
+npx deepspace secrets pull                     # refresh the .dev.vars cache without running dev
+npx deepspace secrets download --format json   # stdout only; dotenv (default) | json | shell
+npx deepspace secrets upload .env [--replace]  # dotenv or JSON, `-` for stdin; --replace deletes keys absent from the file
 
 npx deepspace secrets configs list
-npx deepspace secrets configs create qa
-npx deepspace secrets configs clone prd --name staging  # server-side copy — never read+re-set values manually
-npx deepspace secrets configs delete staging --yes
-npx deepspace secrets configure unset project config    # unlink + clear the generated cache
+npx deepspace secrets configs create qa --copy-from prd   # server-side copy — never read+re-set values manually
+npx deepspace secrets configs delete qa
 ```
 
-Names: `[A-Za-z_][A-Za-z0-9_]*`, conventionally `UPPER_SNAKE`. SDK-reserved binding names (`ASSETS`, `APP_OWNER_JWT`, …) are rejected. Caps: 32 KB per value, 128 KB total per config.
+Every command takes `-a/--app <appId>` (default: `DEEPSPACE_APP_ID` from the nearest `wrangler.toml`), `-c/--config <name>` (default `prd`), and `-e/--env <name>` (targets the `[env.<name>]` block — which is its **own app** with its own store; config defaults to `<name>`). Mixing them up is caught: `-e staging` without an `[env.staging]` app id errors and points you at `-c staging`.
 
-## Projects and configs
+Names: `[A-Za-z_][A-Za-z0-9_]*`, conventionally `UPPER_SNAKE`. SDK-reserved binding names (`APP_OWNER_JWT`, `API_WORKER_URL`, …) are rejected — the platform injects those. Caps: 32 KB per value, 128 secrets / 128 KB per config, 64 configs; oversized writes → 413. `ALLOW_DEBUG_ROUTES=true` is settable but prints a loud warning — it exposes an **unauthenticated** debug API on the deployed app.
 
-A **project** groups **configs** (`prd`, `staging`, `qa`, …); each config is a flat set of KEY=value secrets. Doppler users can bring their muscle memory — `-p/--project`, `-c/--config`, `--scope`, `KEY value`, `upload`/`download` all behave as expected.
+## Configs and environments
 
-Defaults are quiet: project = top-level `wrangler.toml` `name`; config = `prd` (or `<env>` for `--env <env>` targets). One-off `--project`/`--config` flags read/write remote state **without** linking; only `setup` writes the link, only `configure unset` removes it. Links are plain vars:
+The store holds flat KEY=value **configs**. `prd` is the convention for the top-level wrangler environment — deploy of the top-level block ships config `prd`. A named `[env.<name>]` block is a separate app (own id, own store) whose deploys ship config `<name>` of *that* store. Within one app, `-c <name>` reads/writes another config with no linking, and `configs create <new> --copy-from <existing>` copies server-side (it refuses to copy over an existing config).
 
-```toml
-[vars]
-DEEPSPACE_SECRETS_PROJECT = "myapp"
-DEEPSPACE_SECRETS_CONFIG = "prd"
-
-[env.staging.vars]
-DEEPSPACE_SECRETS_CONFIG = "staging"   # env slots inherit the project, override the config
-```
-
-Staging flow:
+Seeding a staging env's store from production crosses two apps, so `--copy-from` can't do it — pipe instead, without a temp file:
 
 ```bash
-npx deepspace secrets configs clone prd --name staging
-npx deepspace secrets setup --config staging --env staging
+npx deepspace secrets download | npx deepspace secrets upload - -e staging
 ```
 
-Keep **one project per app** unless you deliberately want sharing — collaborator access is project-wide (see below).
+## Migrating a legacy app
 
-## Checked-out apps: the advisory block
+Apps that predate the store kept hand-written secrets in `.dev.vars`. Nothing migrates them automatically, and deploy no longer reads them at all — upload once, explicitly:
 
-A checked-out app may carry a names-only comment block in `wrangler.toml` (the CLI maintains it on `set`/`delete`/`upload`):
-
-```toml
-# --- DeepSpace detected secrets (names only; values live in `npx deepspace secrets`) ---
-#   OPENAI_API_KEY
-#   STRIPE_SECRET_KEY
-# --- end DeepSpace detected secrets ---
+```bash
+npx deepspace secrets upload .dev.vars
+npx deepspace deploy
 ```
 
-These are names, not values, and they describe the owner's linked config. If you don't have access to that project, run `setup --project <your-project>` to link your own and `secrets set` each listed name. Never infer values; never write `.dev.vars` directly.
+Deploy guardrails around this: with an **empty** store and secret-looking keys in `.dev.vars`, deploy **blocks** ("Refusing to deploy: the app store has no secrets, but .dev.vars has <keys>…") so you can't silently ship an app whose production secrets get dropped — upload first, or pass `--allow-missing-secrets` to ship without them. With a non-empty store, stray local keys just draw a warning that they are **NOT** deployed.
+
+Deletes propagate too: `secrets delete` + redeploy removes the binding from the live Worker (deploy reconciles the script's `secret_text` bindings against the store).
 
 ## Collaborators
 
-A collaborator ([references/collaborators.md](collaborators.md)) gets secrets access **through the app link**: run commands from the app checkout so the CLI scopes requests to the app. Within the owner's linked project they can read, write, and manage configs (writes are audited under their own id). They **cannot** create a missing project, change which project the app links to, or reach any project the owner's app doesn't link. A `secrets_project_not_linked` 403 means the owner hasn't deployed/linked yet.
+A collaborator ([references/collaborators.md](collaborators.md)) has **full** secrets access on the app — read, write, and configs — with writes audited under their own id. Authorization is the app role (owner / collaborator) keyed by `DEEPSPACE_APP_ID`; there is nothing to link or grant per-secret. Collaborators cannot undeploy or transfer the app.
 
 ## Cache behavior
 
-- `dev` / `test` / `deploy` re-pull linked secrets before running; if the refresh fails, they **abort** rather than ship a stale cache.
-- `set` / `upload` / `delete` refresh the cache immediately when the target is linked; unlinked one-off writes stay remote-only and print a link reminder.
-- The generated section is fenced by a `# --- DeepSpace secrets cache: … ---` marker; content above it (non-secret local vars) is preserved across rewrites.
-- `configure unset project config` unlinks and strips the generated section.
+- `dev` / `test` re-pull the store at startup and regenerate `.dev.vars` (SDK-managed keys + the secrets cache). If the refresh **fails**, they abort rather than run against a stale cache; an empty or not-yet-created store is fine (no cache section, no error).
+- `set` / `upload` / `delete` change the **remote store only** — a running dev session keeps its old values until restarted; `secrets pull` refreshes the file without running dev.
+- The generated section starts at the `# --- DeepSpace secrets cache: … do not edit manually ---` divider and runs to end of file. Once the app is store-backed, treat the whole file as SDK-owned — hand-written lines don't survive a rewrite.
+- Store-backed apps use one shared `.dev.vars` across wrangler envs (no `.dev.vars.<env>` files).
 
 ## Troubleshooting
 
 - **Changed a secret but production still sees the old value** → redeploy. Deployed workers hold `secret_text` bindings; they don't fetch at runtime.
-- **`secrets_project_not_linked` (403)** → you're accessing as a collaborator but the owner's app doesn't link this project. The owner runs `setup` + `deploy` first.
-- **`Collaborators cannot create missing secrets projects` (403)** → the owner must create it (their `setup` does), then you can work inside it.
-- **Pull returned 0 secrets** → check which project/config is linked (`wrangler.toml` vars) — a fresh config is legitimately empty; `-c <other>` reads a different config without relinking.
+- **Changed a secret but local dev still sees the old value** → restart `dev` (or `secrets pull`); the cache regenerates only at startup.
+- **`Not the app owner or a collaborator` (403)** → ask the owner for `collaborators add <your-email>` — or your access was revoked.
+- **`This app id is registered to another user`** → you're holding someone else's id (cloned repo). `npx deepspace init --new-id` forks it into your own app (fresh store).
+- **`list` shows nothing on a fresh app/config** → legitimate; the first `set` creates the store. Reads are side-effect-free and never register anything.
 - **Name rejected** → match `[A-Za-z_][A-Za-z0-9_]*` and avoid SDK-reserved binding names.
+- A `DeepSpace detected secrets` comment block in a scaffolded `wrangler.toml` is a static placeholder the CLI does **not** maintain — `secrets list` is the truth.
+- `undeploy` keeps the store: redeploying the same app id revives the same secrets.
