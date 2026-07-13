@@ -86,7 +86,7 @@ npx deepspace kill       # if your own dev port is stuck (never kill a sibling s
 
 Deploy's subdomain is `wrangler.toml`'s `name`, not the folder. On a **first** deploy, clear the pre-deploy checklist in `references/uiux.md` §5 (real home replacing the placeholder stub, an own theme created — not `slate`/`paper`, no browser-default primitives). Deploy mechanics, the `.dev.vars` contract, secret handling, and **multi-env / staging (`--env`, incl. the client-`APP_NAME` sync gotcha)** → `references/deploy.md`. The full CLI catalog (`integrations`, `test-accounts`, `screenshot`, `domain`, `library`, dev/kill flags) → `references/cli.md`.
 
-App secrets live in the platform's encrypted store, not in files: `npx deepspace secrets setup` once per app (it also migrates any legacy hand-written `.dev.vars` secrets), then `npx deepspace secrets set KEY=value` — worker code reads `env.KEY` in dev and prod alike. → `references/secrets.md`. Teammates the owner adds with `npx deepspace collaborators add <email>` can deploy the app (not undeploy it) and manage secrets inside its linked project. → `references/collaborators.md`.
+App secrets live in the platform's encrypted store, not in files: `npx deepspace secrets set KEY=value` — no setup step; worker code reads `env.KEY` in dev and prod alike, and the store (keyed by the app's immutable `DEEPSPACE_APP_ID` in `wrangler.toml`) is the **only** deploy input — never hand-edit `.dev.vars`. → `references/secrets.md`. The id is the app; the `name` is just the URL (renames, forking a cloned repo with `init --new-id`, ownership transfer → `references/app-identity.md`). Teammates the owner adds with `npx deepspace collaborators add <email>` can deploy the app and manage its secrets (not undeploy or transfer it). → `references/collaborators.md`.
 
 ## Load a reference when you reach its surface
 
@@ -96,7 +96,8 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 |---|---|
 | `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`integrations`/`test-accounts`/`screenshot`/`library`), and the `test` command. |
 | `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, and multi-environment / staging deploys (`deploy --env`). |
-| `references/secrets.md` | Managing app secrets, using `npx deepspace secrets`, migrating a legacy `.dev.vars` app, project/config mapping, or generated-cache behavior. |
+| `references/secrets.md` | Managing app secrets, using `npx deepspace secrets`, migrating a legacy `.dev.vars` app, configs/environments, or generated-cache behavior. |
+| `references/app-identity.md` | App ids (`DEEPSPACE_APP_ID`), forking a cloned repo (`init --new-id`), renames, `apps`/`undeploy`, ownership transfer. |
 | `references/collaborators.md` | Adding teammates to an app, deploying an app you don't own, or a 403 on deploy/secrets as a non-owner. |
 | `references/sdk-reference.md` | Any hook / type / export beyond `useQuery` / `useMutations` / `useAuth` — messaging, game rooms, presence, Yjs, canvas, R2. Open before `node_modules/deepspace/dist/*.d.ts`. |
 | `references/schemas.md` | Defining a collection, picking a permission rule, debugging "why can't this user see/edit X." |

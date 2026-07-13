@@ -2,36 +2,34 @@ _Load this reference when adding teammates to an app, deploying an app you don't
 
 # App collaborators
 
-Collaborators are DeepSpace users the app **owner** authorizes to deploy the app on the owner's behalf. Ownership never moves: the deployed worker keeps the owner's identity, billing, and `APP_OWNER_JWT`.
+Collaborators are DeepSpace users the app **owner** authorizes to work on the app. Ownership never moves: the deployed worker keeps the owner's identity, billing, and `APP_OWNER_JWT`. Authorization keys to the app's immutable `DEEPSPACE_APP_ID` (→ [references/app-identity.md](app-identity.md)) — there is no per-resource grant or link step.
 
 > **Not the same thing:** record-level collaborators (`collaboratorsField` in a schema, the `'shared'` read rule) control who sees *rows inside* an app → `references/schemas.md`. This file is about who can *ship* the app.
 
 ## Managing (owner-only)
 
 ```bash
-npx deepspace collaborators list
+npx deepspace collaborators list                         # emails; --json for user ids
 npx deepspace collaborators add teammate@example.com     # must already be a DeepSpace user
 npx deepspace collaborators remove teammate@example.com
 ```
 
-Run from the app checkout (or pass `--app <name>`). Test accounts (`…@deepspace.test`) can never be collaborators — grants to them fail closed.
+Run from the app checkout (or pass `--app <id or name>`). Test accounts (`…@deepspace.test`) can never be collaborators — grants to them fail closed. Collaborators get owner-equivalent deploy and secrets access, so only add people you trust.
 
 ## What a collaborator can and can't do
 
 | Action | Allowed? |
 |---|---|
-| `deploy` (incl. `--env`) | **Yes** — on-behalf; CLI prints `Deployed on behalf of owner <id>` |
+| `deploy` (incl. `--env`) | **Yes** — on-behalf; CLI prints `Deployed on behalf of owner <id>`; billing stays the owner's |
+| `dev` / `test` | **Yes** |
+| Secrets: `list` / `get` / `download` / `pull` | **Yes** — every config in the app's store |
+| Secrets: `set` / `upload` / `delete`, `configs create` / `delete` | **Yes** — writes are audited under the collaborator's own id |
 | `undeploy` | No — owner (or platform admin) only |
-| Secrets: read / `pull` / `list` / `get` / `download` in the app's linked project | **Yes**, every config in that project |
-| Secrets: `set` / `upload` / `delete` | **Yes** — writes are audited under the collaborator's own id |
-| `configs create` / `clone` / `delete` in the linked project | **Yes** |
-| Create a **new/missing** secrets project | No — 403 `Collaborators cannot create missing secrets projects` |
-| Change which project the app links to (server-side link) | No — owner-only; a collaborator's `secrets setup` writes the local `wrangler.toml` link only |
+| `transfer` | No — owner-only (→ `references/app-identity.md`) |
 | `collaborators add` / `remove` | No — owner-only |
 
 ## Mechanics and traps
 
-- **Access rides the app link.** Collaborator secrets requests are scoped to the app (the CLI adds this automatically when run from a checkout whose link matches), and the platform grants access only if the **owner's** app registry entry links that project. Until the owner has linked + deployed, collaborators get `secrets_project_not_linked` (403).
-- **On-behalf deploys don't touch the secrets link.** A collaborator deploy ships code and refreshed linked secrets but never re-points the app at a different project.
-- **Secrets access is project-wide, not config-scoped.** A collaborator on the app can read/write *every* config in the linked project — including one the owner shares with another app. Keep one project per app unless that sharing is intended.
-- **Getting started as a collaborator:** clone the repo, `npx deepspace login`, then `dev` / `test` / `deploy` work as usual. If `wrangler.toml` lacks the secrets link vars, run `npx deepspace secrets setup --project <owners-project>` to link locally (the server link is already the owner's).
+- **Access is the app role.** Every deploy/secrets request is authorized against the app id: owner, collaborator, or neither. A 403 `Not the app owner or a collaborator` means ask the owner for `collaborators add` — or your access was revoked.
+- **On-behalf deploys keep the owner's identity.** A collaborator deploy ships code plus the store's secrets, tagged to the owner for billing; nothing about the app's ownership changes.
+- **Getting started as a collaborator:** clone the repo (its `wrangler.toml` already carries `DEEPSPACE_APP_ID`), `npx deepspace login`, and `dev` / `test` / `deploy` / `secrets` just work — no linking. If you actually wanted your **own** copy of the app rather than to collaborate, run `npx deepspace init --new-id` to fork it (fresh data, fresh secrets store).

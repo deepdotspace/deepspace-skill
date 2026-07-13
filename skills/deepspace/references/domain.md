@@ -38,7 +38,7 @@ npx deepspace domain list --json
 npx deepspace domain status <domain>
 npx deepspace domain status <domain> --json
 
-# Re-point a domain at a different app (or the same app, e.g., after a rename)
+# Re-point a domain at a different app (renames don't need this — domains follow the app id)
 npx deepspace domain attach <domain> --app <new-app-name>
 npx deepspace domain attach <domain> --app <new-app-name> --json
 
@@ -102,4 +102,4 @@ test('domain attach moves the route to the target app', async ({ request }) => {
 ## See also
 
 - `references/architecture.md` — for how custom hostnames route into the same dispatch worker that handles `<name>.app.space` apps.
-- The `wrangler.toml` `name` field is the link between every CLI command and the app — `domain attach --app <X>` writes a hostname-map entry keyed on `X`, which must match the deployed worker's `name`. Renaming the app post-deploy without re-deploying breaks domain routing.
+- The registry maps every hostname — `<name>.app.space` and custom domains alike — to the app's immutable `DEEPSPACE_APP_ID`, so custom domains survive renames untouched (→ `references/app-identity.md`). `domain attach --app <X>` accepts the app's name or id.
