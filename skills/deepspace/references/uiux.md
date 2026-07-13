@@ -137,7 +137,7 @@ The scaffold ships a copy-paste primitives kit in `src/components/ui/` (index at
 ### Base UI gotchas (already handled in the kit — don't undo them)
 
 - **Custom trigger elements use the `render` prop, not `asChild`:** `<DialogTrigger render={<Button>Open</Button>} />`. The kit's `Button` is a native `<button>` and works as a `render` target.
-- **`SelectValue` label rendering** — the kit's `SelectContent` derives an items map from its `SelectItem` children so the trigger shows the *label* (not the raw value) even before the popup ever opens. Keep options as `SelectItem` children.
+- **`SelectValue` label rendering** — the kit derives an items map from its `SelectItem` children so the trigger shows the *label* (not the raw value) even before the popup ever opens. Render `SelectItem`s inline (direct children / `.map(...)` / fragments) — items inside your own wrapper component are invisible to the walk; pass `items={{ value: 'Label' }}` explicitly instead. Option values must be non-empty strings (`''` is the cleared state).
 - **Nested dialogs** — the kit passes `forceRender` on backdrops so a modal-in-modal deepens the scrim. Opening a `Dialog` from inside a `Modal` just works.
 - **Tabs active state** styles via `data-active` (not `data-selected`).
 - **Open/close animations** depend on the custom `animate-in`/`animate-out` utilities in `src/styles.css` (with `animation-fill-mode: both`). Don't remove that block; components animate via `data-[open]`/`data-[closed]`.
