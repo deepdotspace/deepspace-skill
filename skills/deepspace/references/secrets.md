@@ -35,7 +35,7 @@ npx deepspace secrets configs delete qa
 
 Every command takes `-a/--app <appId>` (default: `DEEPSPACE_APP_ID` from the nearest `wrangler.toml`), `-c/--config <name>` (default `prd`), and `-e/--env <name>` (targets the `[env.<name>]` block — which is its **own app** with its own store; config defaults to `<name>`). Mixing them up is caught: `-e staging` without an `[env.staging]` app id errors and points you at `-c staging`.
 
-Names: `[A-Za-z_][A-Za-z0-9_]*`, conventionally `UPPER_SNAKE`. SDK-reserved binding names (`APP_OWNER_JWT`, `API_WORKER_URL`, …) are rejected — the platform injects those. Caps: 32 KB per value, 128 secrets / 128 KB per config, 64 configs; oversized writes → 413. `ALLOW_DEBUG_ROUTES=true` is settable but prints a loud warning — it exposes an **unauthenticated** debug API on the deployed app.
+Names: `[A-Za-z_][A-Za-z0-9_]*`, conventionally `UPPER_SNAKE`. SDK-reserved binding names (the 11 `RESERVED_BINDING_NAMES` — `APP_OWNER_JWT`, `ASSETS`, … — plus `API_WORKER_URL` and `PLATFORM_WORKER_URL`) are rejected — the platform injects those. Caps: 32 KB per value, 128 secrets / 128 KB per config, 64 configs; oversized writes → 413. `ALLOW_DEBUG_ROUTES=true` is settable but prints a loud warning — it exposes an **unauthenticated** debug API on the deployed app.
 
 ## Configs and environments
 

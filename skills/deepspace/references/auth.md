@@ -73,7 +73,7 @@ The stack is split across two files:
 
 ```tsx
 // App() returns:
-<ToastProvider>                           // from ../components/ui (local, NOT 'deepspace')
+<ToastProvider>                           // from @/components/ui (local, NOT 'deepspace')
   <div data-testid="app-root">            // canonical "shell mounted" test hook — don't rename
     <Suspense><Outlet /></Suspense>
   </div>
@@ -103,7 +103,7 @@ The stack is split across two files:
 
 Do not rewrite either file. The defaults already:
 
-- Wrap the tree in the scaffold's local `ToastProvider` (import `useToast` from `../components/ui`, not `deepspace`).
+- Wrap the tree in the scaffold's local `ToastProvider` (import `useToast` from `@/components/ui`, not `deepspace`).
 - Render routes for both signed-in and signed-out users.
 - Expose a Sign In button in `Navigation.tsx` that opens `<AuthOverlay onClose={...}/>` (GitHub + Google + email/password) and a sign-out option in the avatar dropdown.
 

@@ -6,7 +6,7 @@ _Load this reference for the login contract, the full CLI command catalog, and t
 
 DeepSpace runs against a hosted platform. Every `npx deepspace` command except scaffolding (`npm create deepspace`) and the no-auth catalog probes (`integrations list`/`info`, `add --list`/`--info`) needs a logged-in account.
 
-**`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path `dev` / `test` / `deploy` use — if `whoami` succeeds, those will too. On failure: stderr ``Not logged in. Run `deepspace login`.``, exit 1. Don't stat `~/.deepspace/session` — that's a CLI implementation detail.
+**`npx deepspace whoami`** is the canonical login-state probe (add `--json` from agents). It refreshes the JWT in the same call path `dev` / `test` / `deploy` use — if `whoami` succeeds, those will too. On failure: stderr ``Not logged in. Run `deepspace login` first.``, exit 1. Don't stat `~/.deepspace/session` — that's a CLI implementation detail.
 
 Four hard rules:
 
@@ -23,7 +23,7 @@ The happy-path commands (login, `npm create deepspace`, `add`, `dev`, `test`, `d
 # --- Local dev ---
 npx deepspace dev                  # Vite + worker in-process; HMR on localhost:5173, --strictPort fails loudly on clash
 npx deepspace dev --port 5180      # parallel apps
-npx deepspace dev --prod           # same UI, but workers point at production
+# (no local/prod toggle: dev/test/deploy always target the production platform workers)
 npx deepspace kill                 # kill YOUR leaked listener on 5173 + its workerd children (never a sibling session's)
 npx deepspace kill --port 5180
 npx deepspace kill --all           # sweep every workerd/wrangler/vite on the box
@@ -51,11 +51,13 @@ npx deepspace apps                       # all your apps: id, URL, deploy state 
 npx deepspace init                       # stamp DEEPSPACE_APP_ID into an existing repo
 npx deepspace init --new-id              # fork a cloned repo into your OWN app (fresh data + secrets)
 npx deepspace undeploy [--env <name>]    # off the network; the id survives, redeploy revives
+npx deepspace undeploy <app-id-or-name>  # positional (registry-resolved) works from anywhere — no wrangler.toml needed
 npx deepspace transfer offer <email>     # 7-day ownership handshake; accept --app <appId> | cancel | status
 
 # --- Collaborators (owner-only management; collaborators can deploy + manage secrets, not undeploy/transfer) → references/collaborators.md ---
-npx deepspace collaborators list
-npx deepspace collaborators add teammate@example.com     # must already be a DeepSpace user
+npx deepspace collaborators list                         # also prints a PENDING INVITES section
+npx deepspace collaborators add teammate@example.com     # existing user → added now; non-user → emailed invite (billed to owner), joins on sign-in; re-add while live → already_invited
+npx deepspace collaborators cancel teammate@example.com  # rescind a pending (un-accepted) invite
 npx deepspace collaborators remove teammate@example.com
 
 # --- Integrations discovery (NO AUTH for list/info; invoke is billed) → references/integrations.md ---

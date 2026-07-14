@@ -12,7 +12,9 @@ two steps **in this order** — the secrets store keys off the app id, so adopt 
 
 [references/app-identity.md](app-identity.md) says deploy/init mint an id when none
 exists — but they first try to **adopt** the id of an app you own with a matching name.
-For a legacy app that adoption is what you want. If the lookup misses and a fresh
+For a legacy app that adoption is what you want. Adopting a legacy name-as-id app you
+**own** stays automatic; if a collaborator or admin adopts one they can deploy but
+don't own, deploy asks them to confirm first (or requires `--adopt` non-interactively). If the lookup misses and a fresh
 `app_…` id gets minted instead, you now hold a brand-new app identity, and the next
 deploy tries to register it under your existing subdomain:
 

@@ -9,12 +9,15 @@ Collaborators are DeepSpace users the app **owner** authorizes to work on the ap
 ## Managing (owner-only)
 
 ```bash
-npx deepspace collaborators list                         # emails; --json for user ids
-npx deepspace collaborators add teammate@example.com     # must already be a DeepSpace user
+npx deepspace collaborators list                         # COLLABORATORS + PENDING INVITES (with expiry); --json → {collaborators, pending}
+npx deepspace collaborators add teammate@example.com     # existing user → added now; non-user → emailed invite (see below)
+npx deepspace collaborators cancel teammate@example.com  # rescind a pending (un-accepted) invite
 npx deepspace collaborators remove teammate@example.com
 ```
 
-Run from the app checkout (or pass `--app <id or name>`). Test accounts (`…@deepspace.test`) can never be collaborators — grants to them fail closed. Collaborators get owner-equivalent deploy and secrets access, so only add people you trust.
+Run from the app checkout (or pass `-a`/`--app <id or name>`). Test accounts (`…@deepspace.test`) can never be collaborators — grants to them fail closed. Collaborators get owner-equivalent deploy and secrets access, so only add people you trust.
+
+**`add` has two paths.** If the email already belongs to a DeepSpace user, they're added as a collaborator immediately. If it doesn't, the server creates a **pending invite**, emails the person, and bills the invite to the owner; they become a collaborator when they next sign in. The invite has an expiry date; re-running `add` while an invite is still live returns `already_invited` (no new email, no re-charge) — `cancel <email>` then re-`add` to reset. `list` shows live invites under a `PENDING INVITES ON <app>` section.
 
 ## What a collaborator can and can't do
 
@@ -26,7 +29,7 @@ Run from the app checkout (or pass `--app <id or name>`). Test accounts (`…@de
 | Secrets: `set` / `upload` / `delete`, `configs create` / `delete` | **Yes** — writes are audited under the collaborator's own id |
 | `undeploy` | No — owner (or platform admin) only |
 | `transfer` | No — owner-only (→ `references/app-identity.md`) |
-| `collaborators add` / `remove` | No — owner-only |
+| `collaborators add` / `remove` / `cancel` | No — owner-only |
 
 ## Mechanics and traps
 

@@ -14,6 +14,7 @@ App Worker (per-app)                 Platform Worker (shared)
 ├── /ws/canvas/:docId
 ├── /ws/presence/:scopeId
 ├── /ws/cron/:roomId                ← admin/monitor stream for AppCronRoom
+├── /ws/jobs/:roomId                ← durable background-job stream for AppJobRoom
 ├── /api/auth/* → auth-worker
 ├── /api/integrations/* → api-worker
 └── Static assets (SPA fallback)
@@ -29,7 +30,7 @@ The scaffolded `AppRecordRoom` already passes your `schemas` to `RecordRoom` —
 
 ## Scope conventions
 
-- `app:<APP_NAME>` — the app's primary RecordRoom. Default in the scaffold (`SCOPE_ID` in `src/constants.ts`).
+- `app:<APP_ID>` — the app's primary RecordRoom. Default in the scaffold (`SCOPE_ID = \`app:${APP_ID}\`` in `src/constants.ts`, where `APP_ID` is the immutable `DEEPSPACE_APP_ID`; the worker keys the DO via `app:${env.DEEPSPACE_APP_ID}`). Note: `(app)/_layout.tsx` passes `appId={APP_NAME}` as a separate `RecordScope` prop — that's the display/handle, not the scope ID; don't conflate the two.
 - `conv:<id>` — DM/conversation DO. Use with `useConversation` and the `conv_messages` / `conv_reactions` / `conv_members` schemas.
 - `workspace:default` — the single shared workspace scope (email handles, teams, etc.) hosted on the platform-worker. There is currently only `default`; the `workspace:` namespace is reserved but not multi-instance.
 - `dir:<appHandle>` — per-DeepSpace-app directory DO (cross-app conversations / communities / posts). The `<appHandle>` is the published app's slug (e.g., `dir:deepspace-mail`), not your local `wrangler.toml` `name` — both apps proxy into the platform-worker's directory DO keyed by handle.
@@ -82,7 +83,7 @@ The Durable Object reads caller identity (`userId`, `userName`, `userEmail`, `us
 **Platform worker (cross-app, WebSocket AND `/api/*`)** — same WebSocket query-param scrub as above, plus on `/api/*` HTTP passthrough: overwrites `X-User-Id` with the JWT subject and strips `X-App-Action` (only the worker itself sets that header for internal server-action calls). Auth is required on every cross-app upgrade (no anonymous flow on `workspace:*` / `dir:*` / `conv:*`).
 
 Three valid states on app-worker WebSockets:
-- **No token** → anonymous (DO assigns `anon-<uuid>`). The starter allows this on `/ws/:roomId` and the Yjs / Canvas / Presence / Cron routes.
+- **No token** → anonymous (DO assigns `anon-<uuid>`). The starter allows this on `/ws/:roomId` and the Canvas / Presence / Cron / Jobs routes. (`/ws/yjs/:docId` is the exception — it 401s without a token, per the docs-aware handler above.)
 - **Invalid token** → 401.
 - **Valid token** → identity derived from the JWT claims.
 
@@ -93,10 +94,10 @@ The client SDK no longer sends identity params over WS URLs — the worker would
 The `name` field in `wrangler.toml` is the `<name>.app.space` subdomain. It must match `^[a-z0-9](?:-?[a-z0-9])+$` — lowercase, 2-63 chars, no leading / trailing / double dashes. **Both `deepspace dev` and `deepspace deploy` fail-fast on a non-canonical `name`** — for example, `name = "My_App"` bails with:
 
 ```
-wrangler.toml: name "My_App" is not in canonical form. Update `name` to "my-app" and re-run.
+wrangler.toml: `name` "My_App" is not in canonical form. Update it to "my-app" and re-run.
 ```
 
-Earlier SDKs silently sanitized, which split identity across `[vars].APP_NAME` / `SCOPE_ID` / deployed bindings — now you fix it once and every surface agrees. Edit the field and re-run.
+(The SDK ships a sanitize-and-warn `resolveAppName()` helper, but both commands wrap it in a strict equality gate — don't expect sanitization to rescue a bad name.) Earlier SDKs silently sanitized, which split identity across `[vars].APP_NAME` and deployed bindings — now you fix it once and every surface agrees. Edit the field and re-run.
 
 The `name` is seeded by the `<app-name>` argument at scaffold time but is fully editable afterward — `deploy` reads `wrangler.toml` fresh every run. To pair an arbitrary directory with an arbitrary subdomain, scaffold into the directory you want, then edit `wrangler.toml`'s `name` to the subdomain you want. Don't regenerate or move the scaffold to align them.
 

@@ -68,7 +68,7 @@ This is a visual-inspection helper, not a substitute for Playwright assertions. 
 
 ## Scaffolded Test Files
 
-- `smoke.spec.ts` — app loads, navigation renders, sign-in button present, page title correct
+- `smoke.spec.ts` — static landing loads, static contract (no `/api/auth` request / no `/ws/` socket on load), dynamic app boundary mounts on `/home`, sign-in button present (and `nav-user-name` absent when logged out), unknown route shows 404
 - `api.spec.ts` — API endpoints return expected responses, auth required where expected
 - `collab.spec.ts` — multi-user: two users connect, see each other, data syncs between them
 

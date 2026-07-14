@@ -10,9 +10,15 @@ npx deepspace deploy   # → <wrangler.name>.app.space
 
 The subdomain is the `name` field in `wrangler.toml`, **not** the app-folder name — edit it there if you want a different deploy target; `deploy` does not accept a name override. It must match `^[a-z0-9](?:-?[a-z0-9])+$` (2-63 chars, lowercase); `dev` and `deploy` fail-fast on a non-canonical name (see `references/architecture.md` § App-name rules). The app's *identity* is the immutable `DEEPSPACE_APP_ID` in `[vars]` (minted at scaffold, or on the spot by a first deploy — commit `wrangler.toml`); changing `name` on a deployed app is a **rename** the CLI asks you to confirm (or pass `--rename`) — data, secrets, collaborators, and custom domains follow the id. → `references/app-identity.md`. Deploy requires a logged-in session — re-run `npx deepspace login` if it expired (full login contract → `references/cli.md`).
 
+**Adoption on a repo with no `DEEPSPACE_APP_ID`.** A first deploy resolves the subdomain against the registry. If the name is free it mints a fresh id; if the name belongs to an app you **own**, it adopts that id automatically. If the name belongs to an app you can *deploy but don't own* (collaborator/admin on-behalf), deploy asks you to confirm before adopting — or requires `--adopt` in a non-TTY/CI run. A name owned by an app you **can't** deploy fails up front (pick a different `name`, or ask the owner to add you as a collaborator).
+
 You don't have to own the app: a **collaborator** the owner added (`npx deepspace collaborators add <email>`) deploys the same way — the CLI prints `Deployed on behalf of owner <id>` and ownership/billing stay the owner's. Collaborators cannot `undeploy`. → `references/collaborators.md`
 
 On an **initial build**, run the pre-deploy checklist in `references/uiux.md` §5 first (home replaced, theme picked, browser-default primitives removed, toasts wired). On follow-up deploys with those already verified, just run the command.
+
+After the app is live, deploy also **syncs your payment catalog to Stripe**: if `src/subscriptions.ts` or `src/products.ts` exist, it bundles them and POSTs to `/api/subscriptions/sync` and `/api/charges/products/sync`. It warns (never fails) if Stripe Connect isn't onboarded, and if a plan change stranded existing subscribers (a removed or repriced plan) it interactively asks whether to cancel them — a prompt that has no answer in non-TTY/CI, so it can block those deploys. Details → `references/payments.md`.
+
+Deploy reserves the `run_worker_first` route prefixes `/api/*`, `/ws/*`, `/internal/*`, `/v1/*`, `/_deepspace/*` for the platform; your app can only declare *additional* patterns (→ `references/bindings.md`).
 
 ## `.dev.vars` contract
 
@@ -49,20 +55,21 @@ Two rules the CLI fail-fasts on:
 1. **Distinct, canonical `name` required.** `[env.<name>].name` must be set (e.g. `myapp-staging`) and match `^[a-z0-9](?:-?[a-z0-9])+$`, or deploy aborts. It's the deploy subdomain.
 2. **Named environments do NOT inherit bindings or vars.** Wrangler inherits only a few top-level keys (`main`, `compatibility_date`, `compatibility_flags`). `vars`, `durable_objects`, `migrations`, `assets`, and any `kv`/`r2`/`d1` must be **repeated** inside the `[env.<name>]` block, or the deployed worker is missing them and 500s at runtime. (The env's own `DEEPSPACE_APP_ID` lives in `[env.<name>].vars` — don't copy the top-level one there.)
 
-**Isolation comes from `APP_NAME`, and the CLIENT must match it.** Rooms are scoped `app:${APP_NAME}` (`src/constants.ts` → `SCOPE_ID`). Give the env its own `APP_NAME` in `[env.<name>].vars` and it gets a separate, empty DO namespace. But `APP_NAME` is *also* baked into the client bundle — if `src/constants.ts` hardcodes it, a staging build connects the browser to the **production** room (you'll see empty/sample data while your writes land elsewhere). Fix: read it from the build env and inject per-env in `vite.config.ts`:
+**Isolation comes from the per-env `DEEPSPACE_APP_ID`, and the CLIENT must match it.** Rooms are scoped `app:${APP_ID}` (`src/constants.ts` → `SCOPE_ID`), and each `[env.<name>]` carries its own `DEEPSPACE_APP_ID`, so the staging worker's server-side code (actions, cron, jobs) targets its own DOs. But the app id is *also* baked into the client bundle at scaffold time — if `src/constants.ts` keeps the hardcoded literal, a staging build still ships the **production** id: the browser talks to a room named `app:<prod-id>` while staging's server-side writes land in `app:<staging-id>` — a split-brain where the UI never sees action/cron/job results (and vice versa). Fix: read it from the build env and inject per-env in `vite.config.ts`:
 
 ```ts
 // src/constants.ts
-export const APP_NAME = (import.meta.env.VITE_APP_NAME as string) || 'myapp'
+export const APP_ID = (import.meta.env.VITE_APP_ID as string) || '<prod app id>'
+export const SCOPE_ID = `app:${APP_ID}`
 
 // vite.config.ts — resolve from the active wrangler env (CLOUDFLARE_ENV)
 import { parse as parseToml } from 'smol-toml'
-function resolveAppName() {
+function resolveAppId() {
   const env = process.env.CLOUDFLARE_ENV
   const cfg = parseToml(readFileSync('wrangler.toml', 'utf8')) as any
-  return (env ? cfg.env?.[env]?.vars?.APP_NAME : cfg.vars?.APP_NAME) || 'myapp'
+  return (env ? cfg.env?.[env]?.vars?.DEEPSPACE_APP_ID : cfg.vars?.DEEPSPACE_APP_ID) || ''
 }
-export default defineConfig({ define: { 'import.meta.env.VITE_APP_NAME': JSON.stringify(resolveAppName()) }, /* … */ })
+export default defineConfig({ define: { 'import.meta.env.VITE_APP_ID': JSON.stringify(resolveAppId()) }, /* … */ })
 ```
 
 **Staging-only worker routes** (a temporary import/admin endpoint, extra debug surface) should gate on `env.APP_NAME.includes('staging')` (or the presence of a staging-only secret) so the same `worker.ts` exposes them on staging but 404s in production.

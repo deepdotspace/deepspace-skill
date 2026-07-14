@@ -78,8 +78,9 @@ Edit `ALLOWED_TOOL_NAMES` in `src/ai/tools.ts`. The full catalog from `BUILT_IN_
 - `records.query` / `records.get` — reads
 - `records.create` / `records.update` / `records.delete` — **writes**
 - `user.current` — caller's user record
+- `user.list` — list / look up other users' records
 
-The scaffold ships **all of these**, including writes — the assistant can read AND modify data. **Per-collection RBAC at the DO is the security boundary**; the user's own role determines what each tool call can do. To run a stricter assistant, trim `ALLOWED_TOOL_NAMES` to reads only.
+The scaffold's default `ALLOWED_TOOL_NAMES` ships all of these **except `user.list`** (add it there to enable), including writes — the assistant can read AND modify data. **Per-collection RBAC at the DO is the security boundary**; the user's own role determines what each tool call can do. To run a stricter assistant, trim `ALLOWED_TOOL_NAMES` to reads only.
 
 `buildSystemPrompt(appName, schemas)` produces a concise prompt that lists every collection (name + columns with required-marker `!`). The scaffold's `buildSystemPrompt` includes mutation guardrails ("Confirm intent before destructive actions", "If a write is denied (RBAC), tell the user plainly — do not retry blindly"). Customize by editing `src/ai/tools.ts` directly.
 

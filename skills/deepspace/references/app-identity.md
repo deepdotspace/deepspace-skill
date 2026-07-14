@@ -27,7 +27,10 @@ Change `name` in `wrangler.toml` and deploy; the CLI asks you to confirm (or pas
 ```bash
 npx deepspace apps                    # every app registered to you: id, URL, deploy state (--json)
 npx deepspace undeploy [--env <name>] # off the network; deletes stored data
+npx deepspace undeploy <app-id-or-name> # positional target (registry-resolved) — works from anywhere, no wrangler.toml needed
 ```
+
+The positional form takes an app id **or** a live subdomain name (resolved via the registry), so you can undeploy an app you've lost track of without being in its checkout. Omit it to fall back to `DEEPSPACE_APP_ID` from the nearest `wrangler.toml` (with `--env <name>` selecting that env's app; a positional name overrides `--env`).
 
 `undeploy` deletes the app's stored data but the id survives — deploying again revives the same app (same collaborators, same secrets store), and within 30 days the old name is still yours. Active (deployed) apps count against your tier's cap; undeployed ones don't, and revival is quota-checked like a fresh deploy. `apps` is the answer to "which app do I undeploy?" when a quota message names an id you've lost track of.
 

@@ -18,7 +18,7 @@ export const subscriptionPlans = [
     name: 'Pro',
     priceCents: 900,       // $9/mo — minimum $3/mo ($300)
     yearlyCents: 9000,     // optional; minimum $12/yr ($1200)
-    trialDays: 7,          // optional free trial; max 90
+    trialDays: 7,          // optional free trial; max 365
     taxCode: 'txcd_10000000', // optional, defaults to digital services
   },
 ] as const

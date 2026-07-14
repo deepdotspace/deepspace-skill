@@ -85,6 +85,12 @@ Advanced rules (supported by `PermissionRule` but rarely needed — check the `P
 - `'collaborator'` — caller is the **owner** OR is in `collaboratorsField`. Despite the name, owners always pass.
 - `'access'` — caller passes a per-collection access check (currently behaves identically to `'team'`; prefer `'team'` for clarity).
 
+Both `'team'` and `'access'` depend on the schema declaring a `teamField` **and** a `PermissionContext.isTeamMember(teamId, userId)` implementation being wired in — without both, the team branch never passes and the rule collapses to owner-OR-collaborator (the default `noopPermissionContext.isTeamMember` always returns `false`).
+
+**Column-level write restrictions.** A role's permission object also accepts `writableFields?: string[]` — when set, that role may only update the listed columns; any attempt to change a field outside the list is rejected (`enforced by checkFieldPermissions`). Leave it unset for no restriction.
+
+**Composite uniqueness.** A schema can declare `uniqueOn?: string[]` (e.g., `['userId', 'taskId']`) to enforce a composite uniqueness constraint across those columns.
+
 ## Data visibility
 
 When creating records scoped to specific users (e.g., conversations, private data):
