@@ -77,7 +77,7 @@ Report with evidence — the screenshot, the output, the live URL — and keep a
 
 ## Long builds: state lives on disk, not in context
 
-Context gets compacted; anything not written down gets forgotten or relitigated. Keep, from day one:
+Context gets compacted; anything not written down gets forgotten or relitigated. **On resume — after compaction, a session limit, or a long gap — re-read this reference and the files below before continuing**; standing rules decay silently otherwise. Keep, from day one:
 
 - **A task list** — the running to-do; while it's non-empty there is always a next action. This is what prevents stopping halfway.
 - **A state/decisions file** — current phase, exact next step, locked decisions. First thing to re-read on resume.
