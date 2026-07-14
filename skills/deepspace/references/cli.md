@@ -38,6 +38,14 @@ npx deepspace test e2e             # all Playwright specs
 npx deepspace test unit            # vitest
 npx deepspace screenshot http://localhost:5173/ out.png [--full-page --wait-for-timeout 500]
 
+# --- Production logs (deployed apps; 7-day retention) ---
+npx deepspace logs                       # last 15 min — console output, request summaries, exceptions with stacks
+npx deepspace logs -f                    # follow — polls every ~3s until Ctrl+C
+npx deepspace logs --since 1h --level error --search "payment"
+npx deepspace logs --json                # NDJSON, one event per line (agents: parse, don't scrape)
+# every logs command: -a/--app <id or name>, -e/--env <name> (staging app's own logs)
+# new logs take up to ~1 min to appear — don't conclude "no logs" from one immediate call
+
 # --- App secrets (one store per app, keyed by DEEPSPACE_APP_ID; source of truth for all envs; never hand-edit .dev.vars) → references/secrets.md ---
 npx deepspace secrets set API_KEY=...    # no setup step; works pre-deploy
 npx deepspace secrets list

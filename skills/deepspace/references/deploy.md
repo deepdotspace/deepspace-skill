@@ -1,4 +1,4 @@
-_Load this reference for deploy mechanics, the `.dev.vars` contract, and secret handling. For managing app secrets or understanding `.dev.vars` cache behavior, also read `references/secrets.md`. For the login contract and the full CLI command catalog, see `references/cli.md`._
+_Load this reference for deploy mechanics, the `.dev.vars` contract, secret handling, and post-deploy verification (`deepspace logs`). For managing app secrets or understanding `.dev.vars` cache behavior, also read `references/secrets.md`. For the login contract and the full CLI command catalog, see `references/cli.md`._
 
 # Deploy, `.dev.vars`, and secrets
 
@@ -13,6 +13,13 @@ The subdomain is the `name` field in `wrangler.toml`, **not** the app-folder nam
 You don't have to own the app: a **collaborator** the owner added (`npx deepspace collaborators add <email>`) deploys the same way — the CLI prints `Deployed on behalf of owner <id>` and ownership/billing stay the owner's. Collaborators cannot `undeploy`. → `references/collaborators.md`
 
 On an **initial build**, run the pre-deploy checklist in `references/uiux.md` §5 first (home replaced, theme picked, browser-default primitives removed, toasts wired). On follow-up deploys with those already verified, just run the command.
+
+## Verify a deploy (`deepspace logs`)
+
+After a deploy, read the app's production logs instead of guessing from the browser: `npx deepspace logs` shows the last 15 min (console output, request summaries, exceptions with stacks; 7-day retention), `-f` tails while you reproduce. Full flags → `references/cli.md`. Two rules:
+
+1. **Ingestion lags up to ~1 minute.** An empty result right after a request is lag, not absence — retry (~5s intervals, up to 2 min) before concluding anything.
+2. **A 500 in production ≠ a dev bug.** The exception event carries the real deployed-worker stack — read it instead of re-running `dev` and hoping.
 
 ## `.dev.vars` contract
 

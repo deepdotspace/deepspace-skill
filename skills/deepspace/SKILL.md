@@ -5,7 +5,8 @@ description: >
   DeepSpace SDK on Cloudflare Workers — scaffolding new apps, adding
   features, debugging a `worker.ts` that imports from `deepspace` /
   `deepspace/worker` or uses `RecordRoom`, `__DO_MANIFEST__`, or `npx
-  deepspace`. Also use when the user mentions DeepSpace or app.space, or
+  deepspace`, or viewing production logs / debugging errors on a deployed
+  app (`deepspace logs`). Also use when the user mentions DeepSpace or app.space, or
   asks for anything involving real-time sync, multiplayer state, live
   cursors / presence, whiteboards or canvases, collaborative text editing
   (Yjs), channel-based chat, per-role permissions (RBAC), Durable Object
@@ -97,8 +98,8 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 | Reference | Read before |
 |---|---|
 | `references/workflow.md` | Starting an end-to-end app build — a new product, a clone, or any multi-feature request. |
-| `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`integrations`/`test-accounts`/`screenshot`/`library`), and the `test` command. |
-| `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, and multi-environment / staging deploys (`deploy --env`). |
+| `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`logs`/`integrations`/`test-accounts`/`screenshot`/`library`), and the `test` command. |
+| `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, multi-environment / staging deploys (`deploy --env`), and post-deploy verification with `deepspace logs`. |
 | `references/secrets.md` | Managing app secrets, using `npx deepspace secrets`, migrating a legacy `.dev.vars` app, configs/environments, or generated-cache behavior. |
 | `references/app-identity.md` | App ids (`DEEPSPACE_APP_ID`), forking a cloned repo (`init --new-id`), renames, `apps`/`undeploy`, ownership transfer. |
 | `references/legacy-migration.md` | A pre-app-id app (name-based id in `apps`, no `DEEPSPACE_APP_ID`), or your own deploy failing with "name … taken by another app". |

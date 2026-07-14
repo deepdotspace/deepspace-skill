@@ -30,9 +30,19 @@
     "_rationale": "Casual + vague. Strong signal for the skill's collaborative-canvas wheelhouse."
   },
   {
+    "query": "my app at taskboard.app.space returns 500s in production but works fine locally — how do i see the server logs and stack traces?",
+    "should_trigger": true,
+    "_rationale": "Post-deploy debugging on .app.space = `deepspace logs`; should trigger without naming deepspace."
+  },
+  {
     "query": "show me how to wire up Liveblocks for cursor presence in my Figma plugin",
     "should_trigger": false,
     "_rationale": "Near-miss: shares 'cursor presence' but explicitly names a different real-time stack."
+  },
+  {
+    "query": "how do i tail my Cloudflare Worker's logs with wrangler tail and pipe them through jq?",
+    "should_trigger": false,
+    "_rationale": "Near-miss: log-tailing on Cloudflare, but raw wrangler tooling explicitly named — not a DeepSpace app."
   },
   {
     "query": "build a real-time chat with Socket.IO and Express, deploy to Heroku. nothing fancy, just rooms and messages",
