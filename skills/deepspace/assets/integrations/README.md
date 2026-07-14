@@ -5,7 +5,7 @@ Hand-maintained YAML catalog of every endpoint exposed by the DeepSpace api-work
 ## File layout
 
 - `index.yaml` — flat catalog: every endpoint key + a one-line description. Use this to confirm a name exists or to look one up by topic. Includes `integration_count`, `endpoint_count`, `oauth_required_integrations`, and a `categories.<name>` block per integration with each endpoint's key + description.
-- `<integration>.yaml` (one per integration, 29 files) — full per-endpoint detail: HTTP method, endpoint key, description, input Zod schema (the same one the api-worker validates against), and any auth / billing notes.
+- `<integration>.yaml` (one per integration, 35 files) — full per-endpoint detail: HTTP method, endpoint key, description, input Zod schema (the same one the api-worker validates against), and any auth / billing notes.
 
 Load `index.yaml` first to confirm an endpoint name. Drill into `<integration>.yaml` only when the body shape is non-obvious or when `npx deepspace invoke <ep> --info` isn't an option (no network, agent in a closed sandbox, etc.).
 

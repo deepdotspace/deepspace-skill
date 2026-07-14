@@ -1,12 +1,14 @@
 integration: firecrawl
-endpoint_count: 4
+endpoint_count: 5
 usage_example: await integration.post('firecrawl/crawl', { /* ...params */ })
 tools:
   crawl:
     method: POST
     endpoint_key: firecrawl/crawl
-    description: Crawl a website starting from a URL, following links to discover
-      and scrape multiple pages. 1 credit per page crawled.
+    description: Submit a crawl starting from a URL, following links to discover and
+      scrape multiple pages. Returns immediately with a jobId; poll
+      firecrawl/get-crawl for progress and the scraped pages. 1 credit per page
+      crawled (5 for json/extract formats).
     input_schema:
       type: object
       properties:
@@ -50,6 +52,54 @@ tools:
         data:
           type: object
           properties:
+            jobId:
+              type: string
+              description: Crawl job id; pass to firecrawl/get-crawl to poll
+            status:
+              type: string
+              description: Initial status ("scraping") on submit
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-crawl:
+    method: POST
+    endpoint_key: firecrawl/get-crawl
+    description: Poll a crawl job by id. Returns progress (completed/total) while
+      running; on a terminal status ("completed"/"failed"/"cancelled") returns the
+      scraped pages and settles billing to the crawl's actual credits used.
+    input_schema:
+      type: object
+      properties:
+        jobId:
+          type: string
+      required:
+        - jobId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            jobId:
+              type: string
+            status:
+              type: string
+            completed:
+              type: number
+              description: Pages crawled so far
+            total:
+              type: number
+              description: Total pages discovered
+            creditsUsed:
+              type: number
+            costUsd:
+              type: number
+              description: Settled USD cost (only on terminal status)
             data:
               type: array
               items:
@@ -84,8 +134,11 @@ tools:
                         type: number
                     additionalProperties: true
                 additionalProperties: true
-            creditsUsed:
-              type: number
+            next:
+              type:
+                - string
+                - "null"
+              description: Pagination cursor for the next page of results
           additionalProperties: false
         error:
           type: string

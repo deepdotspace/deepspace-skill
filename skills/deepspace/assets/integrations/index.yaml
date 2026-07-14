@@ -8,8 +8,8 @@ sdk_import: import { integration } from 'deepspace'
 call_pattern: await integration.post('<integration>/<endpoint>', body)
 response_envelope: "{ success: true, data: <endpoint-specific> } | { success:
   false, error: string }"
-integration_count: 29
-endpoint_count: 210
+integration_count: 35
+endpoint_count: 254
 oauth_required_integrations:
   - google
 categories:
@@ -26,15 +26,84 @@ categories:
       - endpoint: anthropic/chat-completion
         description: Generate text completions using Anthropic Claude models via the
           Messages API
+  anymailfinder:
+    file: anymailfinder.yaml
+    endpoint_count: 11
+    endpoints:
+      - endpoint: anymailfinder/create-bulk
+        description: Submit a bulk email-finding search over a table of rows (async;
+          poll get-bulk, fetch with download-bulk)
+      - endpoint: anymailfinder/create-geo-lead
+        description: Submit a GeoLead search — find businesses near a location and their
+          emails (async; poll get-geo-lead, fetch with download-geo-lead)
+      - endpoint: anymailfinder/download-bulk
+        description: Fetch a completed bulk search's results and settle billing to the
+          credits charged (first download only)
+      - endpoint: anymailfinder/download-geo-lead
+        description: Fetch a completed GeoLead search's results and settle billing to the
+          credits charged (first download only)
+      - endpoint: anymailfinder/find-company
+        description: Find a company's email(s) by domain or company name (1 credit on a hit)
+      - endpoint: anymailfinder/find-decision-maker
+        description: Find a decision-maker's email at a company by role category (2 credits
+          on a hit)
+      - endpoint: anymailfinder/find-linkedin-url
+        description: Find the work email behind a LinkedIn profile URL (1 credit on a hit)
+      - endpoint: anymailfinder/find-person
+        description: Find a person's work email from a name + company or a LinkedIn URL
+          (1 credit on a hit)
+      - endpoint: anymailfinder/get-bulk
+        description: Poll a bulk search's status and counts by searchId (free)
+      - endpoint: anymailfinder/get-geo-lead
+        description: Poll a GeoLead search's status and counts by searchId (free)
+      - endpoint: anymailfinder/verify-email
+        description: Verify a single email address with a real-time SMTP check (0.2 credits)
+  apify:
+    file: apify.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: apify/get-actor
+        description: Get an Apify Actor's record plus its default build input schema (free)
+      - endpoint: apify/get-run
+        description: Poll an Actor run by id; settles billing to the run's actual usage
+          cost and returns dataset items on terminal status (free)
+      - endpoint: apify/run-actor
+        description: Start an Apify Actor run and bill its actual usage back to the caller
+          (async; poll get-run)
+      - endpoint: apify/search-actors
+        description: Search the Apify Store for Actors (free)
   cloudconvert:
     file: cloudconvert.yaml
     endpoint_count: 1
     endpoints:
       - endpoint: cloudconvert/convert-file
         description: Convert a file by URL or base64
+  composio:
+    file: composio.yaml
+    endpoint_count: 8
+    endpoints:
+      - endpoint: composio/disconnect
+        description: Delete the calling user's connection to a toolkit (free)
+      - endpoint: composio/execute-tool
+        description: Execute a Composio tool as the calling user on their connected
+          account (billed per call; returns a connect-me signal if not connected)
+      - endpoint: composio/get-connection
+        description: Report the calling user's connection status for a connected account
+          id (free)
+      - endpoint: composio/get-tool
+        description: Get a single Composio tool and its input schema by slug (free)
+      - endpoint: composio/initiate-connection
+        description: Begin connecting the calling user to a toolkit; returns Composio's
+          hosted consent URL (free)
+      - endpoint: composio/list-connections
+        description: List the calling user's connections, scoped to this app (free)
+      - endpoint: composio/list-tools
+        description: Discover Composio tools and their input schemas (free)
+      - endpoint: composio/list-toolkits
+        description: Discover connectable Composio toolkits/apps (free)
   elevenlabs:
     file: elevenlabs.yaml
-    endpoint_count: 4
+    endpoint_count: 5
     endpoints:
       - endpoint: elevenlabs/create-agent
         description: Create an ElevenLabs Conversational AI agent
@@ -45,6 +114,9 @@ categories:
         description: Get a signed URL for ElevenLabs Conversational AI session
       - endpoint: elevenlabs/list-voices
         description: List available ElevenLabs voices
+      - endpoint: elevenlabs/settle-conversation
+        description: Settle a Conversational AI session's billing to the actual call
+          duration (free; caller-invoked settlement)
   email:
     file: email.yaml
     endpoint_count: 1
@@ -54,7 +126,7 @@ categories:
           cc, bcc, reply_to)
   exa:
     file: exa.yaml
-    endpoint_count: 6
+    endpoint_count: 7
     endpoints:
       - endpoint: exa/answer
         description: Get an LLM answer to a question informed by Exa search results.
@@ -67,18 +139,37 @@ categories:
         description: Find similar links to the provided URL using Exa AI. Supports
           content extraction (text, highlights, summaries) and advanced
           filtering for discovered links.
+      - endpoint: exa/get-research
+        description: Poll a research task by id; on a terminal status returns the
+          synthesized content and settles billing to the task's actual Exa cost.
       - endpoint: exa/news-search
         description: "[DEPRECATED — use /news-search-exa instead] Search news articles.
           Limited to truncated content and 24-hour delay."
       - endpoint: exa/research
-        description: Create a research task that explores the web, gathers sources, and
-          synthesizes findings. Waits for completion and returns the full
-          research content. Research can take up to 10 minutes for complex
-          queries.
+        description: Submit a research task that explores the web, gathers sources, and
+          synthesizes findings. Returns a researchId immediately; poll
+          exa/get-research for status and the completed content. Complex tasks can
+          take up to 10 minutes.
       - endpoint: exa/search
         description: Search the web using Exa AI with neural search capabilities.
           Supports categories, content extraction (text, highlights, summaries),
           and advanced filtering.
+  fal:
+    file: fal.yaml
+    endpoint_count: 4
+    endpoints:
+      - endpoint: fal/get-model
+        description: Get a fal model's metadata, OpenAPI schema, and pricing by
+          endpoint id (free)
+      - endpoint: fal/get-result
+        description: Poll a fal run by request_id; on COMPLETED returns the output and
+          settles billing to fal's actual cost (free)
+      - endpoint: fal/list-models
+        description: Discover fal.ai models — image, video, audio (free)
+      - endpoint: fal/run-model
+        description: Run a fixed-output-priced fal model (image / video e.g. veo3 /
+          audio e.g. whisper) and bill its actual cost back to the caller (async;
+          poll get-result)
   finance:
     file: finance.yaml
     endpoint_count: 5
@@ -96,11 +187,15 @@ categories:
           previous close)
   firecrawl:
     file: firecrawl.yaml
-    endpoint_count: 4
+    endpoint_count: 5
     endpoints:
       - endpoint: firecrawl/crawl
-        description: Crawl a website starting from a URL, following links to discover
-          and scrape multiple pages. 1 credit per page crawled.
+        description: Submit a crawl from a URL, following links to discover and scrape
+          multiple pages. Returns a jobId immediately; poll firecrawl/get-crawl. 1
+          credit per page crawled.
+      - endpoint: firecrawl/get-crawl
+        description: Poll a crawl job by id; returns progress while running and the
+          scraped pages on completion, settling billing to the credits used.
       - endpoint: firecrawl/map
         description: Map a website to get a list of all its URLs without scraping
           content. Fast way to discover site structure. 1 credit per page in
@@ -114,7 +209,7 @@ categories:
           costs.
   freepik:
     file: freepik.yaml
-    endpoint_count: 21
+    endpoint_count: 8
     endpoints:
       - endpoint: freepik/download-icons
         description: Download a Freepik icon
@@ -122,37 +217,6 @@ categories:
         description: Download a stock image
       - endpoint: freepik/download-stock-videos
         description: Download a stock video
-      - endpoint: freepik/generate-image-flux-2-pro
-        description: Generate images using Freepik Flux 2 Pro model with custom pixel
-          dimensions
-      - endpoint: freepik/generate-image-flux-2-turbo
-        description: Generate images using Freepik Flux 2 Turbo model — fast
-          speed-optimized generation
-      - endpoint: freepik/generate-image-flux-dev
-        description: Generate images using Freepik Flux Dev model
-      - endpoint: freepik/generate-image-flux-pro
-        description: Generate images using Freepik Flux Pro v1.1 model
-      - endpoint: freepik/generate-image-hyperflux
-        description: Generate images using Freepik Hyperflux model
-      - endpoint: freepik/generate-image-mystic
-        description: Generate ultra-realistic, high-resolution images using Freepik
-          Mystic model
-      - endpoint: freepik/generate-image-runway
-        description: Generate images using RunWay Gen4 Image model — photorealistic and
-          artistic generation
-      - endpoint: freepik/generate-image-seedream
-        description: "[DEPRECATED — prefer Seedream v4 or Seedream 4.5] Generate images
-          using Freepik Seedream v3 model"
-      - endpoint: freepik/generate-image-seedream-v4
-        description: Generate images using Freepik Seedream v4 model
-      - endpoint: freepik/generate-image-seedream-v4-5
-        description: Generate images using Freepik Seedream 4.5 model (superior
-          typography, poster composition, up to 4MP)
-      - endpoint: freepik/generate-image-z-image
-        description: Generate images using Freepik Z-Image turbo model — fast
-          high-quality generation
-      - endpoint: freepik/generate-video
-        description: Generate a video from an image and prompt
       - endpoint: freepik/image-expand
         description: Outpaint/expand an image
       - endpoint: freepik/image-relight
@@ -161,9 +225,6 @@ categories:
         description: Style transfer from a reference image
       - endpoint: freepik/remove-background
         description: Remove background from image
-      - endpoint: freepik/text-to-image-classic
-        description: Generate image from text with full parameter control (classic fast
-          model)
       - endpoint: freepik/upscale-image-precision
         description: Precision upscale an image
   gemini:
@@ -216,7 +277,7 @@ categories:
   google:
     file: google.yaml
     oauth_required: true
-    endpoint_count: 10
+    endpoint_count: 15
     endpoints:
       - endpoint: google/calendar-create-event
         description: Create events on the user's Google Calendar with optional video
@@ -233,13 +294,28 @@ categories:
         description: List files in Google Drive
       - endpoint: google/gmail-get
         description: Get a single email message by ID with full content
+      - endpoint: google/gmail-history-list
+        description: List mailbox changes since a historyId watermark (users.history.list)
+          for inbox-sync / reply-detection
+      - endpoint: google/gmail-inbox
+        description: List and hydrate inbox messages in one call (messages.list +
+          parallel messages.get); defaults to INBOX and format=full
+      - endpoint: google/gmail-labels-get
+        description: Get a single Gmail label by id including accurate message/thread
+          totals (users.labels.get)
       - endpoint: google/gmail-list
         description: List email messages from inbox or with optional search query
+      - endpoint: google/gmail-profile
+        description: Get the connected mailbox's profile — emailAddress, totals, and the
+          current historyId (users.getProfile)
       - endpoint: google/gmail-search
         description: Search emails using Gmail search syntax (e.g., "from:company.com
           subject:feedback")
       - endpoint: google/gmail-send
         description: Send email via Gmail
+      - endpoint: google/gmail-thread-get
+        description: Get a full email thread — every message in one conversation,
+          oldest-first, with headers and body parts (users.threads.get)
   latex:
     file: latex.yaml
     endpoint_count: 1
@@ -259,7 +335,7 @@ categories:
         description: Search LinkedIn profiles
   livekit:
     file: livekit.yaml
-    endpoint_count: 4
+    endpoint_count: 5
     endpoints:
       - endpoint: livekit/create-room
         description: Create a LiveKit room with upfront billing based on max
@@ -274,6 +350,9 @@ categories:
           livekit-create-room for billable rooms with duration limits.
       - endpoint: livekit/list-rooms
         description: List active LiveKit rooms
+      - endpoint: livekit/settle-room
+        description: Settle a metered room's billing to the actual participant-minutes
+          (free; caller-invoked settlement of the reserve-then-settle charge)
   mta:
     file: mta.yaml
     endpoint_count: 4
@@ -333,6 +412,17 @@ categories:
       - endpoint: openai/generate-image
         description: "[DEPRECATED — prefer using newer models instead like Gemini]
           Generate image from prompt (async)"
+  openai-realtime:
+    file: openai-realtime.yaml
+    endpoint_count: 2
+    endpoints:
+      - endpoint: openai-realtime/create-session
+        description: Mint an ephemeral token for a browser WebRTC voice call with OpenAI
+          Realtime (gpt-realtime); reserves and later settles by duration. Backs the
+          SDK's useVoiceAgent hook.
+      - endpoint: openai-realtime/settle-session
+        description: Settle a voice session's billing to the actual call duration (free;
+          caller-invoked settlement)
   openweathermap:
     file: openweathermap.yaml
     endpoint_count: 3
@@ -425,6 +515,16 @@ categories:
           query other search engines)"
       - endpoint: serpapi/web-search
         description: Google Web Search via SerpApi
+  shotstack:
+    file: shotstack.yaml
+    endpoint_count: 2
+    endpoints:
+      - endpoint: shotstack/get-render
+        description: Poll a render by id; on a terminal status returns the result URL
+          and settles billing to the rendered length (free)
+      - endpoint: shotstack/render
+        description: Submit a video edit (JSON timeline + output) to render on
+          Shotstack's cloud (async; poll get-render). Billed per rendered second.
   slack:
     file: slack.yaml
     endpoint_count: 4
@@ -627,17 +727,55 @@ categories:
       - endpoint: f1/sprint
         description: Get sprint race results. Returns empty array if the race weekend
           did not include a sprint race.
-  submagic:
-    file: submagic.yaml
-    endpoint_count: 3
+  tavus:
+    file: tavus.yaml
+    endpoint_count: 20
     endpoints:
-      - endpoint: submagic/create-video
-        description: Create SubMagic video (async)
-      - endpoint: submagic/get-project
-        description: Check SubMagic project status / retrieve result by projectId
-      - endpoint: submagic/wait-for-completion
-        description: Submit + poll a SubMagic project until it finishes (handles the
-          polling loop)
+      - endpoint: tavus/create-conversation
+        description: Start a Conversational Video Interface session (talking avatar over
+          WebRTC); returns a conversation_url. Metered per minute.
+      - endpoint: tavus/create-persona
+        description: Create a persona (the system prompt/brain that drives a replica in
+          conversations). Billed per request.
+      - endpoint: tavus/create-replica
+        description: Train a replica (talking avatar) from a training video URL. Metered
+          — flat training fee, settled on a completed get-replica.
+      - endpoint: tavus/delete-conversation
+        description: Delete a conversation by id (free)
+      - endpoint: tavus/delete-persona
+        description: Delete a persona by id (free)
+      - endpoint: tavus/delete-replica
+        description: Delete a replica by id (free)
+      - endpoint: tavus/delete-video
+        description: Delete a generated video by id (free)
+      - endpoint: tavus/end-conversation
+        description: End an active conversation by id (free)
+      - endpoint: tavus/generate-video
+        description: Generate an async video of a replica reading a script (or driven by
+          audio). Metered per minute of output (poll get-video).
+      - endpoint: tavus/get-conversation
+        description: Get a conversation by id; settles the metered cost once it has ended
+          (free)
+      - endpoint: tavus/get-persona
+        description: Get a persona by id (free)
+      - endpoint: tavus/get-replica
+        description: Get a replica by id; settles the training fee once completed (free)
+      - endpoint: tavus/get-video
+        description: Get a generated video by id; settles the fixed cost once ready (free)
+      - endpoint: tavus/list-conversations
+        description: List conversations (free)
+      - endpoint: tavus/list-personas
+        description: List personas (free)
+      - endpoint: tavus/list-replicas
+        description: List replicas (free)
+      - endpoint: tavus/list-videos
+        description: List generated videos (free)
+      - endpoint: tavus/patch-persona
+        description: Update a persona with an RFC 6902 JSON Patch array (free)
+      - endpoint: tavus/rename-replica
+        description: Rename a replica by id (free)
+      - endpoint: tavus/rename-video
+        description: Rename a generated video by id (free)
   websearch:
     file: websearch.yaml
     endpoint_count: 1

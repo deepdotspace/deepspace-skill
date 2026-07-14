@@ -1,0 +1,323 @@
+integration: composio
+endpoint_count: 8
+usage_example: await integration.post('composio/execute-tool', { /* ...params */ })
+# Per-user isolation is automatic: every call is scoped to the calling app + JWT
+# user (Composio holds each user's OAuth tokens). No endpoint accepts a user_id.
+tools:
+  disconnect:
+    method: POST
+    endpoint_key: composio/disconnect
+    description: Delete the calling user's connection to a toolkit by connected
+      account id (ownership-checked). Free.
+    input_schema:
+      type: object
+      properties:
+        connectedAccountId:
+          type: string
+          minLength: 1
+      required:
+        - connectedAccountId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            disconnected:
+              type: boolean
+            connectedAccountId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  execute-tool:
+    method: POST
+    endpoint_key: composio/execute-tool
+    description: Execute a Composio tool as the calling user on their connected
+      account. Billed flat per call. If the user has not connected the tool's app,
+      returns a requiresConnection signal instead of executing (not billed).
+    input_schema:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+        arguments:
+          type: object
+          default: {}
+          description: Tool input arguments, forwarded to Composio
+          additionalProperties: {}
+      required:
+        - slug
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          description: The tool's result payload, or a requiresConnection signal
+            ({ requiresConnection, provider, toolkit, tool }) when the user must
+            connect the app first
+        error:
+          type: string
+      required:
+        - success
+  get-connection:
+    method: POST
+    endpoint_key: composio/get-connection
+    description: Report the calling user's connection status for a connected account
+      id. Free.
+    input_schema:
+      type: object
+      properties:
+        connectedAccountId:
+          type: string
+          minLength: 1
+      required:
+        - connectedAccountId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            connectedAccountId:
+              type: string
+            status:
+              type: string
+            active:
+              type: boolean
+              description: True when status is ACTIVE
+            toolkit:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-tool:
+    method: POST
+    endpoint_key: composio/get-tool
+    description: Get a single Composio tool and its input schema by slug (register it
+      as an agent function-calling tool). Free.
+    input_schema:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+      required:
+        - slug
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Composio tool record (includes input schema)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  initiate-connection:
+    method: POST
+    endpoint_key: composio/initiate-connection
+    description: Begin connecting the calling user to a toolkit. Returns Composio's
+      hosted consent URL; the user opens it, consents, and Composio stores the
+      tokens. Resolves or lazily creates a managed auth config. Free.
+    input_schema:
+      type: object
+      properties:
+        toolkit:
+          type: string
+          minLength: 1
+        callbackUrl:
+          type: string
+          description: Post-consent browser return URL to your app
+        scopes:
+          type: array
+          items:
+            type: string
+          description: Per-app OAuth scopes; sets a per-app auth config
+      required:
+        - toolkit
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresConnection:
+              type: boolean
+            provider:
+              type: string
+            toolkit:
+              type: string
+            connectedAccountId:
+              type: string
+            redirectUrl:
+              type: string
+              description: Composio-hosted consent URL the user opens
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  list-connections:
+    method: POST
+    endpoint_key: composio/list-connections
+    description: List the calling user's connections, scoped to this app. Free.
+    input_schema:
+      type: object
+      properties:
+        toolkit:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INITIALIZING
+            - INITIATED
+            - INACTIVE
+            - FAILED
+            - EXPIRED
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            connections:
+              type: array
+              items:
+                type: object
+                properties:
+                  connectedAccountId:
+                    type: string
+                  status:
+                    type: string
+                  active:
+                    type: boolean
+                  toolkit:
+                    type: string
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  list-tools:
+    method: POST
+    endpoint_key: composio/list-tools
+    description: Discover Composio tools and their input schemas, optionally filtered
+      by toolkit or search. Free.
+    input_schema:
+      type: object
+      properties:
+        toolkit:
+          type: string
+        search:
+          type: string
+        toolSlugs:
+          type: string
+          description: Comma-separated exact tool slugs
+        important:
+          type: boolean
+        limit:
+          default: 20
+          type: number
+          minimum: 1
+          maximum: 100
+        cursor:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            next_cursor:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  list-toolkits:
+    method: POST
+    endpoint_key: composio/list-toolkits
+    description: Discover connectable Composio toolkits (apps). Free.
+    input_schema:
+      type: object
+      properties:
+        category:
+          type: string
+        managedBy:
+          type: string
+          enum:
+            - composio
+            - project
+            - all
+        limit:
+          default: 50
+          type: number
+          minimum: 1
+          maximum: 100
+        cursor:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  meta: {}
+                  no_auth:
+                    type: boolean
+                  composio_managed_auth_schemes: {}
+                additionalProperties: false
+            next_cursor:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

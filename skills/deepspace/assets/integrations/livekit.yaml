@@ -1,5 +1,5 @@
 integration: livekit
-endpoint_count: 4
+endpoint_count: 5
 usage_example: await integration.post('livekit/create-room', { /* ...params */ })
 tools:
   create-room:
@@ -41,6 +41,10 @@ tools:
             roomName:
               type: string
               description: Room name
+            roomSessionId:
+              type: string
+              description: Stable settle key (room.sid, or roomName if omitted); pass to
+                livekit/settle-room
             adminToken:
               type: string
               description: Admin access token for the room creator
@@ -164,6 +168,47 @@ tools:
                 additionalProperties: true
           required:
             - rooms
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  settle-room:
+    method: POST
+    endpoint_key: livekit/settle-room
+    description: Settle a metered LiveKit room's billing. Free — the client reports
+      the actual participant-minutes and the reserve-then-settle charge from
+      create-room is billed down to that amount, clamped to the reserved cap
+      (self-hosted rooms settle to zero).
+    input_schema:
+      type: object
+      properties:
+        roomSessionId:
+          type: string
+          minLength: 1
+        participantMinutes:
+          type: number
+          minimum: 0
+      required:
+        - roomSessionId
+        - participantMinutes
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ok:
+              type: boolean
+            billedParticipantMinutes:
+              type: number
+              description: Participant-minutes actually billed (clamped to the reserved cap)
+          required:
+            - ok
+            - billedParticipantMinutes
           additionalProperties: false
         error:
           type: string

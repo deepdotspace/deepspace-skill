@@ -1,0 +1,250 @@
+integration: apify
+endpoint_count: 4
+usage_example: await integration.post('apify/run-actor', { /* ...params */ })
+tools:
+  get-actor:
+    method: POST
+    endpoint_key: apify/get-actor
+    description: Get an Apify Actor's record plus its default build input schema by
+      id or username/name. Free.
+    input_schema:
+      type: object
+      properties:
+        actorId:
+          type: string
+      required:
+        - actorId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            username:
+              type: string
+            title:
+              type: string
+            pricing:
+              type:
+                - object
+                - "null"
+              description: Current pricing info (pricingModel, pricePerUnitUsd)
+              additionalProperties: true
+            pricingInfos:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            defaultRunOptions: {}
+            permissionLevel: {}
+            inputSchema:
+              type:
+                - object
+                - "null"
+              description: The actor's default-build input schema
+              additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-run:
+    method: POST
+    endpoint_key: apify/get-run
+    description: Poll an Actor run by id. Returns status RUNNING while in progress; on
+      a terminal status settles billing to the run's actual usage cost and returns
+      the dataset items. Free.
+    input_schema:
+      type: object
+      properties:
+        runId:
+          type: string
+        offset:
+          default: 0
+          type: number
+          minimum: 0
+          description: Dataset item offset for paging results
+      required:
+        - runId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              description: RUNNING while in progress; else the terminal Apify status
+            statusMessage:
+              type: string
+            jobId:
+              type: string
+              description: Present while still running
+            costUsd:
+              type: number
+              description: Settled USD cost (present on terminal status)
+            items:
+              type: array
+              description: Dataset items (present on terminal status)
+            datasetId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  run-actor:
+    method: POST
+    endpoint_key: apify/run-actor
+    description: Start an Apify Actor run and bill its actual usage back to the
+      caller. Async — returns a jobId immediately; poll apify/get-run for status,
+      cost, and results. Accepts PAY_PER_EVENT, PRICE_PER_DATASET_ITEM, or FREE
+      (compute) actors; rented (monthly) actors are not runnable per-call.
+    input_schema:
+      type: object
+      properties:
+        actorId:
+          type: string
+        input:
+          type: object
+          default: {}
+          description: Actor input, forwarded to Apify as the run payload
+          additionalProperties: {}
+        maxTotalChargeUsd:
+          type: number
+          minimum: 0.001
+          maximum: 25
+          description: Required for PAY_PER_EVENT actors; forced as the run's USD cap
+        maxItems:
+          type: number
+          minimum: 1
+          maximum: 10000
+          description: Required for PRICE_PER_DATASET_ITEM actors; caps the item count
+        timeout:
+          type: number
+          minimum: 1
+          maximum: 3600
+          description: Run timeout in seconds (defaults to the actor's own option)
+        memory:
+          type: number
+          minimum: 128
+          maximum: 8192
+          description: Run memory in MB (defaults to the actor's own option)
+        build:
+          type: string
+      required:
+        - actorId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            jobId:
+              type: string
+              description: Run id; pass to apify/get-run
+            status:
+              type: string
+            datasetId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  search-actors:
+    method: POST
+    endpoint_key: apify/search-actors
+    description: Search the Apify Store for Actors. By default hides actors run-actor
+      can't cap (only PAY_PER_EVENT / PRICE_PER_DATASET_ITEM); set includeUncapped to
+      also include FREE (compute) actors. Free.
+    input_schema:
+      type: object
+      properties:
+        search:
+          type: string
+        category:
+          type: string
+        username:
+          type: string
+        pricingModel:
+          type: string
+          enum:
+            - FREE
+            - FLAT_PRICE_PER_MONTH
+            - PRICE_PER_DATASET_ITEM
+            - PAY_PER_EVENT
+        sortBy:
+          default: relevance
+          type: string
+          enum:
+            - relevance
+            - popularity
+            - newest
+            - lastUpdate
+        limit:
+          default: 50
+          type: number
+          minimum: 1
+          maximum: 1000
+        offset:
+          default: 0
+          type: number
+          minimum: 0
+        includeUncapped:
+          default: false
+          type: boolean
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            total:
+              type: number
+            count:
+              type: number
+              description: Number of items returned after filtering
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  username:
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  url:
+                    type: string
+                  stats: {}
+                  currentPricingInfo:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

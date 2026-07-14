@@ -1,5 +1,5 @@
 integration: elevenlabs
-endpoint_count: 4
+endpoint_count: 5
 usage_example: await integration.post('elevenlabs/create-agent', { /* ...params */ })
 tools:
   create-agent:
@@ -185,6 +185,9 @@ tools:
           properties:
             signed_url:
               type: string
+            sessionId:
+              type: string
+              description: Reservation/settle key; pass to elevenlabs/settle-conversation
           additionalProperties: false
         error:
           type: string
@@ -242,6 +245,49 @@ tools:
                   - use_case
                   - preview_url
                 additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  settle-conversation:
+    method: POST
+    endpoint_key: elevenlabs/settle-conversation
+    description: Settle a Conversational AI session's billing. Free — the client
+      reports the conversation_id it learned at WebSocket connect; the
+      authoritative call duration is polled and billed down from the get-signed-url
+      reservation, clamped to the reserved cap. Returns pending until the
+      conversation reaches a terminal status.
+    input_schema:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        conversationId:
+          type: string
+      required:
+        - sessionId
+        - conversationId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ok:
+              type: boolean
+            billedMinutes:
+              type: number
+              description: Minutes actually billed (present when settled)
+            status:
+              type: string
+              description: Conversation status (present while still pending)
+            pending:
+              type: boolean
+              description: True while the conversation has not reached a terminal status
           additionalProperties: false
         error:
           type: string

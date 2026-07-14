@@ -1,0 +1,120 @@
+integration: openai-realtime
+endpoint_count: 2
+usage_example: await integration.post('openai-realtime/create-session', { /* ...params */ })
+tools:
+  create-session:
+    method: POST
+    endpoint_key: openai-realtime/create-session
+    description: Mint a short-lived ephemeral token for a browser WebRTC voice call
+      with OpenAI Realtime (gpt-realtime). The call runs client-side; this reserves
+      maxMinutes x rate and writes a job row, settled later by settle-session. Backs
+      the SDK's useVoiceAgent hook.
+    input_schema:
+      type: object
+      properties:
+        instructions:
+          type: string
+          maxLength: 8000
+        voice:
+          default: marin
+          type: string
+          enum:
+            - alloy
+            - echo
+            - shimmer
+            - marin
+            - cedar
+        tools:
+          type: array
+          maxItems: 32
+          description: OpenAI tool definitions, passed through to the session
+          items:
+            type: object
+            additionalProperties: {}
+        maxMinutes:
+          default: 30
+          type: number
+          minimum: 1
+          maximum: 60
+          description: Enforced session cap; the reservation is maxMinutes x rate
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            sessionId:
+              type: string
+              description: Settle key; pass to openai-realtime/settle-session
+            clientSecret:
+              type: string
+              description: Ephemeral client token for the browser WebRTC connection
+            expiresAt:
+              type: number
+              description: Unix timestamp when the ephemeral token expires
+            model:
+              type: string
+            maxMinutes:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  settle-session:
+    method: POST
+    endpoint_key: openai-realtime/settle-session
+    description: Settle a voice session's billing. Free — the client reports the
+      elapsed duration at call end; the actual minutes are billed down from the
+      create-session reservation, clamped to the reserved cap.
+    input_schema:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          minLength: 1
+        durationSeconds:
+          type: number
+          minimum: 0
+        usage:
+          type: object
+          description: Token usage the hook observed on response.done; stored for
+            reconciliation, not billed in v1
+          properties:
+            inputAudioTokens:
+              type: number
+            outputAudioTokens:
+              type: number
+            inputTextTokens:
+              type: number
+            outputTextTokens:
+              type: number
+          additionalProperties: false
+      required:
+        - sessionId
+        - durationSeconds
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ok:
+              type: boolean
+            billedMinutes:
+              type: number
+              description: Minutes actually billed (clamped to the reserved cap)
+          required:
+            - ok
+            - billedMinutes
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

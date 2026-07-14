@@ -1,5 +1,5 @@
 integration: exa
-endpoint_count: 6
+endpoint_count: 7
 usage_example: await integration.post('exa/answer', { /* ...params */ })
 tools:
   answer:
@@ -376,6 +376,79 @@ tools:
           type: string
       required:
         - success
+  get-research:
+    method: POST
+    endpoint_key: exa/get-research
+    description: Poll a research task by id. Returns the current status while
+      running; on a terminal status ("completed"/"failed"/"canceled") returns the
+      synthesized content and settles billing to the task's actual Exa cost.
+    input_schema:
+      type: object
+      properties:
+        researchId:
+          type: string
+      required:
+        - researchId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            researchId:
+              type: string
+            status:
+              type: string
+              enum:
+                - running
+                - completed
+                - failed
+                - canceled
+              description: Task status; content is only present on "completed"
+            content:
+              type: string
+              description: The complete research output as text
+            parsed:
+              type: object
+              additionalProperties: {}
+              description: Structured JSON object matching outputSchema (only present when
+                outputSchema was provided)
+            output:
+              type: object
+              properties:
+                content:
+                  type: string
+                parsed:
+                  type: object
+                  additionalProperties: {}
+              additionalProperties: false
+              description: Research output matching Exa API structure
+            costDollars:
+              type: object
+              properties:
+                total:
+                  type: number
+                numSearches:
+                  type: number
+                numPages:
+                  type: number
+                reasoningTokens:
+                  type: number
+              required:
+                - total
+              additionalProperties: false
+              description: Actual cost breakdown in USD (present on completed tasks)
+            costUsd:
+              type: number
+              description: Settled USD cost for this task (0 for failed/canceled)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
   news-search:
     method: POST
     endpoint_key: exa/news-search
@@ -484,9 +557,10 @@ tools:
   research:
     method: POST
     endpoint_key: exa/research
-    description: Create a research task that explores the web, gathers sources, and
-      synthesizes findings. Waits for completion and returns the full research
-      content. Research can take up to 10 minutes for complex queries.
+    description: Submit a research task that explores the web, gathers sources, and
+      synthesizes findings. Returns immediately with a researchId; poll
+      exa/get-research for status and the completed content. Complex tasks can
+      take up to 10 minutes.
     input_schema:
       type: object
       properties:
@@ -497,6 +571,10 @@ tools:
         model:
           default: exa-research
           type: string
+          enum:
+            - exa-research-fast
+            - exa-research
+            - exa-research-pro
         outputSchema:
           type: object
           propertyNames:
@@ -515,56 +593,10 @@ tools:
           properties:
             researchId:
               type: string
-              description: Unique identifier for the research request
+              description: Unique identifier for the research task; pass to exa/get-research
             status:
               type: string
-              enum:
-                - pending
-                - running
-                - completed
-                - failed
-                - canceled
-              description: Final status of the research task
-            content:
-              type: string
-              description: The complete research output as text
-            parsed:
-              type: object
-              additionalProperties: {}
-              description: Structured JSON object matching outputSchema (only present when
-                outputSchema was provided)
-            output:
-              type: object
-              properties:
-                content:
-                  type: string
-                  description: The complete research output as text
-                parsed:
-                  type: object
-                  additionalProperties: {}
-                  description: Structured JSON object matching outputSchema
-              required:
-                - content
-              additionalProperties: false
-              description: Research output matching Exa API structure
-            costDollars:
-              type: object
-              properties:
-                total:
-                  type: number
-                numSearches:
-                  type: number
-                numPages:
-                  type: number
-                reasoningTokens:
-                  type: number
-              required:
-                - total
-              additionalProperties: false
-              description: Actual cost breakdown in USD for this research request
-            error:
-              type: string
-              description: Present only when status is "failed"
+              description: Initial status ("running") on submit
           additionalProperties: false
         error:
           type: string

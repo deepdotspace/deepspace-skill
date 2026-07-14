@@ -1,0 +1,127 @@
+integration: shotstack
+endpoint_count: 2
+usage_example: await integration.post('shotstack/render', { /* ...params */ })
+tools:
+  render:
+    method: POST
+    endpoint_key: shotstack/render
+    description: Submit a video edit ("video editing as a JSON API") — a timeline of
+      tracks/clips/assets plus an output spec. Renders asynchronously on Shotstack's
+      cloud and returns a render id immediately; poll shotstack/get-render for
+      completion. Billed per rendered second, settled to the actual length.
+    input_schema:
+      type: object
+      properties:
+        timeline:
+          type: object
+          description: Shotstack timeline (tracks -> clips -> assets); forwarded to
+            Shotstack as-is. Must contain a non-empty tracks array.
+          additionalProperties: {}
+        output:
+          type: object
+          description: Shotstack output spec; forwarded as-is. Must include a format.
+          additionalProperties: {}
+        duration:
+          type: number
+          exclusiveMinimum: 0
+          description: Intended output length in seconds. Drives the pre-flight
+            reservation (not forwarded to Shotstack); the bill settles to the actual
+            rendered length on get-render.
+        merge:
+          type: array
+          items:
+            type: object
+            properties:
+              find:
+                type: string
+              replace: {}
+            required:
+              - find
+            additionalProperties: false
+        callback:
+          type: string
+          description: Optional webhook URL called when the render completes
+      required:
+        - timeline
+        - output
+        - duration
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Render id; pass to shotstack/get-render to poll
+            status:
+              type: string
+              description: Initial status ("queued") on submit
+            message:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-render:
+    method: POST
+    endpoint_key: shotstack/get-render
+    description: Poll a render by id. Returns null fields while rendering; on a
+      terminal status ("done"/"failed") returns the result URL and settles billing
+      to the actual rendered length. NOTE the url is a temporary signed URL
+      Shotstack deletes after 24h — re-host it if you need persistence.
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            status:
+              type:
+                - string
+                - "null"
+            url:
+              type:
+                - string
+                - "null"
+              description: Temporary signed result URL (expires after 24h)
+            error:
+              type:
+                - string
+                - "null"
+            duration:
+              type:
+                - number
+                - "null"
+            costUsd:
+              type: number
+              description: Settled USD cost (0 until done)
+            poster:
+              type:
+                - string
+                - "null"
+            thumbnail:
+              type:
+                - string
+                - "null"
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

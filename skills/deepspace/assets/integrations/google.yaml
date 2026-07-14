@@ -1,6 +1,6 @@
 integration: google
 oauth_required: true
-endpoint_count: 10
+endpoint_count: 15
 usage_example: await integration.post('google/calendar-create-event', { /* ...params */ })
 tools:
   calendar-create-event:
@@ -433,6 +433,223 @@ tools:
           type: string
       required:
         - success
+  gmail-history-list:
+    method: POST
+    endpoint_key: google/gmail-history-list
+    description: List mailbox changes since a historyId watermark (wraps
+      users.history.list) for inbox-sync / reply-detection. startHistoryId is
+      required by Gmail (also accepted as historyId); bootstrap one via gmail-profile.
+      A watermark older than ~7 days returns 404 and must be re-bootstrapped.
+    input_schema:
+      type: object
+      properties:
+        startHistoryId:
+          type: string
+          minLength: 1
+        historyId:
+          type: string
+          minLength: 1
+          description: Alias for startHistoryId
+        pageToken:
+          type: string
+        maxResults:
+          type: number
+          minimum: 1
+          maximum: 500
+        labelId:
+          type: string
+          description: Filter to a single label (Gmail accepts only one)
+        historyTypes:
+          anyOf:
+            - type: string
+              enum:
+                - messageAdded
+                - messageDeleted
+                - labelAdded
+                - labelRemoved
+            - type: array
+              items:
+                type: string
+                enum:
+                  - messageAdded
+                  - messageDeleted
+                  - labelAdded
+                  - labelRemoved
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Gmail users.history.list response (history, historyId,
+            nextPageToken), or the OAuth-required envelope
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            history:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            historyId:
+              type: string
+            nextPageToken:
+              type: string
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  gmail-inbox:
+    method: POST
+    endpoint_key: google/gmail-inbox
+    description: List and hydrate inbox messages in one call (messages.list +
+      parallel messages.get). Defaults to the INBOX label and format=full.
+      maxResults is hard-capped server-side at 50.
+    input_schema:
+      type: object
+      properties:
+        maxResults:
+          type: number
+          minimum: 1
+        pageToken:
+          type: string
+        labelIds:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        q:
+          type: string
+        format:
+          type: string
+          enum:
+            - full
+            - metadata
+            - minimal
+            - raw
+        includeLabelTotal:
+          type: boolean
+          description: When exactly one labelId is requested, piggyback its
+            authoritative total on the response
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            messages:
+              type: array
+              description: Hydrated Gmail message objects (raw messages.get shape)
+              items:
+                type: object
+                additionalProperties: true
+            nextPageToken:
+              type: string
+            resultSizeEstimate:
+              type: number
+            labelTotal:
+              type: object
+              description: Present only when includeLabelTotal is set with one labelId
+              properties:
+                messagesTotal:
+                  type: number
+                messagesUnread:
+                  type: number
+              additionalProperties: false
+            partialErrors:
+              type: array
+              description: Per-message hydrate failures (present only if any occurred)
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: number
+                  error:
+                    type: string
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gmail-labels-get:
+    method: POST
+    endpoint_key: google/gmail-labels-get
+    description: Get a single Gmail label by id (wraps users.labels.get), including
+      accurate messagesTotal / messagesUnread / threadsTotal / threadsUnread counts.
+      Pass id (also accepted as labelId).
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: string
+        labelId:
+          type: string
+          description: Alias for id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Gmail label resource, or the OAuth-required envelope
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            id:
+              type: string
+            name:
+              type: string
+            messagesTotal:
+              type: number
+            messagesUnread:
+              type: number
+            threadsTotal:
+              type: number
+            threadsUnread:
+              type: number
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
   gmail-list:
     method: POST
     endpoint_key: google/gmail-list
@@ -542,6 +759,48 @@ tools:
             resultSizeEstimate:
               type: number
           additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gmail-profile:
+    method: POST
+    endpoint_key: google/gmail-profile
+    description: Get the connected mailbox's profile (wraps users.getProfile) —
+      emailAddress, messagesTotal, threadsTotal, and the current historyId. The
+      cheapest way to obtain a historyId watermark before gmail-history-list.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Gmail profile, or the OAuth-required envelope
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            emailAddress:
+              type: string
+            messagesTotal:
+              type: number
+            threadsTotal:
+              type: number
+            historyId:
+              type: string
+          additionalProperties: true
         error:
           type: string
       required:
@@ -708,6 +967,61 @@ tools:
             sentAt:
               type: string
           additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  gmail-thread-get:
+    method: POST
+    endpoint_key: google/gmail-thread-get
+    description: Get a full email thread (wraps users.threads.get) — every message in
+      one conversation, oldest-first, with headers and body parts attached. Pass id
+      (also accepted as threadId); format defaults to full.
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: string
+        threadId:
+          type: string
+          description: Alias for id
+        format:
+          type: string
+          enum:
+            - full
+            - metadata
+            - minimal
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Gmail thread resource (id, historyId, messages[]), or the
+            OAuth-required envelope
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            id:
+              type: string
+            historyId:
+              type: string
+            messages:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+          additionalProperties: true
         error:
           type: string
       required:

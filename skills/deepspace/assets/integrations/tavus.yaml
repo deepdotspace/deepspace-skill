@@ -1,0 +1,649 @@
+integration: tavus
+endpoint_count: 20
+usage_example: await integration.post('tavus/create-conversation', { /* ...params */ })
+# Tavus Conversational Video Interface (CVI): real-time talking-avatar sessions
+# (a "replica" driven by a "persona") over Daily WebRTC, plus async replica video
+# generation. The three metered creates (conversation, replica, video) reserve a
+# worst case and settle to the real cost on the matching get-* poll. Reads, lists,
+# renames, patches, deletes, and end-conversation are free.
+tools:
+  create-conversation:
+    method: POST
+    endpoint_key: tavus/create-conversation
+    description: Start a Conversational Video Interface session. Returns a
+      conversation_url the browser joins. Metered per minute — reserves
+      ceil(max_call_duration/60) x rate and settles to the real ended duration on
+      get-conversation.
+    input_schema:
+      type: object
+      properties:
+        replica_id:
+          type: string
+        persona_id:
+          type: string
+        conversation_name:
+          type: string
+        conversational_context:
+          type: string
+        custom_greeting:
+          type: string
+        callback_url:
+          type: string
+        properties:
+          type: object
+          description: Tavus conversation properties (max_call_duration is clamped to
+            1800s to bound the reservation, timeouts, recording, etc.)
+          additionalProperties: {}
+      required:
+        - replica_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            conversation_id:
+              type: string
+            conversation_url:
+              type: string
+              description: Daily WebRTC URL the browser joins
+            status:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  create-persona:
+    method: POST
+    endpoint_key: tavus/create-persona
+    description: Create a persona (the "brain"/system prompt that drives a replica in
+      conversations). Billed flat per request.
+    input_schema:
+      type: object
+      properties:
+        persona_name:
+          type: string
+        system_prompt:
+          type: string
+        pipeline_mode:
+          type: string
+        default_replica_id:
+          type: string
+        context:
+          type: string
+        layers:
+          type: object
+          additionalProperties: {}
+      required:
+        - persona_name
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus persona record (includes persona_id)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  create-replica:
+    method: POST
+    endpoint_key: tavus/create-replica
+    description: Train a replica (talking avatar) from a training video URL. Metered —
+      reserves the flat training fee at submit and settles it on a completed
+      get-replica, or refunds a failed train.
+    input_schema:
+      type: object
+      properties:
+        train_video_url:
+          type: string
+        replica_name:
+          type: string
+        callback_url:
+          type: string
+        model_name:
+          type: string
+        properties:
+          type: object
+          additionalProperties: {}
+      required:
+        - train_video_url
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus replica record (includes replica_id)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  delete-conversation:
+    method: POST
+    endpoint_key: tavus/delete-conversation
+    description: Delete a conversation by id. Free.
+    input_schema:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+      required:
+        - conversation_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deleted:
+              type: boolean
+            conversation_id:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  delete-persona:
+    method: POST
+    endpoint_key: tavus/delete-persona
+    description: Delete a persona by id. Free.
+    input_schema:
+      type: object
+      properties:
+        persona_id:
+          type: string
+      required:
+        - persona_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deleted:
+              type: boolean
+            persona_id:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  delete-replica:
+    method: POST
+    endpoint_key: tavus/delete-replica
+    description: Delete a replica by id. Free.
+    input_schema:
+      type: object
+      properties:
+        replica_id:
+          type: string
+      required:
+        - replica_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deleted:
+              type: boolean
+            replica_id:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  delete-video:
+    method: POST
+    endpoint_key: tavus/delete-video
+    description: Delete a video by id. Free.
+    input_schema:
+      type: object
+      properties:
+        video_id:
+          type: string
+      required:
+        - video_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deleted:
+              type: boolean
+            video_id:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  end-conversation:
+    method: POST
+    endpoint_key: tavus/end-conversation
+    description: End an active conversation by id. Free.
+    input_schema:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+      required:
+        - conversation_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ended:
+              type: boolean
+            conversation_id:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  generate-video:
+    method: POST
+    endpoint_key: tavus/generate-video
+    description: Generate an async video of a replica reading a script (or driven by
+      audio_url). Metered per minute of output — reserves the script-derived
+      estimate (= the fixed cost) and settles on a ready get-video. Provide script,
+      or expectedDurationSeconds when driving from audio_url.
+    input_schema:
+      type: object
+      properties:
+        replica_id:
+          type: string
+        script:
+          type: string
+        audio_url:
+          type: string
+        expectedDurationSeconds:
+          type: number
+          exclusiveMinimum: 0
+          description: Required when driving from audio_url (no script to estimate from)
+        video_name:
+          type: string
+        background_url:
+          type: string
+        background_source_url:
+          type: string
+        callback_url:
+          type: string
+        properties:
+          type: object
+          additionalProperties: {}
+      required:
+        - replica_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus video record (includes video_id)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  get-conversation:
+    method: POST
+    endpoint_key: tavus/get-conversation
+    description: Get a conversation by id. Free. Settles the metered cost once the
+      conversation has ended (derived from Tavus's own timestamps).
+    input_schema:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+      required:
+        - conversation_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus conversation record (status, created_at, updated_at,
+            conversation_url, ...)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  get-persona:
+    method: POST
+    endpoint_key: tavus/get-persona
+    description: Get a persona by id. Free.
+    input_schema:
+      type: object
+      properties:
+        persona_id:
+          type: string
+      required:
+        - persona_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus persona record
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  get-replica:
+    method: POST
+    endpoint_key: tavus/get-replica
+    description: Get a replica by id. Free. Settles the training fee once the replica
+      is completed, or refunds a failed train.
+    input_schema:
+      type: object
+      properties:
+        replica_id:
+          type: string
+        verbose:
+          type: boolean
+      required:
+        - replica_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus replica record (includes status)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  get-video:
+    method: POST
+    endpoint_key: tavus/get-video
+    description: Get a generated video by id. Free. Settles the fixed cost once the
+      video is ready, or refunds a failed render.
+    input_schema:
+      type: object
+      properties:
+        video_id:
+          type: string
+      required:
+        - video_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus video record (includes status, download_url when ready)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  list-conversations:
+    method: POST
+    endpoint_key: tavus/list-conversations
+    description: List conversations. Free.
+    input_schema:
+      type: object
+      properties:
+        limit:
+          type: number
+          exclusiveMinimum: 0
+        page:
+          type: number
+          exclusiveMinimum: 0
+        status:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus list response
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  list-personas:
+    method: POST
+    endpoint_key: tavus/list-personas
+    description: List personas. Free.
+    input_schema:
+      type: object
+      properties:
+        limit:
+          type: number
+          exclusiveMinimum: 0
+        page:
+          type: number
+          exclusiveMinimum: 0
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus list response
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  list-replicas:
+    method: POST
+    endpoint_key: tavus/list-replicas
+    description: List replicas. Free.
+    input_schema:
+      type: object
+      properties:
+        limit:
+          type: number
+          exclusiveMinimum: 0
+        page:
+          type: number
+          exclusiveMinimum: 0
+        verbose:
+          type: boolean
+        replica_type:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus list response
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  list-videos:
+    method: POST
+    endpoint_key: tavus/list-videos
+    description: List generated videos. Free.
+    input_schema:
+      type: object
+      properties:
+        limit:
+          type: number
+          exclusiveMinimum: 0
+        page:
+          type: number
+          exclusiveMinimum: 0
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Tavus list response
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  patch-persona:
+    method: POST
+    endpoint_key: tavus/patch-persona
+    description: Update a persona with an RFC 6902 JSON Patch array (e.g. replace
+      /system_prompt). Free.
+    input_schema:
+      type: object
+      properties:
+        persona_id:
+          type: string
+        patch:
+          type: array
+          description: JSON Patch operations, e.g. [{ op, path, value }]
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+        - persona_id
+        - patch
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            patched:
+              type: boolean
+            persona_id:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  rename-replica:
+    method: POST
+    endpoint_key: tavus/rename-replica
+    description: Rename a replica by id. Free.
+    input_schema:
+      type: object
+      properties:
+        replica_id:
+          type: string
+        replica_name:
+          type: string
+      required:
+        - replica_id
+        - replica_name
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            renamed:
+              type: boolean
+            replica_id:
+              type: string
+            replica_name:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  rename-video:
+    method: POST
+    endpoint_key: tavus/rename-video
+    description: Rename a generated video by id. Free.
+    input_schema:
+      type: object
+      properties:
+        video_id:
+          type: string
+        video_name:
+          type: string
+      required:
+        - video_id
+        - video_name
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            renamed:
+              type: boolean
+            video_id:
+              type: string
+            video_name:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

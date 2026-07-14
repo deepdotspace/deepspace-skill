@@ -1,0 +1,202 @@
+integration: fal
+endpoint_count: 4
+usage_example: await integration.post('fal/run-model', { /* ...params */ })
+# Generic runner for fixed-output-priced fal.ai models — image, video (e.g. veo3),
+# and audio/TTS + speech-to-text (e.g. whisper). Pick a model with list-models /
+# get-model, then run it with run-model. Compute-second (GPU-priced) models are
+# discoverable but not runnable (their cost can't be pre-bounded).
+tools:
+  get-model:
+    method: POST
+    endpoint_key: fal/get-model
+    description: Get a fal model's metadata, OpenAPI input/output schema, and pricing
+      by endpoint id. `runnable` is true only when fal prices it on a unit run-model
+      can bound. Free.
+    input_schema:
+      type: object
+      properties:
+        model_id:
+          type: string
+      required:
+        - model_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            endpoint_id:
+              type: string
+            metadata:
+              type:
+                - object
+                - "null"
+              additionalProperties: true
+            openapi:
+              description: OpenAPI 3.0 spec for the model's input/output (null if absent)
+            pricing:
+              type:
+                - object
+                - "null"
+              properties:
+                unit_price:
+                  type: number
+                unit:
+                  type: string
+              additionalProperties: false
+            runnable:
+              type: boolean
+              description: True when run-model can cost-bound this model
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  get-result:
+    method: POST
+    endpoint_key: fal/get-result
+    description: Poll a run by request_id. Returns queue status while in progress; on
+      COMPLETED returns the model output and settles billing to fal's actual cost;
+      an invalid run settles to 0 (full refund). Free.
+    input_schema:
+      type: object
+      properties:
+        request_id:
+          type: string
+      required:
+        - request_id
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              description: IN_QUEUE / IN_PROGRESS / COMPLETED / FAILED
+            queuePosition:
+              description: Present while IN_QUEUE
+            output:
+              description: The model's native output payload (present on COMPLETED)
+            costUsd:
+              type: number
+              description: Settled USD cost (present once billing-events has finalized)
+            error:
+              description: Failure detail (present on FAILED)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  list-models:
+    method: POST
+    endpoint_key: fal/list-models
+    description: Discover fal.ai models (image, video, audio). Free.
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - deprecated
+        limit:
+          default: 20
+          type: number
+          minimum: 1
+          maximum: 100
+        cursor:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            models:
+              type: array
+              items:
+                type: object
+                properties:
+                  endpoint_id:
+                    type: string
+                  display_name:
+                    type: string
+                  category:
+                    type: string
+                  description:
+                    type: string
+                  status:
+                    type: string
+                  model_url:
+                    type: string
+                  thumbnail_url:
+                    type: string
+                additionalProperties: false
+            next_cursor: {}
+            has_more: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  run-model:
+    method: POST
+    endpoint_key: fal/run-model
+    description: Run a fixed-output-priced fal model and bill its actual cost back to
+      the caller. Async — returns a jobId immediately; poll fal/get-result for
+      status, output, and cost. Rejected before charging if the run's worst case
+      exceeds maxCostUsd or the model isn't cost-boundable.
+    input_schema:
+      type: object
+      properties:
+        model_id:
+          type: string
+        input:
+          type: object
+          default: {}
+          description: The model's native input (e.g. {prompt} / {text,voice}),
+            forwarded to fal verbatim
+          additionalProperties: {}
+        maxCostUsd:
+          type: number
+          minimum: 0.001
+          maximum: 50
+          description: Caller's authorized budget and pre-flight reservation; the run
+            is rejected if its worst case exceeds this
+      required:
+        - model_id
+        - maxCostUsd
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            jobId:
+              type: string
+              description: fal request_id; pass to fal/get-result
+            status:
+              type: string
+              description: Initial queue status (e.g. IN_QUEUE)
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

@@ -1,0 +1,520 @@
+integration: anymailfinder
+endpoint_count: 11
+usage_example: await integration.post('anymailfinder/find-person', { /* ...params */ })
+# NOTE: the find-* lookups run real-time SMTP checks (Anymail recommends a 180s
+# timeout). Raise the SDK call's timeoutMs above the 120s default for these.
+tools:
+  create-bulk:
+    method: POST
+    endpoint_key: anymailfinder/create-bulk
+    description: Submit a bulk email-finding search over a table of rows. Returns a
+      searchId immediately; poll anymailfinder/get-bulk and fetch results with
+      download-bulk (credits are charged per valid row on the first download only).
+    input_schema:
+      type: object
+      properties:
+        data:
+          type: array
+          minItems: 1
+          maxItems: 1001
+          description: Rows x columns; the first row is headers unless has_header is
+            false. Capped at 1000 data rows.
+          items:
+            type: array
+            items:
+              type:
+                - string
+                - number
+                - "null"
+        has_header:
+          default: true
+          type: boolean
+        domain_field_index:
+          type: number
+          minimum: 0
+        company_name_field_index:
+          type: number
+          minimum: 0
+        first_name_field_index:
+          type: number
+          minimum: 0
+        last_name_field_index:
+          type: number
+          minimum: 0
+        full_name_field_index:
+          type: number
+          minimum: 0
+        linkedin_url_field_index:
+          type: number
+          minimum: 0
+        email_field_index:
+          type: number
+          minimum: 0
+        decision_maker_category:
+          type: array
+          items:
+            type: string
+            enum:
+              - ceo
+              - engineering
+              - finance
+              - hr
+              - it
+              - logistics
+              - marketing
+              - operations
+              - buyer
+              - sales
+        file_name:
+          type: string
+      required:
+        - data
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            searchId:
+              type: string
+              description: Pass to anymailfinder/get-bulk and download-bulk
+            status:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  create-geo-lead:
+    method: POST
+    endpoint_key: anymailfinder/create-geo-lead
+    description: Submit a GeoLead search (find businesses near a location and their
+      emails). Returns a searchId immediately; poll anymailfinder/get-geo-lead and
+      fetch results with download-geo-lead (charged per valid row on first download).
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        radius_km:
+          type: number
+          minimum: 1
+        find_company_emails:
+          default: false
+          type: boolean
+        find_decision_maker_categories:
+          default: []
+          type: array
+          description: Empty array disables the decision-maker search
+          items:
+            type: string
+            enum:
+              - ceo
+              - engineering
+              - finance
+              - hr
+              - it
+              - logistics
+              - marketing
+              - operations
+              - buyer
+              - sales
+        result_limit:
+          default: 100
+          type: number
+          minimum: 1
+          maximum: 500
+        file_name:
+          type: string
+      required:
+        - query
+        - latitude
+        - longitude
+        - radius_km
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            searchId:
+              type: string
+            status:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+  download-bulk:
+    method: POST
+    endpoint_key: anymailfinder/download-bulk
+    description: Fetch the results of a completed bulk search and settle billing to
+      the credits charged (charged on the first download only; later downloads are
+      free repeats). Returns the search info unchanged while still running.
+    input_schema:
+      type: object
+      properties:
+        searchId:
+          type: string
+      required:
+        - searchId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Anymail search info; on completion adds costUsd and the results
+            array
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+            counts:
+              type: object
+              additionalProperties:
+                type: number
+            credits_needed:
+              type: number
+            paid:
+              type: boolean
+            costUsd:
+              type: number
+              description: Settled USD cost (present once downloaded)
+            results:
+              type: array
+              description: Downloaded rows (present on completed searches)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  download-geo-lead:
+    method: POST
+    endpoint_key: anymailfinder/download-geo-lead
+    description: Fetch the results of a completed GeoLead search and settle billing to
+      the credits charged (charged on the first download only; later downloads are
+      free repeats). Returns the search info unchanged while still running.
+    input_schema:
+      type: object
+      properties:
+        searchId:
+          type: string
+      required:
+        - searchId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Anymail search info; on completion adds costUsd and the results
+            array
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+            counts:
+              type: object
+              additionalProperties:
+                type: number
+            credits_needed:
+              type: number
+            paid:
+              type: boolean
+            costUsd:
+              type: number
+            results:
+              type: array
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  find-company:
+    method: POST
+    endpoint_key: anymailfinder/find-company
+    description: Find a company's email(s) by domain or company name. Charged 1
+      credit only when a valid email is found. Provide domain or company_name.
+    input_schema:
+      type: object
+      properties:
+        domain:
+          type: string
+        company_name:
+          type: string
+        email_type:
+          default: any
+          type: string
+          enum:
+            - any
+            - generic
+            - personal
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Anymail Finder response plus costUsd
+          properties:
+            credits_charged:
+              type: number
+            costUsd:
+              type: number
+              description: Settled USD cost (0 on misses / free 30-day repeats)
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  find-decision-maker:
+    method: POST
+    endpoint_key: anymailfinder/find-decision-maker
+    description: Find a decision-maker's email at a company by role category. Charged
+      2 credits only when a valid email is found. Provide domain or company_name.
+    input_schema:
+      type: object
+      properties:
+        domain:
+          type: string
+        company_name:
+          type: string
+        decision_maker_category:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum:
+              - ceo
+              - engineering
+              - finance
+              - hr
+              - it
+              - logistics
+              - marketing
+              - operations
+              - buyer
+              - sales
+      required:
+        - decision_maker_category
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Anymail Finder response plus costUsd
+          properties:
+            credits_charged:
+              type: number
+            costUsd:
+              type: number
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  find-linkedin-url:
+    method: POST
+    endpoint_key: anymailfinder/find-linkedin-url
+    description: Find the work email behind a LinkedIn profile URL. Charged 1 credit
+      only when a valid email is found.
+    input_schema:
+      type: object
+      properties:
+        linkedin_url:
+          type: string
+      required:
+        - linkedin_url
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Anymail Finder response plus costUsd
+          properties:
+            credits_charged:
+              type: number
+            costUsd:
+              type: number
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  find-person:
+    method: POST
+    endpoint_key: anymailfinder/find-person
+    description: Find a person's work email. Provide linkedin_url, or a name
+      (full_name, or first_name + last_name) plus a company (domain or
+      company_name). Charged 1 credit only when a valid email is found.
+    input_schema:
+      type: object
+      properties:
+        full_name:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        domain:
+          type: string
+        company_name:
+          type: string
+        linkedin_url:
+          type: string
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Anymail Finder response plus costUsd
+          properties:
+            credits_charged:
+              type: number
+            costUsd:
+              type: number
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  get-bulk:
+    method: POST
+    endpoint_key: anymailfinder/get-bulk
+    description: Poll a bulk search's status and counts by searchId. Free. A failed
+      search refunds its reservation.
+    input_schema:
+      type: object
+      properties:
+        searchId:
+          type: string
+      required:
+        - searchId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+            counts:
+              type: object
+              additionalProperties:
+                type: number
+            credits_needed:
+              type: number
+            paid:
+              type: boolean
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  get-geo-lead:
+    method: POST
+    endpoint_key: anymailfinder/get-geo-lead
+    description: Poll a GeoLead search's status and counts by searchId. Free. A failed
+      search refunds its reservation.
+    input_schema:
+      type: object
+      properties:
+        searchId:
+          type: string
+      required:
+        - searchId
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+            counts:
+              type: object
+              additionalProperties:
+                type: number
+            credits_needed:
+              type: number
+            paid:
+              type: boolean
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
+  verify-email:
+    method: POST
+    endpoint_key: anymailfinder/verify-email
+    description: Verify a single email address with a real-time SMTP check. Charged
+      0.2 credits per call.
+    input_schema:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          description: Raw Anymail Finder verification response plus costUsd
+          properties:
+            credits_charged:
+              type: number
+            costUsd:
+              type: number
+          additionalProperties: true
+        error:
+          type: string
+      required:
+        - success
