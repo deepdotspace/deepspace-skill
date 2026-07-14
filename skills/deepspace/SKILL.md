@@ -46,6 +46,8 @@ import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'       
 
 ## 3. Build — discover before you hand-build
 
+Building a **complete app** — a new product, a clone of an existing one, any multi-feature build? Read `references/workflow.md` first: it sequences research, spec, design source, de-risking, and verification around the steps below, and ends with the done-check that actually holds.
+
 Run both catalogs *first thing* in any build — *never* skip on a hunch that nothing fits. The one-line names can't tell you what a block does; only `add --info` / `integrations info` can, so don't rule one out from the list alone.
 
 ```bash
@@ -94,6 +96,7 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 
 | Reference | Read before |
 |---|---|
+| `references/workflow.md` | Starting an end-to-end app build — a new product, a clone, or any multi-feature request. |
 | `references/cli.md` | The login contract, the full CLI command catalog (`dev`/`kill`/`integrations`/`test-accounts`/`screenshot`/`library`), and the `test` command. |
 | `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, and multi-environment / staging deploys (`deploy --env`). |
 | `references/secrets.md` | Managing app secrets, using `npx deepspace secrets`, migrating a legacy `.dev.vars` app, configs/environments, or generated-cache behavior. |

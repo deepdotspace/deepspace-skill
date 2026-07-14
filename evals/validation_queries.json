@@ -38,5 +38,20 @@
     "query": "write a postgres schema for a kanban board with cards, columns, comments, and assignees",
     "should_trigger": false,
     "_rationale": "Pure database design. No app, no real-time."
+  },
+  {
+    "query": "rebuild producthunt's daily-launch feed end to end — pixel-for-pixel UI, live upvotes for everyone viewing, every feature they have — and put it on a subdomain",
+    "should_trigger": true,
+    "_rationale": "Indirect whole-app clone build: exact-UI parity + real-time + subdomain deploy, no 'deepspace' mention."
+  },
+  {
+    "query": "the full spec is in docs/spec.md — build the entire product on deepspace end to end, verify everything works live, and deploy when done",
+    "should_trigger": true,
+    "_rationale": "End-to-end autonomous build from a spec file — workflow.md's exact entry case."
+  },
+  {
+    "query": "write me a PRD for a bill-splitting startup idea — features, personas, pricing tiers",
+    "should_trigger": false,
+    "_rationale": "Near-miss: product thinking about an app, but a document deliverable — nothing to build or deploy."
   }
 ]

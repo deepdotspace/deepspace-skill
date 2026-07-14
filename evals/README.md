@@ -9,7 +9,7 @@ This directory is **for skill maintainers**, not part of the published skill.
 | File | Purpose |
 |---|---|
 | `train_queries.json` | 12 queries (6 should-trigger, 6 should-not-trigger). Used to identify failure modes when you're iterating on the description. |
-| `validation_queries.json` | 8 held-out queries (4/4). Use **only after** you stop iterating, to check that improvements generalized. |
+| `validation_queries.json` | 11 held-out queries (6/5). Use **only after** you stop iterating, to check that improvements generalized. |
 | `sanity_queries.json` | 5 fresh queries (3/2). Run after final selection to honest-check on prompts that were never part of the optimization process. |
 | `run-eval.sh` | Runs each query 3× through `claude -p`, checks whether the Skill tool was invoked with `skill: "deepspace"`, computes per-query trigger rate, prints a pass/fail summary, exits non-zero if anything failed. |
 
