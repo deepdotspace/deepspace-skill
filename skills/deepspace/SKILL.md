@@ -46,8 +46,6 @@ import { RecordRoom, verifyJwt, CHANNELS_SCHEMA } from 'deepspace/worker'       
 
 ## 3. Build — discover before you hand-build
 
-Building a **complete app** — a new product, a clone of an existing one, any multi-feature build? Read `references/workflow.md` first: it sequences research, spec, design source, de-risking, and verification around the steps below, and ends with the done-check that actually holds.
-
 Run both catalogs *first thing* in any build — *never* skip on a hunch that nothing fits. The one-line names can't tell you what a block does; only `add --info` / `integrations info` can, so don't rule one out from the list alone.
 
 ```bash
