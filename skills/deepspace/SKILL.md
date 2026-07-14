@@ -98,6 +98,7 @@ Before editing files, scan this table and `Read` every row whose trigger matches
 | `references/deploy.md` | Deploy mechanics, the `.dev.vars` contract, secret handling, and multi-environment / staging deploys (`deploy --env`). |
 | `references/secrets.md` | Managing app secrets, using `npx deepspace secrets`, migrating a legacy `.dev.vars` app, configs/environments, or generated-cache behavior. |
 | `references/app-identity.md` | App ids (`DEEPSPACE_APP_ID`), forking a cloned repo (`init --new-id`), renames, `apps`/`undeploy`, ownership transfer. |
+| `references/legacy-migration.md` | A pre-app-id app (name-based id in `apps`, no `DEEPSPACE_APP_ID`), or your own deploy failing with "name … taken by another app". |
 | `references/collaborators.md` | Adding teammates to an app, deploying an app you don't own, or a 403 on deploy/secrets as a non-owner. |
 | `references/sdk-reference.md` | Any hook / type / export beyond `useQuery` / `useMutations` / `useAuth` — messaging, game rooms, presence, Yjs, canvas, R2. Open before `node_modules/deepspace/dist/*.d.ts`. |
 | `references/schemas.md` | Defining a collection, picking a permission rule, debugging "why can't this user see/edit X." |
