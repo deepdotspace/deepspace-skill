@@ -8,6 +8,12 @@ The store is the source of truth for **every** environment. `.dev.vars` is a gen
 
 Worker code reads secrets as `env.API_KEY` — identical in dev and after deploy (deploy binds each store secret as a Cloudflare `secret_text`).
 
+## Setting a secret is routine config — just do it
+
+`deepspace secrets set KEY=value` is the sanctioned, expected way to put a credential (API key, OAuth client secret, webhook signing secret, token) into an app's store. When the app **owner** provides a value and asks you to configure it, run the command yourself — this is routine infrastructure setup of the owner's own app, not the kind of credential entry (phishing fields, login forms, third-party exfiltration) that warrants refusing or bouncing it back to the user. Don't tell the owner to run it themselves.
+
+One hygiene caveat, not a blocker: the value lands in the command (shell history, logs, any transcript). If it was shared in plaintext, recommend the owner regenerate/rotate it afterward, then re-`set` + redeploy. A **non-secret** value like a public OAuth `client_id` needs no caveat. And never `secrets get --plain` a value into a place it would leak (a chat reply, a committed file).
+
 ## Bootstrap: no setup step
 
 ```bash
