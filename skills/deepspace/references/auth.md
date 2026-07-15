@@ -28,6 +28,8 @@ Every dynamic page requires sign-in. Wrap the data layer in `src/pages/(app)/_la
 
 Static top-level pages (like the shipped `index.tsx` landing) sit outside `(app)/` and stay reachable signed-out regardless — if truly *nothing* should render without a session, point `/` at a gated page instead of shipping the static landing.
 
+> **Blank-page tell** — a `RecordProvider` without `allowAnonymous` renders *nothing* for signed-out visitors. On localhost the SDK shows a "you're signed out" diagnostic box instead (production stays blank) — seeing it means add `allowAnonymous` or gate the route behind `<AuthGate>`.
+
 ### 3. Mixed (default)
 
 Three tiers, decided by where the file lives under `src/pages/` (`(app)` and `(protected)` are generouted route groups — the parentheses mean they don't appear in the URL, so `(app)/home.tsx` serves `/home`):
@@ -91,8 +93,14 @@ The stack is split across two files:
   </AuthBoot>
 </DeepSpaceAuthProvider>
 
-// AuthBoot mounts the data layer for everyone (signed-in OR signed-out):
-<RecordProvider allowAnonymous>
+// AuthBoot mounts the data layer for everyone (signed-in OR signed-out).
+// The error callbacks are the only surface for rejected optimistic writes —
+// keep them wired to the toasts:
+<RecordProvider
+  allowAnonymous
+  onPermissionError={(title, detail) => warning(title, detail)}
+  onValidationError={(title, detail) => error(title, detail)}
+>
   <RecordScope roomId={SCOPE_ID} schemas={schemas} appId={APP_NAME}>
     {children}
   </RecordScope>

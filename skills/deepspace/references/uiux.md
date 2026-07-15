@@ -130,8 +130,8 @@ The scaffold ships a copy-paste primitives kit in `src/components/ui/` (index at
 **Why the shadowing happens:** the scaffold's `src/components/ui/` ships its own copy of the UI primitives, with its own React contexts. A hook only finds a Provider from the *same* module instance, so mixing `useToast` from `deepspace` with the scaffold's `ToastProvider` fails even though the APIs look identical. Pick one source per primitive — the scaffold's local copy is the default and matches what `_app.tsx` wraps the tree in.
 
 **`useToast` is the default feedback channel** for any mutation. `const { success, error, warning, info } = useToast()` then:
-- `success('Saved', 'Your changes have been saved.')` after `create` / `put` / `remove` resolves.
-- `error('Failed to save', err.message)` in the `catch`.
+- `success('Saved', 'Your changes have been saved.')` after the mutation resolves. Plain `create` / `put` / `remove` resolve optimistically (before the server accepts), so use the `*Confirmed` variant before toasting success on anything the user must trust.
+- `error('Failed to save', err.message)` in the `catch` — **only `*Confirmed` variants throw on a server denial**. Plain mutations never hit the catch; their rejections surface through `RecordProvider`'s `onPermissionError`/`onValidationError` toasts, already wired in the scaffold's `(app)/_layout.tsx`.
 - No silent mutations — the user should always see confirmation.
 
 ### Base UI gotchas (already handled in the kit — don't undo them)
@@ -199,7 +199,7 @@ These are cheap to add and dramatically change how finished an app feels.
 
 - **Every async action** (mutate, upload, send): `Button loading={pending}` — it disables and shows the spinner. Use optimistic UI where the collection supports it.
 - **Every destructive action** (delete, remove, leave): `ConfirmModal` that names the item in the body ("Delete task 'Buy milk'?"), not a generic "Are you sure?".
-- **Every mutation**: fire `useToast` on success and error.
+- **Every mutation**: fire `useToast` on success and error — with the plain-vs-`*Confirmed` caveat from the `useToast` section above (plain mutations never throw on denial; the provider callbacks toast those).
 - **Every form**: inline validation next to the field, not a global banner. Use `Label` + `Input` + a small `<p>` with the error.
 - **Every list during initial load**: `animate-pulse` placeholder blocks (`bg-muted rounded-md`) shaped like the content. Never a blank screen with just "Loading…".
 - **Hover/focus states** on every clickable element — the primitives handle this; raw `<div onClick>` does not. The scaffold also ships `*:focus-visible` outlines in `styles.css` — keep them.

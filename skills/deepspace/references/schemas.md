@@ -104,10 +104,10 @@ When creating records scoped to specific users (e.g., conversations, private dat
 
 ## Schema-lint warnings
 
-The SDK runs a lightweight lint when each schema is registered (worker startup, first DO boot). Warnings print to the worker console prefixed `[schema-lint]` — they don't block boot, but each one flags a real privacy or correctness foot-gun. Treat them as errors:
+The SDK runs a lightweight lint when each schema is registered (worker startup, first DO boot), and `deepspace dev` / `deepspace deploy` also run it up front and print any findings in the terminal ("Schema lint: N warnings in src/schemas.ts"). Runtime warnings print to the worker console prefixed `[schema-lint]`. Neither blocks, but each finding flags a real privacy or correctness foot-gun. Treat them as errors:
 
 - **`visibilityField` declared, a role has `read: true`, but no role uses `read: 'published'` / `'shared'`** — the visibility column does nothing because the `read: true` roles see every row regardless of `visibility`. Either drop `visibilityField` (you didn't mean to gate reads) or change at least one role to `read: 'published'` (owner OR public) / `'shared'` (owner OR collaborator OR public) so the filter actually runs.
 - **`ownerField` set but the named column is not `userBound: true`** — owner-spoofing risk. `userBound: true` is what tells the DO to overwrite the column with the caller's verified userId on write, instead of trusting whatever the client sent. Add `userBound: true` (and ideally `immutable: true`) to the column definition.
 - **`userBound: true` on a non-`text` storage column** — the SDK can only coerce a userId into a text field; on `number` columns the write will fail at runtime (the `storage` union is `'number' | 'text'`). Change `storage` to `'text'`.
 
-These are the most common shapes of "looks secure but isn't" — if a `[schema-lint]` line appears at `dev` startup, fix the schema before continuing.
+These are the most common shapes of "looks secure but isn't" — if a schema-lint warning appears at `dev`/`deploy` startup or in the worker console, fix the schema before continuing.
