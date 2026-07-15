@@ -131,7 +131,7 @@ The scaffold ships a copy-paste primitives kit in `src/components/ui/` (index at
 
 **`useToast` is the default feedback channel** for any mutation. `const { success, error, warning, info } = useToast()` then:
 - `success('Saved', 'Your changes have been saved.')` after the mutation resolves. Plain `create` / `put` / `remove` resolve optimistically (before the server accepts), so use the `*Confirmed` variant before toasting success on anything the user must trust.
-- `error('Failed to save', err.message)` in the `catch` — **only `*Confirmed` variants throw on a server denial**. Plain mutations never hit the catch; their rejections surface through `RecordProvider`'s `onPermissionError`/`onValidationError` toasts, already wired in the scaffold's `(app)/_layout.tsx`.
+- `error('Failed to save', err.message)` in the `catch` — **only `*Confirmed` variants throw on a server denial**. Plain mutations never hit the catch; their rejections surface through `RecordProvider`'s `onWriteError` toasts, already wired in the scaffold's `(app)/_layout.tsx`.
 - No silent mutations — the user should always see confirmation.
 
 ### Base UI gotchas (already handled in the kit — don't undo them)

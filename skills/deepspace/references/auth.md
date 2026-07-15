@@ -94,12 +94,15 @@ The stack is split across two files:
 </DeepSpaceAuthProvider>
 
 // AuthBoot mounts the data layer for everyone (signed-in OR signed-out).
-// The error callbacks are the only surface for rejected optimistic writes —
-// keep them wired to the toasts:
+// onWriteError is the only surface for server-rejected optimistic writes —
+// keep it
+// wired to the toasts (`warning`/`error` come from the scaffold's
+// `useToast()`, destructured at the top of AuthBoot):
 <RecordProvider
   allowAnonymous
-  onPermissionError={(title, detail) => warning(title, detail)}
-  onValidationError={(title, detail) => error(title, detail)}
+  onWriteError={(e) =>
+    e.kind === 'permission' ? warning(e.title, e.detail) : error(e.title, e.detail)
+  }
 >
   <RecordScope roomId={SCOPE_ID} schemas={schemas} appId={APP_NAME}>
     {children}
@@ -107,7 +110,7 @@ The stack is split across two files:
 </RecordProvider>
 ```
 
-`AuthBoot` is local to `(app)/_layout.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for auth to resolve (`useAuthStatus().isLoaded`) so the data layer always mounts with valid auth state, then renders children regardless of sign-in status (while resolving it shows a fixed theme-colored panel, not a spinner). Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default.
+`AuthBoot` is local to `(app)/_layout.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for auth to resolve (`useAuthStatus().isLoaded`) so the data layer always mounts with valid auth state, then renders children regardless of sign-in status (while resolving it shows a fixed theme-colored panel, not a spinner). Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default. Apps scaffolded before `onWriteError` existed won't have the wiring — retrofit it exactly as shown above.
 
 Do not rewrite either file. The defaults already:
 
