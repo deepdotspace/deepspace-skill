@@ -46,6 +46,16 @@ npx deepspace logs --json                # NDJSON, one event per line (agents: p
 # every logs command: -a/--app <id or name>, -e/--env <name> (staging app's own logs)
 # new logs take up to ~1 min to appear — don't conclude "no logs" from one immediate call
 
+# --- Client-side (browser) errors → surface in `deepspace logs` (opt-in) ---
+# Browser JS errors never invoke the Worker, so they're INVISIBLE to `logs` by default.
+# Symptom: white screen / client crash but server logs are clean. Forward them (two lines):
+#   client (e.g. src/main.tsx): import { installClientErrorReporter } from 'deepspace'
+#                               installClientErrorReporter()
+#   worker.ts:                  import { registerClientErrorRoute } from 'deepspace/worker'
+#                               registerClientErrorRoute(app)   // BEFORE app.all('/_deepspace/*')
+# then reproduce → forwarded errors appear in `logs`/dashboard tagged CLIENT.
+# React error boundary: reportClientError(err, { componentStack }) from 'deepspace'.
+
 # --- App secrets (one store per app, keyed by DEEPSPACE_APP_ID; source of truth for all envs; never hand-edit .dev.vars) → references/secrets.md ---
 npx deepspace secrets set API_KEY=...    # no setup step; works pre-deploy
 npx deepspace secrets list

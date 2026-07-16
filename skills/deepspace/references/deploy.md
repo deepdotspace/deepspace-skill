@@ -16,10 +16,11 @@ On an **initial build**, run the pre-deploy checklist in `references/uiux.md` §
 
 ## Verify a deploy (`deepspace logs`)
 
-After a deploy, read the app's production logs instead of guessing from the browser: `npx deepspace logs` shows the last 15 min (console output, request summaries, exceptions with stacks; 7-day retention), `-f` tails while you reproduce. Full flags → `references/cli.md`. Two rules:
+After a deploy, read the app's production logs instead of guessing from the browser: `npx deepspace logs` shows the last 15 min (console output, request summaries, exceptions with stacks; 7-day retention), `-f` tails while you reproduce. Full flags → `references/cli.md`. Three rules:
 
 1. **Ingestion lags up to ~1 minute.** An empty result right after a request is lag, not absence — retry (~5s intervals, up to 2 min) before concluding anything.
 2. **A 500 in production ≠ a dev bug.** The exception event carries the real deployed-worker stack — read it instead of re-running `dev` and hoping.
+3. **A white screen with clean server logs is a *browser* error.** Client-side JS errors never invoke the Worker, so `logs` never sees them by default. Opt in with `installClientErrorReporter()` (client) + `registerClientErrorRoute(app)` (worker, mounted before the `/_deepspace/*` proxy); forwarded errors then appear in `logs` tagged `CLIENT`. Snippet → `references/cli.md`.
 
 ## `.dev.vars` contract
 

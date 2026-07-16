@@ -35,6 +35,11 @@
     "_rationale": "Post-deploy debugging on .app.space = `deepspace logs`; should trigger without naming deepspace."
   },
   {
+    "query": "my deployed app shows a blank white screen for some users but deepspace logs is empty — how do i capture the browser-side error?",
+    "should_trigger": true,
+    "_rationale": "Client-side error capture: `deepspace logs` empty because browser errors don't reach the Worker → installClientErrorReporter + registerClientErrorRoute (references/cli.md)."
+  },
+  {
     "query": "show me how to wire up Liveblocks for cursor presence in my Figma plugin",
     "should_trigger": false,
     "_rationale": "Near-miss: shares 'cursor presence' but explicitly names a different real-time stack."
