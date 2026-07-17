@@ -28,6 +28,8 @@ Every dynamic page requires sign-in. Wrap the data layer in `src/pages/(app)/_la
 
 Static top-level pages (like the shipped `index.tsx` landing) sit outside `(app)/` and stay reachable signed-out regardless — if truly *nothing* should render without a session, point `/` at a gated page instead of shipping the static landing.
 
+> **Blank-page tell** — a `RecordProvider` without `allowAnonymous` renders *nothing* for signed-out visitors. On localhost the SDK shows a "you're signed out" diagnostic box instead (production stays blank) — seeing it means add `allowAnonymous` or gate the route behind `<AuthGate>`.
+
 ### 3. Mixed (default)
 
 Three tiers, decided by where the file lives under `src/pages/` (`(app)` and `(protected)` are generouted route groups — the parentheses mean they don't appear in the URL, so `(app)/home.tsx` serves `/home`):
@@ -91,15 +93,24 @@ The stack is split across two files:
   </AuthBoot>
 </DeepSpaceAuthProvider>
 
-// AuthBoot mounts the data layer for everyone (signed-in OR signed-out):
-<RecordProvider allowAnonymous>
+// AuthBoot mounts the data layer for everyone (signed-in OR signed-out).
+// onWriteError is the only surface for server-rejected optimistic writes —
+// keep it
+// wired to the toasts (`warning`/`error` come from the scaffold's
+// `useToast()`, destructured at the top of AuthBoot):
+<RecordProvider
+  allowAnonymous
+  onWriteError={(e) =>
+    e.kind === 'permission' ? warning(e.title, e.detail) : error(e.title, e.detail)
+  }
+>
   <RecordScope roomId={SCOPE_ID} schemas={schemas} appId={APP_NAME}>
     {children}
   </RecordScope>
 </RecordProvider>
 ```
 
-`AuthBoot` is local to `(app)/_layout.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for auth to resolve (`useAuthStatus().isLoaded`) so the data layer always mounts with valid auth state, then renders children regardless of sign-in status (while resolving it shows a fixed theme-colored panel, not a spinner). Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default.
+`AuthBoot` is local to `(app)/_layout.tsx`. It is **not** the same as the SDK's `<AuthGate>` — it just waits for auth to resolve (`useAuthStatus().isLoaded`) so the data layer always mounts with valid auth state, then renders children regardless of sign-in status (while resolving it shows a fixed theme-colored panel, not a spinner). Public pages render fine inside it; the data layer is in `allowAnonymous` mode by default. Apps scaffolded before `onWriteError` existed won't have the wiring — retrofit it exactly as shown above.
 
 Do not rewrite either file. The defaults already:
 
