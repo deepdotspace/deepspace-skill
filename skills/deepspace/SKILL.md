@@ -257,6 +257,13 @@ and each part of it has a documented shape you should read before acting:
   never substitute an ad hoc reverse proxy or an internal registry write.
   Keep certificate-validation records needed for renewal, and verify the app
   through HTTPS on the custom hostname before calling the connection complete.
+- **A native client (iPhone, iPad, Mac)** is `npx deepspace add mobile`, an
+  Expo app in `mobile/` on `deepspace/native`. Read the Expo guide
+  (`/guides/mobile-apps`) before building one: the SDK already provides
+  keyboard shortcuts, context menus, the same app on the web (`expoWeb`),
+  writes that survive reconnects, one private store per account
+  (`accountStores`), and `npx deepspace testflight <signed.ipa>` for
+  TestFlight. Use them rather than writing app-local versions.
 - **Taking an app down** is `deepspace app undeploy`. It is the most
   destructive app command and the docs state exactly what it removes and what
   survives. Read the app-identity guide before running it, and never run it
