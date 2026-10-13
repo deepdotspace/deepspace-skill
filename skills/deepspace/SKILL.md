@@ -23,6 +23,28 @@ authority for everything else — it is written to be opinionated, so when it
 recommends an approach, take that as the default rather than one option among
 many.
 
+## Independent agent accounts and pinned distributions
+
+When using independent agent signup, a portable credential selected by
+`DEEPSPACE_AGENT_CREDENTIAL_FILE`, or a prototype distribution, follow that
+distribution's onboarding guide for account creation, installation, and updates.
+The [staging agent quickstart](https://deepdotspace-site-staging.spacestest.com/docs/agents/start.md)
+is the current prototype entry point; production signup remains disabled.
+
+Keep the selected environment and private credential across commands and
+container restarts. Use the installed CLI's `auth agent register`, `status`,
+and `renew` flows; solve a returned challenge before submitting its answer.
+Recover a lost prompt with `auth agent status --json`. Do not fall back to
+human OAuth, request provider credentials, or create another identity to recover
+an existing account. A human hosting account is not needed for this flow.
+
+Use the installed `create-deepspace` command and matching SDK archive. Keep the
+manifest and lockfile. Do not replace a pinned prototype with registry packages
+or `@latest`; adopt a newer distribution only through its onboarding instructions.
+These account and version rules apply to the operating sequence and upgrade
+guidance below. The general documentation remains the authority for app design,
+data, permissions, and source control.
+
 ## One source authority
 
 Every app has exactly one Git authority — DeepSpace source (packaged,
@@ -93,12 +115,13 @@ calls, not pages: `npx deepspace integrations list` / `integrations info
 
    ```bash
    npx deepspace auth whoami --json
-   npx deepspace auth login # only when signed out
    ```
 
-   Login opens browser OAuth and polls for up to ten minutes. Leave it in the
-   foreground and let the user finish it; never request, invent, or handle a
-   password. A container or CI shell has no browser: run `auth login --help`
+   For independent agent accounts, use the account flow above. For a human
+   account that is signed out, `npx deepspace auth login` opens browser OAuth
+   and polls for up to ten minutes. Leave it in the foreground and let the user
+   finish it; never request, invent, or handle a password. For that human-account
+   flow in a container or CI shell without a browser, run `auth login --help`
    and use the operator-supplied env credentials it names — that help is the
    authority on which variables they are — and never put a password on a
    command line.
@@ -112,21 +135,26 @@ calls, not pages: `npx deepspace integrations list` / `integrations info
    and runtime versions before diagnosing it or choosing a recovery; keep the
    app's selected package manager and lockfile consistent.
 
+   For a new app using the ordinary published distribution:
+
    ```bash
    npm create deepspace@latest <app-name>
    cd <app-name>
    npx deepspace dev start
    ```
 
+   For a pinned prototype, use `create-deepspace <app-name>` from the installed
+   distribution instead of the registry command above.
+
    App ids are server-minted at registration, and apps **register on first
    use**: the first id-needing verb (`deploy`, `dev start`, `test run`,
    `push`, a `secrets` write) mints the id under whichever login and plane
    the shell holds, announced on stderr naming the account email. Check
    `auth whoami` BEFORE that first verb so the registration lands on the
-   intended account; when the shell's login is not the intended owner, log
-   in as the owner first (or run `npx deepspace app init` as them) rather
-   than minting an id you then have to throw away. A scaffold made while
-   signed out is fine — it registers the same way once someone logs in. Any
+   intended account. If the owner is wrong, select the intended account before
+   registering: restore its private credential for an agent, or sign in as the
+   owner for a human account. A scaffold made while signed out is fine — it
+   registers the same way once the intended account is authenticated. Any
    `app_not_registered` or `app_not_initialized` refusal means exactly that
    and nothing else.
 
@@ -238,7 +266,7 @@ what to check when it did not), and a **caught error is a `log` line, not an
 The sequence above does not end at `deploy` — the app has a life afterwards,
 and each part of it has a documented shape you should read before acting:
 
-- **Moving to a newer SDK** is `deepspace app update`, not a hand-edited
+- **Moving to a newer published SDK** is `deepspace app update`, not a hand-edited
   `package.json`. Run the **newest** CLI first —
   `npx deepspace@latest app update --json` — then follow its `steps`; it is a
   read-only guide and never rewrites the app for you. The updating guide
@@ -246,6 +274,8 @@ and each part of it has a documented shape you should read before acting:
   field means. A scaffold older than server-minted ids refuses
   `app_not_registered` at every turn; its one remedy is
   `npx deepspace@latest app init --new-id`, which the guide explains.
+  Pinned prototypes follow their distribution's upgrade instructions instead;
+  the registry commands in this paragraph do not apply to them.
 - **Active apps consume a slot in your tier's quota.** A deploy or a fresh
   registration can be refused for that reason alone, and the remedy is a
   choice (free a slot or upgrade) — which is why that refusal ships no
