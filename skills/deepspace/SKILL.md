@@ -50,8 +50,14 @@ surface to the user, not steps to run in passing.
 
 ## How to read the documentation
 
-Consult the docs BEFORE building in an area, not after something breaks. The
-reading procedure:
+For a UI-only change that neither calls DeepSpace APIs nor changes its runtime,
+configuration, source, or deployment, work from the local UI code and rendered
+result first; do not fetch DeepSpace docs merely because the package is present.
+Enter the documentation workflow only if the task reaches a DeepSpace-owned
+area.
+
+For DeepSpace-owned behavior, consult the docs BEFORE building in that area,
+not after something breaks. The reading procedure:
 
 1. **Fetch the index once per task area:** <https://docs.deep.space/llms.txt>
    — generated from the docs on every deploy, so it is never stale — lists
