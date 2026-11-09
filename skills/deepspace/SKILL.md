@@ -23,42 +23,6 @@ authority for everything else — it is written to be opinionated, so when it
 recommends an approach, take that as the default rather than one option among
 many.
 
-## Where DeepSpace runs
-
-DeepSpace builds and deploys from a terminal that can reach DeepSpace's
-servers. Most coding agents have one; skip this section unless one of the two
-cases below applies.
-
-**You can run commands but can't reach DeepSpace**: `auth login` answers
-`login_session_unreachable`, or docs.deep.space won't load, as in some cloud
-sandboxes. You can build the app, but not sign in, register, test against
-DeepSpace or deploy. Then:
-
-1. Build in a folder on the user's own computer if you can write to one;
-   otherwise hand the project over as a download that includes `.git`.
-   `deploy` refuses a folder that isn't a git repository (`not_git_repo`).
-2. Use the installed package's `.d.ts` files and the CLI's `--help` in place
-   of the docs.
-3. Skip `dev start`, `test run`, `deploy`, `push` and `secrets` writes; each
-   registers the app with DeepSpace. Run what works without it (type-check,
-   unit tests, build), and tell the user which checks ran and which didn't.
-4. End with the commands for their own terminal, in order: `npm install`
-   (npm 11.6 or later), `npx deepspace auth whoami` (`auth login` if signed
-   out), `npx deepspace test run`, `npx deepspace deploy`.
-
-**You can't run commands at all** (claude.ai chat, for example): don't attempt
-a build. Instead:
-
-1. Answer the user's DeepSpace questions from the documentation below.
-2. Help them decide what the app should do: who uses it, its screens, its data,
-   and who can see or change what.
-3. Write that plan as a prompt they can paste into a coding agent, starting
-   with "Build this with DeepSpace:".
-4. Tell them where to paste it: Claude Code (the Code tab in the Claude desktop
-   app, or `claude` in a terminal), Codex, or Cursor. A DeepSpace plugin
-   installed on claude.ai also appears in Claude Code when they sign in there
-   with the same Claude account.
-
 ## One source authority
 
 Every app has exactly one Git authority — DeepSpace source (packaged,
@@ -329,3 +293,13 @@ and each part of it has a documented shape you should read before acting:
   apps their own design.
 - Run apps on a supported Node line — the installation guide
   (`/get-started/installation`) is the authority on which lines those are.
+
+## Without a working terminal
+
+- **No shell** (claude.ai chat): don't attempt a build. Help the user plan
+  the app, then write a prompt starting "Build this with DeepSpace:" for
+  Claude Code, Codex or Cursor.
+- **A shell that can't reach DeepSpace** (`auth login` answers
+  `login_session_unreachable`): build and run what works offline, keep the
+  project a git repository, say which checks ran, and end with the commands
+  for the user's own terminal: `auth whoami`, `test run`, `deploy`.
