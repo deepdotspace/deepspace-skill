@@ -23,6 +23,23 @@ authority for everything else — it is written to be opinionated, so when it
 recommends an approach, take that as the default rather than one option among
 many.
 
+## Where DeepSpace runs
+
+DeepSpace builds and deploys from a terminal. If you can run shell commands and
+reach npm, skip this section.
+
+If you can't (claude.ai chat, for example), don't attempt a build. Instead:
+
+1. Answer the user's DeepSpace questions from the documentation below.
+2. Help them decide what the app should do: who uses it, its screens, its data,
+   and who can see or change what.
+3. Write that plan as a prompt they can paste into a coding agent, starting
+   with "Build this with DeepSpace:".
+4. Tell them where to paste it: Claude Code (the Code tab in the Claude desktop
+   app, or `claude` in a terminal), Codex, or Cursor. A DeepSpace plugin
+   installed on claude.ai also appears in Claude Code when they sign in there
+   with the same Claude account.
+
 ## One source authority
 
 Every app has exactly one Git authority — DeepSpace source (packaged,
