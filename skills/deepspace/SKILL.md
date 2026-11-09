@@ -150,6 +150,7 @@ calls, not pages: `npx deepspace integrations list` / `integrations info
 
    ```bash
    npx deepspace test run        # the quick default; it names what it skipped
+   npx deepspace test run unit   # seconds: renders every public page in Node — a page that needs a browser fails here, not at deploy
    npx deepspace test run all    # every spec, including ones you added
    npx deepspace deploy
    ```
