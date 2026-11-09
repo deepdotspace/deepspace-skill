@@ -1,8 +1,23 @@
 {
   "name": "deepspace",
-  "description": "Build real-time collaborative apps on Cloudflare Workers with DeepSpace SDK",
-  "version": "0.1.0",
+  "displayName": "DeepSpace",
+  "description": "Build and deploy full-stack, real-time apps with the DeepSpace SDK: auth and roles, live data sync, messaging, file storage, payments, AI chat, and one-command deploys to app.space on Cloudflare Workers.",
+  "version": "0.2.0",
   "author": {
-    "name": "DeepSpace"
-  }
+    "name": "DeepSpace",
+    "url": "https://deep.space"
+  },
+  "homepage": "https://docs.deep.space",
+  "repository": "https://github.com/deepdotspace/deepspace-skill",
+  "license": "MIT",
+  "keywords": [
+    "full-stack",
+    "real-time",
+    "auth",
+    "deploy",
+    "hosting",
+    "collaboration",
+    "cloudflare-workers",
+    "react"
+  ]
 }

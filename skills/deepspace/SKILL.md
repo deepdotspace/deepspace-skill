@@ -293,3 +293,13 @@ and each part of it has a documented shape you should read before acting:
   apps their own design.
 - Run apps on a supported Node line — the installation guide
   (`/get-started/installation`) is the authority on which lines those are.
+
+## Without a working terminal
+
+- **No shell** (claude.ai chat): don't attempt a build. Help the user plan
+  the app, then write a prompt starting "Build this with DeepSpace:" for
+  Claude Code, Codex or Cursor.
+- **A shell that can't reach DeepSpace** (`auth login` answers
+  `login_session_unreachable`): build and run what works offline, keep the
+  project a git repository, say which checks ran, and end with the commands
+  for the user's own terminal: `auth whoami`, `test run`, `deploy`.
