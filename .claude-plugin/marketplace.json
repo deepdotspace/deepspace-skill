@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "deepspace",
+  "description": "The DeepSpace plugin for Claude Code.",
+  "owner": {
+    "name": "DeepSpace"
+  },
+  "plugins": [
+    {
+      "name": "deepspace",
+      "displayName": "DeepSpace",
+      "description": "Build and deploy full-stack, real-time apps with the DeepSpace SDK: auth and roles, live data sync, messaging, file storage, payments, AI chat, and one-command deploys to app.space on Cloudflare Workers.",
+      "source": "./",
+      "category": "development",
+      "homepage": "https://docs.deep.space"
+    }
+  ]
+}

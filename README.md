@@ -4,11 +4,22 @@ Portable agent skill for building apps with the [DeepSpace SDK](https://github.c
 
 ## Install
 
+In Claude Code:
+
+```text
+/plugin marketplace add deepdotspace/deepspace-skill
+/plugin install deepspace@deepspace
+```
+
+In Codex, Cursor and other agents:
+
 ```bash
 npx -y skills@latest add deepdotspace/deepspace-skill -y
 ```
 
-Claude Code plugin users can also run `/plugin install deepspace`.
+DeepSpace builds and deploys from a terminal, so the skill needs an agent that
+can run shell commands. Where it can't, as in claude.ai chat, the skill helps
+plan the app and hands the plan off to a coding agent.
 
 ## What it does
 
