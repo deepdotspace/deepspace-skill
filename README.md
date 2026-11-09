@@ -17,8 +17,9 @@ In Codex, Cursor and other agents:
 npx -y skills@latest add deepdotspace/deepspace-skill -y
 ```
 
-DeepSpace builds and deploys from a terminal; without one, as in claude.ai
-chat, the skill helps plan the app and hands it to a coding agent.
+In sandboxes that can't reach DeepSpace, such as claude.ai's, the skill builds
+the app and hands you the commands to sign in, test and deploy from your own
+terminal.
 
 ## What it does
 
