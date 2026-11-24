@@ -6,9 +6,9 @@ skill. This eval covers triggering only.
 
 | File | Purpose |
 |---|---|
-| `train_queries.json` | 14 queries (7 should-trigger, 7 should-not). Iterate against this. |
-| `validation_queries.json` | 11 held-out queries (6/5). Run only after you stop iterating. |
-| `sanity_queries.json` | 5 fresh queries (3/2). Final honest check; never optimize against it. |
+| `train_queries.json` | 19 queries (9 should-trigger, 10 should-not). Iterate against this. |
+| `validation_queries.json` | 16 held-out queries (9/7). Run only after you stop iterating. |
+| `sanity_queries.json` | 6 fresh queries (3/3). Final honest check; never optimize against it. |
 
 `run-eval.sh` runs each query several times through `claude -p`, checks
 whether the Skill tool fired with `skill: "deepspace"`, and exits non-zero on

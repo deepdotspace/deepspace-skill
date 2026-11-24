@@ -5,9 +5,14 @@
     "_rationale": "Fresh: collaborative canvas + channel-based chat + multi-user. Indirect."
   },
   {
-    "query": "add a 'who's currently on this page' bar to my app",
+    "query": "add a 'who's currently on this page' bar to my app (it imports from 'deepspace')",
     "should_trigger": true,
-    "_rationale": "Fresh: presence is in the trigger description."
+    "_rationale": "Presence inside a DeepSpace project. Replaces the unconditional case, which also expected a trigger for non-DeepSpace apps."
+  },
+  {
+    "query": "add a 'who's currently on this page' bar to my plain React app that uses Pusher",
+    "should_trigger": false,
+    "_rationale": "Paired near-miss: same feature, different stack."
   },
   {
     "query": "rewrite my app so the avatar dropdown actually signs the user out — currently it does nothing",
