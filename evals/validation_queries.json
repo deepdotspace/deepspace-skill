@@ -53,5 +53,30 @@
     "query": "write me a PRD for a bill-splitting startup idea — features, personas, pricing tiers",
     "should_trigger": false,
     "_rationale": "Near-miss: product thinking about an app, but a document deliverable — nothing to build or deploy."
+  },
+  {
+    "query": "shared chore chart for my roommates, I want to send them a link",
+    "should_trigger": true,
+    "_rationale": "Held-out casual: shared app opened from a link."
+  },
+  {
+    "query": "let my team vote on lunch and show results live",
+    "should_trigger": true,
+    "_rationale": "Held-out casual: poll with live results, no stack named."
+  },
+  {
+    "query": "deploy this to app.space",
+    "should_trigger": true,
+    "_rationale": "Inside a DeepSpace app: app.space deploy trigger."
+  },
+  {
+    "query": "fix the off-by-one in utils.ts",
+    "should_trigger": false,
+    "_rationale": "Near-miss: bug fix in code with no DeepSpace signal."
+  },
+  {
+    "query": "write a script that tracks my personal budget in a spreadsheet",
+    "should_trigger": false,
+    "_rationale": "Near-miss: single-user, no shared app."
   }
 ]

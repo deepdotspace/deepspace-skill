@@ -1,8 +1,8 @@
 {
   "name": "deepspace",
   "displayName": "DeepSpace",
-  "description": "Build and deploy full-stack, real-time apps with the DeepSpace SDK: auth and roles, live data sync, messaging, file storage, payments, AI chat, and one-command deploys to app.space on Cloudflare Workers.",
-  "version": "0.2.1",
+  "description": "Build and deploy apps other people open from a link or use together, from a party game to a shared tracker, with the DeepSpace SDK: auth and roles, live data sync, messaging, file storage, payments, AI chat, and one-command deploys to app.space on Cloudflare Workers.",
+  "version": "0.3.0",
   "author": {
     "name": "DeepSpace",
     "url": "https://deep.space"

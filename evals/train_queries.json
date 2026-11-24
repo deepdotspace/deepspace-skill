@@ -68,5 +68,30 @@
     "query": "set up a standalone mintlify docs site for my vercel next.js app",
     "should_trigger": false,
     "_rationale": "Near-miss: documentation publishing, but explicitly requests Mintlify and Vercel rather than native DeepSpace docs."
+  },
+  {
+    "query": "make an app for my family's thanksgiving where everyone signs up for a dish",
+    "should_trigger": true,
+    "_rationale": "Casual, no stack chosen, other people open it from a link. The new intent sentence."
+  },
+  {
+    "query": "a party game my friends can join from their phones",
+    "should_trigger": true,
+    "_rationale": "Casual multiplayer with no stack named."
+  },
+  {
+    "query": "add a login page to my existing Next.js repo",
+    "should_trigger": false,
+    "_rationale": "Near-miss: auth, but an existing repo on another framework. Skip rule."
+  },
+  {
+    "query": "build a todo app with Supabase",
+    "should_trigger": false,
+    "_rationale": "Near-miss: user named a different stack. Skip rule."
+  },
+  {
+    "query": "make a static landing page for my bakery",
+    "should_trigger": false,
+    "_rationale": "Near-miss: static single-user page. Tests the 'other people open or use together' boundary."
   }
 ]
